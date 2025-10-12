@@ -4,8 +4,8 @@ import { useHasMounted } from '../../../lib/hooks/useHasMounted';
 import { Map } from '../../common/icons';
 import MapBox from './MapBox';
 
-const LNG = -0.548706;
-const LAT = 44.807147;
+const LNG = -0.550281;
+const LAT = 44.805434;
 
 type CarteCabinetProps = {
   id?: string;

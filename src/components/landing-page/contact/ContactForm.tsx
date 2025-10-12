@@ -25,13 +25,17 @@ export default function ContactForm() {
     formData.append('form-name', 'contact');
 
     try {
+      // Convert FormData to URLSearchParams for Netlify Forms
+      const formObject = Object.fromEntries(formData.entries()) as Record<
+        string,
+        string
+      >;
+
       // eslint-disable-next-line no-undef
       const response = await fetch('/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(
-          formData as unknown as Record<string, string>
-        ).toString(),
+        body: new URLSearchParams(formObject).toString(),
       });
 
       if (response.ok) {
