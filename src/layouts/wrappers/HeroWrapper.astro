@@ -3,27 +3,52 @@ import { getImage } from 'astro:assets';
 import Hero from '../../components/landing-page/hero/Hero';
 import dogHomepage from '../../images/dog-homepage.jpg';
 
-const [heroAvif, heroWebp] = await Promise.all([
-  getImage({
-    src: dogHomepage,
-    widths: [480, 768, 1024, 1440, 1920],
-    format: 'avif',
-    quality: 60
-  }),
-  getImage({
-    src: dogHomepage,
-    widths: [480, 768, 1024, 1440, 1920],
-    format: 'webp',
-    quality: 75
-  })
-]);
+const widths = [480, 768, 1024, 1440, 1920];
+
+// Generate AVIF images
+const avifImages = await Promise.all(
+  widths.map(width =>
+    getImage({
+      src: dogHomepage,
+      width,
+      format: 'avif',
+      quality: 60
+    })
+  )
+);
+
+// Generate WebP images
+const webpImages = await Promise.all(
+  widths.map(width =>
+    getImage({
+      src: dogHomepage,
+      width,
+      format: 'webp',
+      quality: 75
+    })
+  )
+);
+
+// Construct srcsets
+const avifSrcset = avifImages.map((img, i) => `${img.src} ${widths[i]}w`).join(', ');
+const webpSrcset = webpImages.map((img, i) => `${img.src} ${widths[i]}w`).join(', ');
+
+// Use the largest image as default src
+const avifSrc = avifImages[avifImages.length - 1]?.src ?? '';
+const webpSrc = webpImages[webpImages.length - 1]?.src ?? '';
 ---
 
 <Hero
   client:load
   backgroundSources={{
-    avif: heroAvif,
-    webp: heroWebp
+    avif: {
+      src: avifSrc,
+      srcset: avifSrcset
+    },
+    webp: {
+      src: webpSrc,
+      srcset: webpSrcset
+    }
   }}
   backgroundAlt="Chien recevant un soin ostéopathique"
 />

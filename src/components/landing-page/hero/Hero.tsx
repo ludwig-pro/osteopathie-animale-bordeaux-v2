@@ -45,7 +45,9 @@ export default function Hero({
   const { avif, webp, fallback } = backgroundSources ?? {};
   const fallbackSrc = fallback ?? webp?.src ?? avif?.src;
   const rootElement =
-    typeof document !== 'undefined' ? document.getElementById('root') : null;
+    typeof document !== 'undefined'
+      ? document.getElementById('root') || document.body
+      : null;
 
   return (
     <div className="relative h-screen w-full bg-no-repeat bg-cover bg-center">
@@ -174,7 +176,7 @@ export default function Hero({
                   <div className="space-y-4 sm:space-y-0 sm:mx-auto sm:inline-grid sm:grid-cols-2 sm:gap-5">
                     <PopupButton
                       url={url_calendly}
-                      rootElement={rootElement ?? undefined}
+                      rootElement={rootElement as HTMLElement}
                       text="Prendre rendez-vous en ligne"
                       className="flex w-full items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-gold-600 bg-white hover:bg-opacity-70 sm:px-8"
                     />
