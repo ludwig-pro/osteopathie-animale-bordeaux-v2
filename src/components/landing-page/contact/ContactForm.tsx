@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useCallback, type FormEvent } from 'react';
 import { GoogleReCaptcha } from 'react-google-recaptcha-v3';
 import FormField from './FormField';
 
@@ -7,6 +7,10 @@ export default function ContactForm() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const handleVerify = useCallback((token: string) => {
+    setToken(token);
+  }, []);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -105,11 +109,7 @@ export default function ContactForm() {
             value={token}
           />
 
-          <GoogleReCaptcha
-            onVerify={(token) => {
-              setToken(token);
-            }}
-          />
+          <GoogleReCaptcha onVerify={handleVerify} />
 
           {/* RGPD compliance text */}
           <p className="text-sm text-gray-500">
