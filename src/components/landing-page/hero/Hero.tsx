@@ -3,8 +3,6 @@ import { MenuIcon, XIcon } from '@heroicons/react/outline';
 import React, { Fragment } from 'react';
 import { PopupButton } from 'react-calendly';
 import * as Icons from '../../common/icons';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { isDomAvailable } from '../../../lib/utils';
 
 const navigation = [
   { name: 'Animaux', href: '#animaux' },
@@ -23,31 +21,51 @@ const navigationSvg = {
 const url_calendly =
   'https://calendly.com/osteopathe-animalier/consultation-osteopathique'; // 'https://calendly.com/osteopathe-animalier/';
 
-type ImageData = {
-  src: string;
-  srcSet: {
-    attribute: string;
-  };
-  attributes?: Record<string, unknown>;
-};
-
 type HeroProps = {
   children?: React.ReactNode;
-  backgroundImage?: ImageData;
+  backgroundSources?: {
+    avif?: {
+      src: string;
+      srcset: string;
+    };
+    webp?: {
+      src: string;
+      srcset: string;
+    };
+    fallback?: string;
+  };
+  backgroundAlt?: string;
 };
 
-export default function Hero({ children, backgroundImage }: HeroProps) {
-  const bgStyle = backgroundImage
-    ? {
-        backgroundImage: `url(${backgroundImage.src})`,
-      }
-    : {};
+export default function Hero({
+  children,
+  backgroundSources,
+  backgroundAlt = '',
+}: HeroProps) {
+  const { avif, webp, fallback } = backgroundSources ?? {};
+  const fallbackSrc = fallback ?? webp?.src ?? avif?.src;
+  const rootElement =
+    typeof document !== 'undefined' ? document.getElementById('root') : null;
 
   return (
-    <div
-      className="h-screen bg-no-repeat bg-cover bg-center w-full"
-      style={bgStyle}
-    >
+    <div className="relative h-screen w-full bg-no-repeat bg-cover bg-center">
+      {fallbackSrc && (
+        <picture className="absolute inset-0">
+          {avif?.srcset && <source srcSet={avif.srcset} type="image/avif" />}
+          {webp?.srcset && <source srcSet={webp.srcset} type="image/webp" />}
+          <img
+            src={fallbackSrc}
+            alt={backgroundAlt}
+            className="h-full w-full object-cover"
+            loading="eager"
+            decoding="async"
+          />
+        </picture>
+      )}
+      <div
+        className="absolute inset-0 bg-black bg-opacity-30"
+        aria-hidden="true"
+      />
       <Popover className="relative pt-6 pb-16 sm:pb-24 ">
         {({ open }) => (
           <>
@@ -156,9 +174,7 @@ export default function Hero({ children, backgroundImage }: HeroProps) {
                   <div className="space-y-4 sm:space-y-0 sm:mx-auto sm:inline-grid sm:grid-cols-2 sm:gap-5">
                     <PopupButton
                       url={url_calendly}
-                      rootElement={
-                        document.getElementById('root') as HTMLElement
-                      }
+                      rootElement={rootElement ?? undefined}
                       text="Prendre rendez-vous en ligne"
                       className="flex w-full items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-gold-600 bg-white hover:bg-opacity-70 sm:px-8"
                     />
