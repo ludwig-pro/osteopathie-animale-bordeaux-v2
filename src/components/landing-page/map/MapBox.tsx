@@ -1,9 +1,7 @@
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import React, { useEffect, useRef, useState } from 'react';
-
-const MAPBOX_TOKEN =
-  'pk.eyJ1IjoibHVkd2lnLXBybyIsImEiOiJjbG93MWp2a2Ewd2t3MnBvMXVnejh4emJwIn0.t51kcIlfT8-2v-3iHznMwQ';
+import { API_CONFIG } from '../../../lib/constants/api';
 
 const mapContainerStyle = {
   width: '100%',
@@ -22,9 +20,16 @@ const MapBox = ({ lng, lat, label }: MapBoxProps) => {
   const [, setMap] = useState<mapboxgl.Map | null>(null);
 
   useEffect(() => {
+    const mapboxToken = API_CONFIG.mapbox.token;
+
+    if (!mapboxToken) {
+      console.error('Mapbox token is missing from environment variables');
+      return;
+    }
+
     const map = new mapboxgl.Map({
       container: mapContainerRef.current!,
-      accessToken: MAPBOX_TOKEN,
+      accessToken: mapboxToken,
       style: 'mapbox://styles/mapbox/streets-v11',
       center: [lng, lat],
       zoom: 10,
