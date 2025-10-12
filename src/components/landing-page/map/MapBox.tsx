@@ -27,9 +27,11 @@ const MapBox = ({ lng, lat, label }: MapBoxProps) => {
       return;
     }
 
+    // Set the access token globally (recommended by Mapbox)
+    mapboxgl.accessToken = mapboxToken;
+
     const map = new mapboxgl.Map({
       container: mapContainerRef.current!,
-      accessToken: mapboxToken,
       style: 'mapbox://styles/mapbox/streets-v11',
       center: [lng, lat],
       zoom: 10,
