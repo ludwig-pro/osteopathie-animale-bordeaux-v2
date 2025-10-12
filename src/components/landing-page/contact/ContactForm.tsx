@@ -56,7 +56,6 @@ export default function ContactForm() {
           method="POST"
           data-netlify="true"
           data-netlify-honeypot="bot-field"
-          data-netlify-recaptcha="true"
           onSubmit={handleSubmit}
           className="grid grid-cols-1 gap-y-6"
         >
@@ -162,9 +161,6 @@ export default function ContactForm() {
               </div>
             </div>
           )}
-
-          {/* reCAPTCHA widget - Netlify injects the checkbox here */}
-          <div data-netlify-recaptcha="true"></div>
 
           <button
             type="submit"
