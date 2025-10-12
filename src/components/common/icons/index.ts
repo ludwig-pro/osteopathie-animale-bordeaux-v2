@@ -1,0 +1,14 @@
+export { default as Animal } from './Animal';
+export { default as Osteopathie } from './Osteopathie';
+export { default as QuandConsulter } from './QuandConsulter';
+export { default as Tarifs } from './Tarifs';
+export { default as Map } from './Map';
+export { default as Bilan } from './Bilan';
+export { default as BreakBone } from './BreakBone';
+export { default as Articulation } from './Articulation';
+export { default as Grow } from './Grow';
+export { default as Thunder } from './Thunder';
+export { default as Gate } from './Gate';
+export { default as Lungs } from './Lungs';
+export { default as Phone } from './Phone';
+export { default as Email } from './Email';

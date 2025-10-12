@@ -1,7 +1,5 @@
-// tailwind.config.js
 module.exports = {
-  future: {},
-  purge: ['./src/**/*.{js,jsx,ts,tsx}'],
+  content: ['./src/**/*.{astro,html,js,jsx,ts,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -23,11 +21,7 @@ module.exports = {
         canard: '#143545',
         'canard-light': '#215772',
       },
-      backgroundImage: (theme) => ({
-        'happy-dog': "url('../images/dog-homepage.jpg')",
-      }),
     },
   },
-  variants: {},
   plugins: [require('@tailwindcss/forms')],
 };

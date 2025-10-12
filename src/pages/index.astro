@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HeroWrapper from '../layouts/wrappers/HeroWrapper.astro';
+import AnimalSectionWrapper from '../layouts/wrappers/AnimalSectionWrapper.astro';
+import MapSection from '../components/landing-page/map/MapSection';
+import WhenToConsult from '../components/landing-page/when-to-consult/WhenToConsult';
+import OsteopathieAnimaleWrapper from '../layouts/wrappers/OsteopathieAnimaleWrapper.astro';
+import QuiSuisJeWrapper from '../layouts/wrappers/QuiSuisJeWrapper.astro';
+import PrixWrapper from '../layouts/wrappers/PrixWrapper.astro';
+import DeroulementConsultationWrapper from '../layouts/wrappers/DeroulementConsultationWrapper.astro';
+import ContactWrapper from '../components/landing-page/contact/ContactWrapper';
+import Footer from '../components/layout/Footer';
+
+const title = 'Osteopathe Animalier Bordeaux - Agathe Lescout';
+const description = "L'Ostéopathe animalier Agathe Lescout, intervenant sur Bordeaux et Gironde!";
+---
+
+<BaseLayout title={title} description={description}>
+  <div>
+    <main id="root">
+      <HeroWrapper />
+      <div id="animaux">
+        <AnimalSectionWrapper />
+      </div>
+      <MapSection client:visible />
+      <WhenToConsult id="quand-consulter" client:visible />
+      <PrixWrapper id="tarifs" />
+      <DeroulementConsultationWrapper />
+      <OsteopathieAnimaleWrapper id="osteopathie" />
+      <QuiSuisJeWrapper />
+      <div class="recaptcha-wrapper">
+        <ContactWrapper id="contact" client:visible />
+      </div>
+    </main>
+    <Footer client:visible />
+  </div>
+</BaseLayout>

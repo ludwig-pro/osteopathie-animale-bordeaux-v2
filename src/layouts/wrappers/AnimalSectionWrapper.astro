@@ -1,0 +1,55 @@
+---
+import { getImage } from 'astro:assets';
+import AnimalSection from '../../components/landing-page/animals/AnimalSection';
+import sectionChien from '../../images/sectionChien.jpg';
+import sectionChat from '../../images/sectionChat.jpg';
+import sectionCheval from '../../images/sectionCheval.jpg';
+import sectionLapin from '../../images/sectionLapin.jpg';
+import sectionVache from '../../images/sectionVache.jpg';
+
+// Optimiser toutes les images de la section animaux
+const sectionChienImg = await getImage({
+  src: sectionChien,
+  width: 1280,  // Plus grande car affichée en grand format
+  format: 'webp',
+  quality: 80
+});
+
+const sectionChatImg = await getImage({
+  src: sectionChat,
+  width: 1280,
+  format: 'webp',
+  quality: 80
+});
+
+const sectionChevalImg = await getImage({
+  src: sectionCheval,
+  width: 1280,
+  format: 'webp',
+  quality: 80
+});
+
+const sectionLapinImg = await getImage({
+  src: sectionLapin,
+  width: 1280,
+  format: 'webp',
+  quality: 80
+});
+
+const sectionVacheImg = await getImage({
+  src: sectionVache,
+  width: 1280,
+  format: 'webp',
+  quality: 80
+});
+
+const optimizedImages = {
+  sectionChien: sectionChienImg,
+  sectionChat: sectionChatImg,
+  sectionCheval: sectionChevalImg,
+  sectionLapin: sectionLapinImg,
+  sectionVache: sectionVacheImg,
+};
+---
+
+<AnimalSection client:only="react" optimizedImages={optimizedImages} />

@@ -1,0 +1,14 @@
+---
+import { getImage } from 'astro:assets';
+import Hero from '../../components/landing-page/hero/Hero';
+import dogHomepage from '../../images/dog-homepage.jpg';
+
+const dogHomepageImg = await getImage({
+  src: dogHomepage,
+  width: 1920,
+  format: 'webp',
+  quality: 80
+});
+---
+
+<Hero client:only="react" backgroundImage={dogHomepageImg} />

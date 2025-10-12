@@ -1,24 +1,23 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-This Gatsby site keeps application code under `src/`. Page-level routes live in `src/pages` (e.g. `index.js`), reusable UI in `src/components`, domain utilities in `src/lib`, and browser hooks in `src/hooks`. Images consumed by GraphQL are stored in `src/images`; add large binaries to an external bucket instead. Build configuration sits at the repository root (`gatsby-config.js`, `gatsby-node.js`, `tailwind.config.js`). Keep environment-specific secrets in `.env.*` files referenced through Gatsby environment variables.
+The Astro project keeps application code under `src/`. Page routes live in `src/pages` as `.astro` files, reusable UI stays in `src/components` (mostly React islands), domain utilities in `src/lib`, and browser hooks in `src/hooks`. Images are colocated in `src/images`; store very large binaries outside the repo. Core configuration resides at the root (`astro.config.mjs`, `tailwind.config.js`). Environment-specific secrets go in `.env.*` files consumed via Astro/Vite environment variables.
 
 ## Build, Test, and Development Commands
-- `yarn install`: install dependencies; always run after pulling.
-- `yarn develop`: start the local dev server on port 8000 with hot reload.
-- `yarn build`: produce an optimized static bundle for Netlify.
-- `yarn serve`: preview the last production build locally.
-- `yarn clean`: clear Gatsby caches when stale data appears.
-- `yarn format`: apply Prettier to JS, JSX, JSON, and Markdown files before review.
+- `yarn install`: install dependencies; run after each pull.
+- `yarn dev`: start the Astro dev server on port 4321 with HMR.
+- `yarn build`: generate the static site (Netlify adapter enabled).
+- `yarn preview`: preview the last production build locally.
+- `yarn format`: apply Prettier to JS, JSX, Markdown, and Astro files before review.
 
 ## Coding Style & Naming Conventions
-Follow Prettier defaults (2-space indentation, single quotes, trailing commas where valid). React components and file names use PascalCase (`HeroSection.js`), hooks start with `use`, utility modules use camelCase. Tailwind classes should be grouped by layout → spacing → typography for readability. Run `yarn format` prior to committing; do not hand-edit generated GraphQL image fragments.
+Follow Prettier defaults (2-space indentation, single quotes, trailing commas where valid). React components and file names use PascalCase (`HeroSection.jsx`), hooks start with `use`, utilities use camelCase. Tailwind classes stay ordered layout → spacing → typography for readability. Always run `yarn format` prior to committing.
 
 ## Testing Guidelines
-Automated tests are not yet configured (`yarn test` exits early). When adding tests, follow Gatsby’s Jest setup and place specs alongside source files as `<Component>.test.js`. For now, validate changes by running `yarn develop`, exercising dynamic flows (Calendly modal, map) in multiple breakpoints, and checking Lighthouse locally. Record manual test notes in the pull request.
+Automated tests are not configured yet. For now, validate changes by running `yarn dev`, exercising interactive flows (Calendly modal, map) across breakpoints, and checking Lighthouse locally. Document manual test notes in pull requests.
 
 ## Commit & Pull Request Guidelines
-Existing history favors short, imperative titles (e.g. "Update Hero.js"). Use present tense, limit to ~72 characters, and describe scope in the body if needed. Each PR should link to the relevant issue or task, outline functional changes, list manual verification steps, and attach before/after screenshots for visual updates. Request review once CI (if configured) is green and format checks pass.
+Use short, imperative commit titles (e.g. "Update Hero.jsx"). Keep messages in present tense, ~72 characters max. In PRs, link to the relevant issue/task, explain functional changes, list manual verification steps, and include before/after screenshots for visual updates. Request review once formatting passes and preview builds look correct.
 
 ## Deployment Notes
-The project targets Netlify via `gatsby-adapter-netlify`. Keep Netlify environment variables (Mapbox, ReCAPTCHA, GTM) in the dashboard rather than the repo. After merging to the main branch, trigger a Netlify deploy preview to confirm headers and offline support behave as expected.
+Deployment targets Netlify via `@astrojs/netlify`. Configure Mapbox, ReCAPTCHA, GTM, and other secrets in the Netlify dashboard rather than the repository. After merging to `main`, trigger a Netlify deploy preview to verify headers and offline behaviour.

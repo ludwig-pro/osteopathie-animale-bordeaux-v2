@@ -1,0 +1,18 @@
+---
+import { getImage } from 'astro:assets';
+import Osteopathy from '../../components/landing-page/osteopathy/Osteopathy';
+import bulldog from '../../images/bulldog.jpeg';
+
+const bulldogImg = await getImage({
+  src: bulldog,
+  width: 800,
+  format: 'webp',
+  quality: 80
+});
+---
+
+<Osteopathy
+  client:visible
+  id={Astro.props['id']}
+  bulldogImg={bulldogImg}
+/>

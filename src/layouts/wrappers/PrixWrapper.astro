@@ -1,0 +1,37 @@
+---
+import { getImage } from 'astro:assets';
+import Pricing from '../../components/landing-page/pricing/Pricing';
+import chienetchat from '../../images/chienetchat.jpeg';
+import furet from '../../images/furet.jpeg';
+import forfait from '../../images/forfaitmensuel.jpeg';
+
+// Pré-optimiser les images avec getImage()
+const chienetchatImg = await getImage({
+  src: chienetchat,
+  width: 800,
+  format: 'webp',
+  quality: 80
+});
+
+const furetImg = await getImage({
+  src: furet,
+  width: 800,
+  format: 'webp',
+  quality: 80
+});
+
+const forfaitImg = await getImage({
+  src: forfait,
+  width: 800,
+  format: 'webp',
+  quality: 80
+});
+---
+
+<Pricing
+  client:visible
+  id={Astro.props['id']}
+  chienetchatImg={chienetchatImg}
+  furetImg={furetImg}
+  forfaitImg={forfaitImg}
+/>
