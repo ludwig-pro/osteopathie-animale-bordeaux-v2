@@ -24,10 +24,6 @@ const url_calendly =
 type HeroProps = {
   children?: React.ReactNode;
   backgroundSources?: {
-    avif?: {
-      src: string;
-      srcset: string;
-    };
     webp?: {
       src: string;
       srcset: string;
@@ -42,8 +38,8 @@ export default function Hero({
   backgroundSources,
   backgroundAlt = '',
 }: HeroProps) {
-  const { avif, webp, fallback } = backgroundSources ?? {};
-  const fallbackSrc = fallback ?? webp?.src ?? avif?.src;
+  const { webp, fallback } = backgroundSources ?? {};
+  const fallbackSrc = fallback ?? webp?.src;
   const rootElement =
     typeof document !== 'undefined'
       ? document.getElementById('root') || document.body
@@ -53,7 +49,6 @@ export default function Hero({
     <div className="relative h-screen w-full bg-no-repeat bg-cover bg-center">
       {fallbackSrc && (
         <picture className="absolute inset-0">
-          {avif?.srcset && <source srcSet={avif.srcset} type="image/avif" />}
           {webp?.srcset && <source srcSet={webp.srcset} type="image/webp" />}
           <img
             src={fallbackSrc}
