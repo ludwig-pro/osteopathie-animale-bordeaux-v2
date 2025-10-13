@@ -179,7 +179,7 @@ export default function Hero({
                     />
                     <a
                       href="#contact"
-                      className="flex items-center text-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gold-500 hover:bg-opacity-70 sm:px-8"
+                      className="flex items-center text-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gold-700 hover:bg-gold-800 sm:px-8"
                     >
                       Prendre rendez-vous par téléphone
                     </a>
