@@ -74,3 +74,8 @@ yarn-error.log
 .astro
 dist/
 
+src/components/common/ResponsiveImage.tsx
+light-mobile.html
+.gitignore
+performance.md
+LIGHTHOUSE.json

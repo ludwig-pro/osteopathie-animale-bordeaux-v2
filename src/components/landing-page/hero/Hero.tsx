@@ -53,6 +53,8 @@ export default function Hero({
           <img
             src={fallbackSrc}
             alt={backgroundAlt}
+            width={1920}
+            height={1080}
             className="h-full w-full object-cover"
             loading="eager"
             decoding="async"

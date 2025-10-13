@@ -29,6 +29,8 @@ export default function Section({ name, text, alt, imageData }: SectionProps) {
             src={imageData.src}
             srcSet={imageData.srcSet.attribute}
             alt={alt}
+            width={1200}
+            height={800}
             loading="lazy"
             decoding="async"
             className="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:left-0 lg:h-full lg:max-w-none object-cover"

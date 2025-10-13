@@ -56,6 +56,8 @@ export default function OsteopathieAnimale({
                 src={bulldogImg.src}
                 srcSet={bulldogImg.srcSet.attribute}
                 alt="Bulldog anglais recevant un soin ostéopathique"
+                width={1200}
+                height={800}
                 loading="lazy"
                 decoding="async"
                 className="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:left-0 lg:h-full lg:w-auto lg:max-w-none object-cover"

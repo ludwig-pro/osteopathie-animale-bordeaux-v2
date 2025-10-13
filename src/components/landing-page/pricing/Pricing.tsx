@@ -188,6 +188,8 @@ function Card({
           src={image.src}
           srcSet={image.srcSet.attribute}
           alt={alt}
+          width={800}
+          height={400}
           loading="lazy"
           decoding="async"
           className="h-48 w-full object-cover"

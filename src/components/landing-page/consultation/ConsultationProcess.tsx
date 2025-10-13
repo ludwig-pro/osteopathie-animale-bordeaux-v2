@@ -148,6 +148,8 @@ export default function DeroulementConsultation({
               src={youngcatImg.src}
               srcSet={youngcatImg.srcSet.attribute}
               alt="Chaton tigré donnant la patte lors d'un examen ostéopathique"
+              width={1200}
+              height={800}
               loading="lazy"
               decoding="async"
               className="relative mx-auto rounded-lg w-full object-cover"
@@ -273,6 +275,8 @@ export default function DeroulementConsultation({
                 src={correctionImg.src}
                 srcSet={correctionImg.srcSet.attribute}
                 alt="Ostéopathe pratiquant une manipulation vertébrale sur un cheval"
+                width={1200}
+                height={800}
                 loading="lazy"
                 decoding="async"
                 className="relative mx-auto rounded-lg w-full object-cover"
