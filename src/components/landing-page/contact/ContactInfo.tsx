@@ -24,7 +24,7 @@ export default function ContactInfo() {
           Bègles :
         </h4>
         <p className="ml-2 mt-3 text-lg leading-6 text-gray-500">
-          Lundi et Jeudi : 9h à 19h
+          Lundi et Vendredi : 9h à 19h
         </p>
 
         <dl className="mt-8 text-base text-gray-500">
