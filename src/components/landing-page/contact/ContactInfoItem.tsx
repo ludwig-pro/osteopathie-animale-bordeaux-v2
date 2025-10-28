@@ -14,14 +14,14 @@ export default function ContactInfoItem({
   srLabel,
 }: ContactInfoItemProps) {
   return (
-    <a href={href} className="text-gray-500">
-      <div className="mt-3">
-        <dt className="sr-only">{srLabel}</dt>
-        <dd className="flex">
+    <div className="mt-3">
+      <dt className="sr-only">{srLabel}</dt>
+      <dd className="flex">
+        <a href={href} className="flex text-gray-500">
           {icon}
           <span className="ml-3">{label}</span>
-        </dd>
-      </div>
-    </a>
+        </a>
+      </dd>
+    </div>
   );
 }

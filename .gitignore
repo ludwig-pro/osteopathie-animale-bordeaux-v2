@@ -71,3 +71,11 @@ yarn-error.log
 
 # Local Netlify folder
 .netlify
+.astro
+dist/
+
+src/components/common/ResponsiveImage.tsx
+light-mobile.html
+.gitignore
+performance.md
+LIGHTHOUSE.json

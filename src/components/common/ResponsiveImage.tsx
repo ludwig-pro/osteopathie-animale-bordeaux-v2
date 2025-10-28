@@ -13,6 +13,8 @@ type ResponsiveImageProps = {
   decoding?: 'async' | 'sync';
   quality?: number;
   priority?: boolean;
+  width?: number;
+  height?: number;
 } & React.ImgHTMLAttributes<HTMLImageElement>;
 
 export default function ResponsiveImage({
@@ -25,6 +27,8 @@ export default function ResponsiveImage({
   decoding = 'async',
   quality: _quality = 80,
   priority = false,
+  width,
+  height,
   ...imgProps
 }: ResponsiveImageProps) {
   if (!image) {
@@ -38,6 +42,8 @@ export default function ResponsiveImage({
         className={className}
         src={image}
         alt={alt ?? ''}
+        width={width}
+        height={height}
         loading={priority ? 'eager' : loading}
         decoding={priority ? 'sync' : decoding}
         sizes={sizes}
@@ -57,10 +63,11 @@ export default function ResponsiveImage({
       className={className}
       src={baseSrc}
       alt={alt ?? ''}
+      width={width ?? maxWidth}
+      height={height}
       loading={priority ? 'eager' : loading}
       decoding={priority ? 'sync' : decoding}
       sizes={sizes}
-      width={maxWidth}
       style={{
         width: '100%',
         height: 'auto',

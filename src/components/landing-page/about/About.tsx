@@ -24,6 +24,8 @@ export default function QuiSuisJe({ agatheImg }: QuiSuisJeProps) {
                       src={agatheImg.src}
                       srcSet={agatheImg.srcSet.attribute}
                       alt="Portrait d'Agathe Lescout, ostéopathe spécialisée dans les animaux"
+                      width={800}
+                      height={1000}
                       loading="lazy"
                       decoding="async"
                       className="shadow-lg rounded-lg w-full h-full object-cover"
