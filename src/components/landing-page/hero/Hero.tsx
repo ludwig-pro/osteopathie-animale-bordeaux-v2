@@ -60,22 +60,11 @@ export default function Hero({
   backgroundAlt = '',
 }: HeroProps) {
   const [isCalendlyPopupReady, setIsCalendlyPopupReady] = useState(false);
-  const [showSentryTestButton, setShowSentryTestButton] = useState(false);
-  const [sentryTestStatus, setSentryTestStatus] = useState<string | null>(null);
   const calendlyLoadTimeoutRef = useRef<number | null>(null);
   const hasCalendlyProfilePageEventRef = useRef(false);
 
   useEffect(() => {
     setIsCalendlyPopupReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    setShowSentryTestButton(params.get('sentry-test') === '1');
   }, []);
 
   const clearCalendlyLoadTimeout = useCallback(() => {
@@ -164,35 +153,6 @@ export default function Hero({
     'flex w-full items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-gold-500 bg-white hover:bg-opacity-70 sm:px-8';
   const canUsePopupButton =
     isCalendlyPopupReady && rootElement instanceof HTMLElement;
-  const handleSentryTestClick = async () => {
-    const client = Sentry.getClient();
-    const publicDsn = import.meta.env.PUBLIC_SENTRY_DSN;
-
-    if (!publicDsn) {
-      setSentryTestStatus(
-        'PUBLIC_SENTRY_DSN absente dans ce build (vérifie les variables Netlify pour Deploy Preview).'
-      );
-      return;
-    }
-
-    if (!client) {
-      setSentryTestStatus(
-        'SDK Sentry non initialisé dans la page. Vérifie que la preview a été redéployée après ajout des variables.'
-      );
-      return;
-    }
-
-    const eventId = Sentry.captureException(
-      new Error('Sentry test error: manual check from Hero CTA')
-    );
-    const flushed = await Sentry.flush(3000);
-
-    setSentryTestStatus(
-      flushed
-        ? `Événement envoyé à Sentry (eventId: ${eventId}).`
-        : 'Événement capturé mais confirmation réseau non reçue (flush timeout).'
-    );
-  };
 
   return (
     <div className="relative h-screen w-full bg-no-repeat bg-cover bg-center">
@@ -350,22 +310,6 @@ export default function Hero({
                     </a>
                   </div>
                 </div>
-                {showSentryTestButton && (
-                  <div className="mt-4">
-                    <button
-                      type="button"
-                      onClick={handleSentryTestClick}
-                      className="inline-flex items-center justify-center px-4 py-2 border border-white/70 text-sm font-medium rounded-md shadow-sm text-white bg-canard/70 hover:bg-canard"
-                    >
-                      Tester remontée Sentry
-                    </button>
-                    {sentryTestStatus && (
-                      <p className="mt-2 text-sm text-white">
-                        {sentryTestStatus}
-                      </p>
-                    )}
-                  </div>
-                )}
               </div>
               {children}
             </main>
