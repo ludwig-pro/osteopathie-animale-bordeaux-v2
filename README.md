@@ -58,6 +58,8 @@ Variables d'environnement recommandées :
 - `SENTRY_ORG` : slug de l'organisation Sentry.
 - `SENTRY_PROJECT` : slug du projet Sentry.
 
+Pour tester sur une Deploy Preview Netlify, vérifie que `PUBLIC_SENTRY_DSN` est bien disponible pour le contexte **Deploy Previews** (pas seulement Production), puis relance le déploiement.
+
 ## 🌐 Déploiement
 
 Le site cible Netlify via `@astrojs/netlify`. Configure les variables d’environnement (Mapbox, ReCAPTCHA, GTM…) dans le dashboard Netlify avant de déployer.

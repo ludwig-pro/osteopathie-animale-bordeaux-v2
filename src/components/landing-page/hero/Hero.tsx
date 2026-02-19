@@ -61,6 +61,7 @@ export default function Hero({
 }: HeroProps) {
   const [isCalendlyPopupReady, setIsCalendlyPopupReady] = useState(false);
   const [showSentryTestButton, setShowSentryTestButton] = useState(false);
+  const [sentryTestStatus, setSentryTestStatus] = useState<string | null>(null);
   const calendlyLoadTimeoutRef = useRef<number | null>(null);
   const hasCalendlyProfilePageEventRef = useRef(false);
 
@@ -163,9 +164,33 @@ export default function Hero({
     'flex w-full items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-gold-500 bg-white hover:bg-opacity-70 sm:px-8';
   const canUsePopupButton =
     isCalendlyPopupReady && rootElement instanceof HTMLElement;
-  const handleSentryTestClick = () => {
-    Sentry.captureException(
+  const handleSentryTestClick = async () => {
+    const client = Sentry.getClient();
+    const publicDsn = import.meta.env.PUBLIC_SENTRY_DSN;
+
+    if (!publicDsn) {
+      setSentryTestStatus(
+        'PUBLIC_SENTRY_DSN absente dans ce build (vérifie les variables Netlify pour Deploy Preview).'
+      );
+      return;
+    }
+
+    if (!client) {
+      setSentryTestStatus(
+        'SDK Sentry non initialisé dans la page. Vérifie que la preview a été redéployée après ajout des variables.'
+      );
+      return;
+    }
+
+    const eventId = Sentry.captureException(
       new Error('Sentry test error: manual check from Hero CTA')
+    );
+    const flushed = await Sentry.flush(3000);
+
+    setSentryTestStatus(
+      flushed
+        ? `Événement envoyé à Sentry (eventId: ${eventId}).`
+        : 'Événement capturé mais confirmation réseau non reçue (flush timeout).'
     );
   };
 
@@ -334,6 +359,11 @@ export default function Hero({
                     >
                       Tester remontée Sentry
                     </button>
+                    {sentryTestStatus && (
+                      <p className="mt-2 text-sm text-white">
+                        {sentryTestStatus}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

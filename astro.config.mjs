@@ -3,31 +3,23 @@ import react from '@astrojs/react';
 import tailwind from '@astrojs/tailwind';
 import sentry from '@sentry/astro';
 
-const sentryDsn = process.env.PUBLIC_SENTRY_DSN;
 const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN;
 const sentryOrg = process.env.SENTRY_ORG;
 const sentryProject = process.env.SENTRY_PROJECT;
 
-const sentryIntegration = sentryDsn
-  ? sentry({
-      dsn: sentryDsn,
-      sourceMapsUploadOptions:
-        sentryAuthToken && sentryOrg && sentryProject
-          ? {
-              authToken: sentryAuthToken,
-              org: sentryOrg,
-              project: sentryProject,
-            }
-          : undefined,
-    })
-  : null;
+const sentryIntegration = sentry({
+  enabled: { client: true, server: false },
+  ...(sentryAuthToken && sentryOrg && sentryProject
+    ? {
+        authToken: sentryAuthToken,
+        org: sentryOrg,
+        project: sentryProject,
+      }
+    : {}),
+});
 
 export default defineConfig({
-  integrations: [
-    react(),
-    tailwind(),
-    ...(sentryIntegration ? [sentryIntegration] : []),
-  ],
+  integrations: [react(), tailwind(), sentryIntegration],
   output: 'static',
   image: {
     responsiveStyles: true,
