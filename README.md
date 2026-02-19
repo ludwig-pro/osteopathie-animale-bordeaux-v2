@@ -47,6 +47,17 @@ Site vitrine d'Agathe Lescout, désormais propulsé par [Astro](https://astro.bu
 - `yarn preview` : prévisualisation du build localement.
 - `yarn format` : formatage Prettier (`.js`, `.jsx`, `.md`, `.astro`, etc.).
 
+## 📈 Monitoring (Sentry)
+
+L'intégration Sentry Astro est activée uniquement si `PUBLIC_SENTRY_DSN` est défini.
+
+Variables d'environnement recommandées :
+
+- `PUBLIC_SENTRY_DSN` : DSN du projet Sentry (client navigateur).
+- `SENTRY_AUTH_TOKEN` : token pour upload des sourcemaps (CI/Netlify).
+- `SENTRY_ORG` : slug de l'organisation Sentry.
+- `SENTRY_PROJECT` : slug du projet Sentry.
+
 ## 🌐 Déploiement
 
 Le site cible Netlify via `@astrojs/netlify`. Configure les variables d’environnement (Mapbox, ReCAPTCHA, GTM…) dans le dashboard Netlify avant de déployer.
