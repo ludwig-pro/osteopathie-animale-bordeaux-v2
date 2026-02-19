@@ -1,6 +1,6 @@
 import { Popover, Transition } from '@headlessui/react';
 import { MenuIcon, XIcon } from '@heroicons/react/outline';
-import React, { Fragment } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import { PopupButton } from 'react-calendly';
 import * as Icons from '../../common/icons';
 
@@ -38,12 +38,20 @@ export default function Hero({
   backgroundSources,
   backgroundAlt = '',
 }: HeroProps) {
+  const [isCalendlyPopupReady, setIsCalendlyPopupReady] = useState(false);
+
+  useEffect(() => {
+    setIsCalendlyPopupReady(true);
+  }, []);
+
   const { webp, fallback } = backgroundSources ?? {};
   const fallbackSrc = fallback ?? webp?.src;
   const rootElement =
     typeof document !== 'undefined'
       ? document.getElementById('root') || document.body
       : null;
+  const calendlyCtaClassName =
+    'flex w-full items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-gold-500 bg-white hover:bg-opacity-70 sm:px-8';
 
   return (
     <div className="relative h-screen w-full bg-no-repeat bg-cover bg-center">
@@ -171,12 +179,23 @@ export default function Hero({
                 </h1>
                 <div className="mt-10 max-w-sm mx-auto sm:max-w-none sm:flex sm:justify-center">
                   <div className="space-y-4 sm:space-y-0 sm:mx-auto sm:inline-grid sm:grid-cols-2 sm:gap-5">
-                    <PopupButton
-                      url={url_calendly}
-                      rootElement={rootElement as HTMLElement}
-                      text="Prendre rendez-vous en ligne"
-                      className="flex w-full items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-gold-500 bg-white hover:bg-opacity-70 sm:px-8"
-                    />
+                    {isCalendlyPopupReady ? (
+                      <PopupButton
+                        url={url_calendly}
+                        rootElement={rootElement as HTMLElement}
+                        text="Prendre rendez-vous en ligne"
+                        className={calendlyCtaClassName}
+                      />
+                    ) : (
+                      <a
+                        href={url_calendly}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={calendlyCtaClassName}
+                      >
+                        Prendre rendez-vous en ligne
+                      </a>
+                    )}
                     <a
                       href="#contact"
                       className="flex items-center text-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gold-500 hover:bg-gold-1000 sm:px-8"
