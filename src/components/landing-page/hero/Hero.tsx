@@ -61,7 +61,7 @@ export default function Hero({
 }: HeroProps) {
   const [isCalendlyPopupReady, setIsCalendlyPopupReady] = useState(false);
   const calendlyLoadTimeoutRef = useRef<number | null>(null);
-  const hasCalendlyProfilePageEventRef = useRef(false);
+  const hasCalendlyLoadedEventRef = useRef(false);
 
   useEffect(() => {
     setIsCalendlyPopupReady(true);
@@ -90,12 +90,12 @@ export default function Hero({
   );
 
   const handleCalendlyOpenClick = useCallback(() => {
-    hasCalendlyProfilePageEventRef.current = false;
+    hasCalendlyLoadedEventRef.current = false;
     clearCalendlyLoadTimeout();
     trackCalendlyStep('calendly_popup_open_clicked');
 
     calendlyLoadTimeoutRef.current = window.setTimeout(() => {
-      if (hasCalendlyProfilePageEventRef.current) {
+      if (hasCalendlyLoadedEventRef.current) {
         return;
       }
 
@@ -108,7 +108,7 @@ export default function Hero({
           path: window.location.pathname,
         });
         Sentry.captureMessage(
-          'Calendly popup opened but no profile page event was received within 8s.'
+          'Calendly popup opened but no Calendly load event was received within 8s.'
         );
       });
 
@@ -116,20 +116,26 @@ export default function Hero({
     }, 8000);
   }, [clearCalendlyLoadTimeout, trackCalendlyStep]);
 
+  const markCalendlyLoaded = useCallback(() => {
+    hasCalendlyLoadedEventRef.current = true;
+    clearCalendlyLoadTimeout();
+  }, [clearCalendlyLoadTimeout]);
+
   useCalendlyEventListener({
     onProfilePageViewed: () => {
-      hasCalendlyProfilePageEventRef.current = true;
-      clearCalendlyLoadTimeout();
+      markCalendlyLoaded();
       trackCalendlyStep('calendly_profile_page_viewed');
     },
     onEventTypeViewed: () => {
+      markCalendlyLoaded();
       trackCalendlyStep('calendly_event_type_viewed');
     },
     onDateAndTimeSelected: () => {
+      markCalendlyLoaded();
       trackCalendlyStep('calendly_date_and_time_selected');
     },
     onEventScheduled: (event) => {
-      clearCalendlyLoadTimeout();
+      markCalendlyLoaded();
       trackCalendlyStep('calendly_event_scheduled', {
         calendlyEventUri: event.data.payload.event.uri,
         calendlyInviteeUri: event.data.payload.invitee.uri,
