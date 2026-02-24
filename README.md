@@ -60,6 +60,22 @@ Variables d'environnement recommandées :
 
 Pour tester sur une Deploy Preview Netlify, vérifie que `PUBLIC_SENTRY_DSN` est bien disponible pour le contexte **Deploy Previews** (pas seulement Production), puis relance le déploiement.
 
+## 📊 Analytics (PostHog)
+
+L'intégration PostHog est activée uniquement si `PUBLIC_POSTHOG_KEY` est défini.
+
+Variables d'environnement recommandées :
+
+- `PUBLIC_POSTHOG_KEY` : clé projet PostHog (client navigateur).
+- `PUBLIC_POSTHOG_HOST` : endpoint ingestion PostHog (`https://eu.i.posthog.com` ou `https://us.i.posthog.com`).
+
+Événements métier trackés :
+
+- `calendly_*` : parcours prise de rendez-vous (CTA, vue événement, planification).
+- `contact_section_cta_clicked` : clic CTA vers la section contact.
+- `contact_phone_clicked` / `contact_email_clicked` : interactions contact direct.
+- `contact_form_submit_started` / `contact_form_submit_succeeded` / `contact_form_submit_failed` : funnel formulaire.
+
 ## 🌐 Déploiement
 
 Le site cible Netlify via `@astrojs/netlify`. Configure les variables d’environnement (Mapbox, ReCAPTCHA, GTM…) dans le dashboard Netlify avant de déployer.
