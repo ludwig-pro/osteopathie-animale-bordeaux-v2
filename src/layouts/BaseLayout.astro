@@ -6,6 +6,9 @@ export interface Props {
 }
 
 const { title, description = "L'Ostéopathe animalier Agathe Lescout, intervenant sur Bordeaux et Gironde!", siteUrl = 'https://www.osteopathie-animale-bordeaux.fr' } = Astro.props;
+const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
+const posthogHost = import.meta.env.PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com';
+const isPostHogEnabled = Boolean(posthogKey);
 ---
 
 <!DOCTYPE html>
@@ -28,6 +31,7 @@ const { title, description = "L'Ostéopathe animalier Agathe Lescout, intervenan
     <link rel="preconnect" href="https://www.google.com" />
     <link rel="preconnect" href="https://www.googletagmanager.com" />
     <link rel="preconnect" href="https://calendly.com" />
+    {isPostHogEnabled && <link rel="preconnect" href={posthogHost} />}
 
     <script is:inline>
       {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -36,6 +40,66 @@ const { title, description = "L'Ostéopathe animalier Agathe Lescout, intervenan
       'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
       })(window,document,'script','dataLayer','GTM-KCM49LQ');`}
     </script>
+    {isPostHogEnabled && (
+      <script is:inline define:vars={{ posthogKey, posthogHost }}>
+        {`
+          !function(t,e){
+            var o,n,p,r;
+            if(e.__posthog_initialized__) return;
+            e.__posthog_initialized__ = true;
+            e.posthog = e.posthog || [];
+            e.posthog.__SV = 1;
+            o=t.createElement("script");
+            o.type="text/javascript";
+            o.async=!0;
+            o.src=posthogHost.replace(".i.posthog.com","-assets.i.posthog.com") + "/static/array.js";
+            n=t.getElementsByTagName("script")[0];
+            n.parentNode.insertBefore(o,n);
+            p=function(t,o){
+              var n=o.split(".");
+              n.length===2 && (t[n[0]] = t[n[0]] || [], t=t[n[0]], o=n[1]);
+              t[o]=function(){
+                t.push([o].concat(Array.prototype.slice.call(arguments,0)));
+              };
+            };
+            r=e.posthog;
+            r.people = r.people || [];
+            ["init","capture","identify","alias","people.set","set_config"].forEach(function(t){p(r,t);});
+            e.dataLayer = e.dataLayer || [];
+            var ignored = {"gtm.js": true, "gtm.dom": true, "gtm.load": true};
+            var mirrorDataLayerItem = function(item){
+              if(!item || typeof item !== "object") return;
+              var eventName = item.event;
+              if(typeof eventName !== "string" || ignored[eventName]) return;
+              var props = {};
+              for (var key in item) {
+                if (Object.prototype.hasOwnProperty.call(item, key) && key !== "event") {
+                  props[key] = item[key];
+                }
+              }
+              e.posthog.capture(eventName, props);
+            };
+            e.dataLayer.forEach(mirrorDataLayerItem);
+            var originalPush = e.dataLayer.push.bind(e.dataLayer);
+            e.dataLayer.push = function() {
+              var items = Array.prototype.slice.call(arguments, 0);
+              items.forEach(mirrorDataLayerItem);
+              return originalPush.apply(e.dataLayer, items);
+            };
+            e.posthog.init(posthogKey, {
+              api_host: posthogHost,
+              defaults: "2026-01-30",
+              autocapture: false,
+              capture_pageview: true,
+              capture_pageleave: true,
+              disable_session_recording: true,
+              capture_dead_clicks: false,
+              rageclick: false,
+            });
+          }(document, window);
+        `}
+      </script>
+    )}
   </head>
   <body>
     <noscript>

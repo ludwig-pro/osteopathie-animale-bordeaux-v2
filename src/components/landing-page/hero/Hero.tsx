@@ -9,6 +9,10 @@ import React, {
   useState,
 } from 'react';
 import { PopupButton, useCalendlyEventListener } from 'react-calendly';
+import {
+  pushDataLayerEvent,
+  type AnalyticsPayload,
+} from '../../../lib/analytics';
 import * as Icons from '../../common/icons';
 
 const navigation = [
@@ -27,20 +31,6 @@ const navigationSvg = {
 
 const url_calendly =
   'https://calendly.com/osteopathe-animalier/consultation-osteopathique'; // 'https://calendly.com/osteopathe-animalier/';
-
-type TrackingPayload = Record<string, string>;
-
-const pushDataLayerEvent = (event: string, payload: TrackingPayload = {}) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  window.dataLayer = window.dataLayer ?? [];
-  window.dataLayer.push({
-    event,
-    ...payload,
-  });
-};
 
 type HeroProps = {
   children?: React.ReactNode;
@@ -77,7 +67,7 @@ export default function Hero({
   }, []);
 
   const trackCalendlyStep = useCallback(
-    (event: string, payload: TrackingPayload = {}) => {
+    (event: string, payload: AnalyticsPayload = {}) => {
       pushDataLayerEvent(event, payload);
       Sentry.addBreadcrumb({
         category: 'calendly',
@@ -310,6 +300,11 @@ export default function Hero({
                     )}
                     <a
                       href="#contact"
+                      onClick={() =>
+                        pushDataLayerEvent('contact_section_cta_clicked', {
+                          source: 'hero',
+                        })
+                      }
                       className="flex items-center text-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gold-500 hover:bg-gold-1000 sm:px-8"
                     >
                       Prendre rendez-vous par téléphone

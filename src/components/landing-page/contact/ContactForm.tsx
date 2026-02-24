@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { pushDataLayerEvent } from '../../../lib/analytics';
 import FormField from './FormField';
 
 export default function ContactForm() {
@@ -11,6 +12,9 @@ export default function ContactForm() {
     setLoading(true);
     setSuccess(false);
     setError(false);
+    pushDataLayerEvent('contact_form_submit_started', {
+      formName: 'contact',
+    });
 
     const form = e.currentTarget;
     const formData = new FormData(form);
@@ -34,14 +38,25 @@ export default function ContactForm() {
 
       if (response.ok) {
         setSuccess(true);
+        pushDataLayerEvent('contact_form_submit_succeeded', {
+          formName: 'contact',
+        });
         form.reset();
         // Reset success message after 5 seconds
         setTimeout(() => setSuccess(false), 5000);
       } else {
         setError(true);
+        pushDataLayerEvent('contact_form_submit_failed', {
+          formName: 'contact',
+          status: response.status,
+        });
       }
     } catch (_err) {
       setError(true);
+      pushDataLayerEvent('contact_form_submit_failed', {
+        formName: 'contact',
+        status: 'network_error',
+      });
     } finally {
       setLoading(false);
     }
