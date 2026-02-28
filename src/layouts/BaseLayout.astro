@@ -6,9 +6,19 @@ export interface Props {
 }
 
 const { title, description = "L'Ostéopathe animalier Agathe Lescout, intervenant sur Bordeaux et Gironde!", siteUrl = 'https://www.osteopathie-animale-bordeaux.fr' } = Astro.props;
+const gtmId = import.meta.env.PUBLIC_GTM_ID;
+const isGtmEnabled = Boolean(gtmId);
 const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
 const posthogHost = import.meta.env.PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com';
 const isPostHogEnabled = Boolean(posthogKey);
+const gtmDelayMs = Number.parseInt(
+  import.meta.env.PUBLIC_ANALYTICS_GTM_DELAY_MS ?? '3000',
+  10
+);
+const posthogDelayMs = Number.parseInt(
+  import.meta.env.PUBLIC_ANALYTICS_POSTHOG_DELAY_MS ?? '5000',
+  10
+);
 ---
 
 <!DOCTYPE html>
@@ -32,15 +42,33 @@ const isPostHogEnabled = Boolean(posthogKey);
 
     <script
       is:inline
-      define:vars={{ isPostHogEnabled, posthogKey, posthogHost }}
+      define:vars={{
+        isGtmEnabled,
+        gtmId,
+        gtmDelayMs,
+        isPostHogEnabled,
+        posthogKey,
+        posthogHost,
+        posthogDelayMs,
+      }}
     >
       (function (w, d) {
-        var GTM_ID = 'GTM-KCM49LQ';
-        var GTM_LOAD_DELAY_MS = 3500;
-        var POSTHOG_LOAD_DELAY_MS = 6000;
+        var GTM_LOAD_DELAY_MS = Math.max(0, Number(gtmDelayMs) || 0);
+        var POSTHOG_LOAD_DELAY_MS = Math.max(0, Number(posthogDelayMs) || 0);
         var INTERACTION_EVENTS = ['pointerdown', 'keydown', 'touchstart'];
 
         w.dataLayer = w.dataLayer || [];
+
+        var injectPreconnect = function (url) {
+          if (!url) {
+            return;
+          }
+
+          var link = d.createElement('link');
+          link.rel = 'preconnect';
+          link.href = url;
+          d.head.appendChild(link);
+        };
 
         var runWhenIdle = function (callback) {
           if ('requestIdleCallback' in w) {
@@ -57,16 +85,17 @@ const isPostHogEnabled = Boolean(posthogKey);
         };
 
         var loadGtm = function () {
-          if (w.__gtm_loaded__) {
+          if (!isGtmEnabled || w.__gtm_loaded__) {
             return;
           }
 
           w.__gtm_loaded__ = true;
+          injectPreconnect('https://www.googletagmanager.com');
           w.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
 
           var gtmScript = d.createElement('script');
           gtmScript.async = true;
-          gtmScript.src = 'https://www.googletagmanager.com/gtm.js?id=' + GTM_ID;
+          gtmScript.src = 'https://www.googletagmanager.com/gtm.js?id=' + gtmId;
           d.head.appendChild(gtmScript);
         };
 
@@ -79,16 +108,20 @@ const isPostHogEnabled = Boolean(posthogKey);
           var n;
           var p;
           var r;
+          var posthogAssetHost =
+            posthogHost.replace('.i.posthog.com', '-assets.i.posthog.com');
 
           w.__posthog_initialized__ = true;
           w.posthog = w.posthog || [];
           w.posthog.__SV = 1;
+
+          injectPreconnect(posthogHost);
+          injectPreconnect(posthogAssetHost);
+
           o = d.createElement('script');
           o.type = 'text/javascript';
           o.async = true;
-          o.src =
-            posthogHost.replace('.i.posthog.com', '-assets.i.posthog.com') +
-            '/static/array.js';
+          o.src = posthogAssetHost + '/static/array.js';
           n = d.getElementsByTagName('script')[0];
           n.parentNode.insertBefore(o, n);
 
@@ -175,6 +208,20 @@ const isPostHogEnabled = Boolean(posthogKey);
           }, POSTHOG_LOAD_DELAY_MS);
         };
 
+        var flushBeforeHidden = function () {
+          if (d.visibilityState !== 'hidden') {
+            return;
+          }
+
+          loadGtm();
+          loadPosthog();
+        };
+        d.addEventListener('visibilitychange', flushBeforeHidden);
+        w.addEventListener('pagehide', function () {
+          loadGtm();
+          loadPosthog();
+        });
+
         if (d.readyState === 'complete') {
           scheduleDeferredAnalytics();
         } else {
@@ -184,9 +231,11 @@ const isPostHogEnabled = Boolean(posthogKey);
     </script>
   </head>
   <body>
-    <noscript>
-      <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KCM49LQ" height="0" width="0" style="display:none;visibility:hidden"></iframe>
-    </noscript>
+    {isGtmEnabled && (
+      <noscript>
+        <iframe src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`} height="0" width="0" style="display:none;visibility:hidden"></iframe>
+      </noscript>
+    )}
     <slot />
   </body>
 </html>

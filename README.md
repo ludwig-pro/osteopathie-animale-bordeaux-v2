@@ -62,12 +62,21 @@ Pour tester sur une Deploy Preview Netlify, vérifie que `PUBLIC_SENTRY_DSN` est
 
 ## 📊 Analytics (PostHog)
 
-L'intégration PostHog est activée uniquement si `PUBLIC_POSTHOG_KEY` est défini.
+L'intégration GTM/PostHog est activée uniquement si les clés correspondantes sont définies.
 
 Variables d'environnement recommandées :
 
+- `PUBLIC_GTM_ID` : identifiant du conteneur Google Tag Manager.
 - `PUBLIC_POSTHOG_KEY` : clé projet PostHog (client navigateur).
 - `PUBLIC_POSTHOG_HOST` : endpoint ingestion PostHog (`https://eu.i.posthog.com` ou `https://us.i.posthog.com`).
+- `PUBLIC_ANALYTICS_GTM_DELAY_MS` : délai (ms) avant chargement différé de GTM après `load` (défaut `3000`).
+- `PUBLIC_ANALYTICS_POSTHOG_DELAY_MS` : délai (ms) avant chargement différé de PostHog après `load` (défaut `5000`).
+
+Comportement de chargement :
+
+- Chargement immédiat si interaction utilisateur (`pointerdown`, `keydown`, `touchstart`).
+- Fallback de chargement différé en idle après `load`.
+- Fallback supplémentaire sur `visibilitychange/pagehide` pour limiter les pertes de tracking.
 
 Événements métier trackés :
 
