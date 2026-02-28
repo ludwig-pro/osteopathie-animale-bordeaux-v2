@@ -278,7 +278,11 @@ export default function Hero({
                 <div className="mt-10 max-w-sm mx-auto sm:max-w-none sm:flex sm:justify-center">
                   <div className="space-y-4 sm:space-y-0 sm:mx-auto sm:inline-grid sm:grid-cols-2 sm:gap-5">
                     {canUsePopupButton ? (
-                      <div className="w-full" onClick={handleCalendlyOpenClick}>
+                      <div
+                        className="w-full"
+                        onClick={handleCalendlyOpenClick}
+                        data-testid="cta-booking-online"
+                      >
                         <PopupButton
                           url={url_calendly}
                           rootElement={rootElement}
@@ -291,6 +295,7 @@ export default function Hero({
                         href={url_calendly}
                         target="_blank"
                         rel="noopener noreferrer"
+                        data-testid="cta-booking-online"
                         onClick={() =>
                           trackCalendlyStep('calendly_fallback_link_clicked')
                         }
@@ -301,6 +306,7 @@ export default function Hero({
                     )}
                     <a
                       href="#contact"
+                      data-testid="cta-booking-phone"
                       onClick={() =>
                         pushDataLayerEvent('contact_section_cta_clicked', {
                           source: 'hero',

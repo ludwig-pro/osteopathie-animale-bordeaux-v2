@@ -1,0 +1,208 @@
+name: CI Quality
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '20'
+  LIGHTHOUSE_DELTA_THRESHOLD: '0.05'
+
+jobs:
+  lint_build:
+    name: Lint & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Build
+        run: yarn build
+
+  smoke_e2e:
+    name: Smoke E2E
+    runs-on: ubuntu-latest
+    needs: lint_build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run smoke tests
+        run: yarn test:e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+
+  lighthouse_local:
+    name: Lighthouse (Local)
+    runs-on: ubuntu-latest
+    needs: lint_build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build app
+        run: yarn build
+
+      - name: Start preview server
+        run: |
+          yarn preview --host 127.0.0.1 --port 4321 > /tmp/astro-preview.log 2>&1 &
+          echo $! > /tmp/astro-preview.pid
+
+      - name: Wait for preview server
+        run: |
+          for _ in $(seq 1 60); do
+            if curl --silent --fail http://127.0.0.1:4321 > /dev/null; then
+              echo "Preview server is up"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "Preview server did not start in time"
+          cat /tmp/astro-preview.log
+          exit 1
+
+      - name: Run local Lighthouse collection
+        run: |
+          rm -rf .lighthouseci
+          yarn lighthouse:local
+
+      - name: Enforce local Lighthouse regression gate
+        run: yarn ci:lighthouse:regression --baseline ci/lighthouse-baselines/local.json
+
+      - name: Upload local Lighthouse artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-local-artifacts
+          path: |
+            .lighthouseci
+            /tmp/astro-preview.log
+          if-no-files-found: warn
+
+      - name: Stop preview server
+        if: always()
+        run: |
+          if [ -f /tmp/astro-preview.pid ]; then
+            kill "$(cat /tmp/astro-preview.pid)" || true
+          fi
+
+  lighthouse_remote:
+    name: Lighthouse (Remote)
+    runs-on: ubuntu-latest
+    needs: lint_build
+    env:
+      NETLIFY_SITE_SLUG: ${{ vars.NETLIFY_SITE_SLUG }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Resolve audit URL
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            if [ -z "$NETLIFY_SITE_SLUG" ]; then
+              echo "NETLIFY_SITE_SLUG repository variable is required for PR remote Lighthouse checks."
+              exit 1
+            fi
+
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+            TARGET_URL="https://deploy-preview-${PR_NUMBER}--${NETLIFY_SITE_SLUG}.netlify.app"
+          else
+            TARGET_URL="https://www.osteopathie-animale-bordeaux.fr"
+          fi
+
+          echo "url=$TARGET_URL" >> "$GITHUB_OUTPUT"
+          echo "Resolved Lighthouse target: $TARGET_URL"
+
+      - name: Wait for remote URL availability (max 15 minutes)
+        env:
+          TARGET_URL: ${{ steps.target.outputs.url }}
+        run: |
+          for _ in $(seq 1 90); do
+            if curl --silent --fail --location "$TARGET_URL" > /dev/null; then
+              echo "Remote URL is reachable: $TARGET_URL"
+              exit 0
+            fi
+            sleep 10
+          done
+
+          echo "Timed out after 15 minutes while waiting for $TARGET_URL"
+          exit 1
+
+      - name: Run remote Lighthouse collection
+        env:
+          LIGHTHOUSE_TARGET_URL: ${{ steps.target.outputs.url }}
+        run: |
+          rm -rf .lighthouseci
+          yarn lighthouse:remote
+
+      - name: Enforce remote Lighthouse regression gate
+        run: yarn ci:lighthouse:regression --baseline ci/lighthouse-baselines/remote.json
+
+      - name: Upload remote Lighthouse artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-remote-artifacts
+          path: .lighthouseci
+          if-no-files-found: warn

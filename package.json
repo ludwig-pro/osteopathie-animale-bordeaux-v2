@@ -12,7 +12,12 @@
     "preview": "astro preview",
     "format": "prettier --write \"**/*.{js,jsx,json,md,astro}\"",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx,astro}\"",
-    "lint:fix": "eslint \"src/**/*.{js,jsx,ts,tsx,astro}\" --fix"
+    "lint:fix": "eslint \"src/**/*.{js,jsx,ts,tsx,astro}\" --fix",
+    "test:e2e": "playwright test",
+    "test": "yarn test:e2e",
+    "lighthouse:local": "lhci collect --config=.lighthouserc.local.json",
+    "lighthouse:remote": "lhci collect --config=.lighthouserc.remote.json --url=${LIGHTHOUSE_TARGET_URL}",
+    "ci:lighthouse:regression": "node scripts/check-lighthouse-regression.mjs"
   },
   "dependencies": {
     "@headlessui/react": "1.7.17",
@@ -48,6 +53,8 @@
     "@types/react-modal": "^3.16.3",
     "@typescript-eslint/eslint-plugin": "^8.44.0",
     "@typescript-eslint/parser": "^8.44.0",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.55.1",
     "astro": "^5.0.0",
     "autoprefixer": "10.4.16",
     "eslint": "^9.36.0",

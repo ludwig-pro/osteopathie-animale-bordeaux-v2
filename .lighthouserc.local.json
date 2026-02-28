@@ -1,0 +1,16 @@
+{
+  "ci": {
+    "collect": {
+      "url": ["http://127.0.0.1:4321/"],
+      "numberOfRuns": 1,
+      "settings": {
+        "onlyCategories": [
+          "performance",
+          "accessibility",
+          "best-practices",
+          "seo"
+        ]
+      }
+    }
+  }
+}
