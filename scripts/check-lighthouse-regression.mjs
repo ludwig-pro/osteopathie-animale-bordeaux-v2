@@ -69,6 +69,7 @@ function buildMarkdownReport(summary) {
     '<!-- lighthouse-remote-report -->',
     `## ${statusIcon} Lighthouse Remote Report`,
     '',
+    `- Source: ${summary.source}`,
     `- URL: ${summary.url}`,
     `- Delta threshold: ${summary.deltaThreshold.toFixed(2)}`,
     `- Baseline: \`${summary.baselinePath}\``,
@@ -109,7 +110,14 @@ async function main() {
   }
 
   const reportsDir = args['reports-dir'] ?? '.lighthouseci';
-  const reportPath = args.report ?? (await findLatestReport(reportsDir));
+  const hasProvidedScores =
+    args['score-performance'] ||
+    args['score-accessibility'] ||
+    args['score-best-practices'] ||
+    args['score-seo'];
+  const reportPath = hasProvidedScores
+    ? null
+    : args.report ?? (await findLatestReport(reportsDir));
   const deltaThreshold = Number.parseFloat(
     process.env.LIGHTHOUSE_DELTA_THRESHOLD ?? '0.05'
   );
@@ -117,21 +125,35 @@ async function main() {
   const baselineRaw = await fs.readFile(baselinePath, 'utf8');
   const baseline = JSON.parse(baselineRaw);
 
-  const reportRaw = await fs.readFile(reportPath, 'utf8');
-  const report = JSON.parse(reportRaw);
+  const report = reportPath
+    ? JSON.parse(await fs.readFile(reportPath, 'utf8'))
+    : null;
+  const providedScores = {
+    performance: args['score-performance'],
+    accessibility: args['score-accessibility'],
+    'best-practices': args['score-best-practices'],
+    seo: args['score-seo'],
+  };
 
   const failures = [];
   const categoryResults = [];
+  const source =
+    args.source ?? (reportPath ? 'lhci-report' : 'external-scores');
+  const reportUrl =
+    args.url ?? report?.finalUrl ?? report?.requestedUrl ?? 'unknown';
 
-  console.log(`Lighthouse report: ${reportPath}`);
-  console.log(
-    `Lighthouse URL: ${report.finalUrl ?? report.requestedUrl ?? 'unknown'}`
-  );
+  if (reportPath) {
+    console.log(`Lighthouse report: ${reportPath}`);
+  } else {
+    console.log('Lighthouse report: n/a (external scores mode)');
+  }
+  console.log(`Lighthouse URL: ${reportUrl}`);
+  console.log(`Source: ${source}`);
   console.log(`Delta threshold: ${deltaThreshold.toFixed(2)}`);
 
   for (const category of CATEGORIES) {
     const baselineScore = baseline?.categories?.[category];
-    const currentScore = readScore(report, category);
+    let currentScore = readScore(report, category);
     const floor = DEFAULT_FLOORS[category];
 
     if (typeof baselineScore !== 'number') {
@@ -142,6 +164,13 @@ async function main() {
 
     let drop = null;
     const status = [];
+
+    if (currentScore === null && providedScores[category] != null) {
+      const providedRaw = Number.parseFloat(providedScores[category]);
+      if (Number.isFinite(providedRaw)) {
+        currentScore = providedRaw > 1 ? providedRaw / 100 : providedRaw;
+      }
+    }
 
     if (currentScore === null) {
       failures.push(
@@ -204,9 +233,10 @@ async function main() {
 
   const summary = {
     passed: failures.length === 0,
+    source,
     baselinePath,
-    reportPath,
-    url: report.finalUrl ?? report.requestedUrl ?? 'unknown',
+    reportPath: reportPath ?? 'n/a',
+    url: reportUrl,
     deltaThreshold,
     categories: categoryResults,
     failures,

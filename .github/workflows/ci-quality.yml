@@ -157,18 +157,15 @@ jobs:
 
       - name: Resolve audit URL
         id: target
+        if: github.event_name != 'pull_request'
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            PR_NUMBER="${{ github.event.pull_request.number }}"
-            TARGET_URL="https://deploy-preview-${PR_NUMBER}--hopeful-lumiere-46fc2e.netlify.app"
-          else
-            TARGET_URL="https://www.osteopathie-animale-bordeaux.fr"
-          fi
+          TARGET_URL="https://www.osteopathie-animale-bordeaux.fr"
 
           echo "url=$TARGET_URL" >> "$GITHUB_OUTPUT"
           echo "Resolved Lighthouse target: $TARGET_URL"
 
       - name: Wait for remote URL availability (max 15 minutes)
+        if: github.event_name != 'pull_request'
         env:
           TARGET_URL: ${{ steps.target.outputs.url }}
         run: |
@@ -183,7 +180,83 @@ jobs:
           echo "Timed out after 15 minutes while waiting for $TARGET_URL"
           exit 1
 
+      - name: Read Netlify Lighthouse scores from PR comment
+        if: github.event_name == 'pull_request'
+        id: netlify_scores
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.issue.number;
+            const expectedSha = context.payload.pull_request.head.sha;
+
+            const parseFromBody = (body) => {
+              const perf = body.match(/\*\*Performance\*\*:\s*(\d+)/i);
+              const acc = body.match(/\*\*Accessibility\*\*:\s*(\d+)/i);
+              const bp = body.match(/\*\*Best Practices\*\*:\s*(\d+)/i);
+              const seo = body.match(/\*\*SEO\*\*:\s*(\d+)/i);
+              const preview = body.match(/Deploy Preview \|\s*\[(https?:\/\/[^\]]+)\]/i);
+              const deployLog = body.match(/Latest deploy log \|\s*(https?:\/\/\S+)/i);
+              if (!perf || !acc || !bp || !seo) {
+                return null;
+              }
+              return {
+                performance: perf[1],
+                accessibility: acc[1],
+                bestPractices: bp[1],
+                seo: seo[1],
+                previewUrl: preview ? preview[1] : '',
+                deployLogUrl: deployLog ? deployLog[1] : '',
+              };
+            };
+
+            let parsed = null;
+            for (let attempt = 1; attempt <= 90; attempt += 1) {
+              const comments = await github.paginate(
+                github.rest.issues.listComments,
+                { owner, repo, issue_number, per_page: 100 }
+              );
+
+              const netlifyComments = comments
+                .filter((c) => c.user?.login === 'netlify')
+                .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+
+              const matchingCommitComment =
+                netlifyComments.find((c) => c.body?.includes(expectedSha)) ??
+                netlifyComments[0];
+
+              if (matchingCommitComment?.body) {
+                parsed = parseFromBody(matchingCommitComment.body);
+              }
+
+              if (parsed) {
+                core.info(`Found Netlify Lighthouse scores on attempt ${attempt}.`);
+                break;
+              }
+
+              core.info(`Netlify Lighthouse scores not available yet (attempt ${attempt}/90).`);
+              await sleep(10000);
+            }
+
+            if (!parsed) {
+              core.setFailed('Unable to find Netlify Lighthouse scores in PR comments within 15 minutes.');
+              return;
+            }
+
+            core.setOutput('performance', parsed.performance);
+            core.setOutput('accessibility', parsed.accessibility);
+            core.setOutput('best_practices', parsed.bestPractices);
+            core.setOutput('seo', parsed.seo);
+            core.setOutput('preview_url', parsed.previewUrl);
+            core.setOutput('deploy_log_url', parsed.deployLogUrl);
+            core.info(
+              `Parsed Netlify Lighthouse scores: perf=${parsed.performance}, access=${parsed.accessibility}, bp=${parsed.bestPractices}, seo=${parsed.seo}`
+            );
+
       - name: Run remote Lighthouse collection
+        if: github.event_name != 'pull_request'
         env:
           LIGHTHOUSE_TARGET_URL: ${{ steps.target.outputs.url }}
         run: |
@@ -194,7 +267,24 @@ jobs:
         id: lighthouse_gate
         continue-on-error: true
         run: |
-          yarn ci:lighthouse:regression --baseline ci/lighthouse-baselines/remote.json --summary-file /tmp/lighthouse-remote-summary.json --markdown-file /tmp/lighthouse-remote-report.md
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            yarn ci:lighthouse:regression \
+              --baseline ci/lighthouse-baselines/remote.json \
+              --source netlify-pr-comment \
+              --url "${{ steps.netlify_scores.outputs.preview_url }}" \
+              --score-performance "${{ steps.netlify_scores.outputs.performance }}" \
+              --score-accessibility "${{ steps.netlify_scores.outputs.accessibility }}" \
+              --score-best-practices "${{ steps.netlify_scores.outputs.best_practices }}" \
+              --score-seo "${{ steps.netlify_scores.outputs.seo }}" \
+              --summary-file /tmp/lighthouse-remote-summary.json \
+              --markdown-file /tmp/lighthouse-remote-report.md
+          else
+            yarn ci:lighthouse:regression \
+              --baseline ci/lighthouse-baselines/remote.json \
+              --source lhci-production \
+              --summary-file /tmp/lighthouse-remote-summary.json \
+              --markdown-file /tmp/lighthouse-remote-report.md
+          fi
 
       - name: Update PR comment with Lighthouse report
         if: always() && github.event_name == 'pull_request'
