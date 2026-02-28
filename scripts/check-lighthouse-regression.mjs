@@ -59,6 +59,47 @@ function formatScore(score) {
   return typeof score === 'number' ? score.toFixed(2) : 'n/a';
 }
 
+function formatDelta(value) {
+  return typeof value === 'number' ? value.toFixed(2) : 'n/a';
+}
+
+function buildMarkdownReport(summary) {
+  const statusIcon = summary.passed ? '✅' : '❌';
+  const lines = [
+    '<!-- lighthouse-remote-report -->',
+    `## ${statusIcon} Lighthouse Remote Report`,
+    '',
+    `- URL: ${summary.url}`,
+    `- Delta threshold: ${summary.deltaThreshold.toFixed(2)}`,
+    `- Baseline: \`${summary.baselinePath}\``,
+    `- Report file: \`${summary.reportPath}\``,
+    '',
+    '| Category | Baseline | Current | Drop | Floor | Status |',
+    '|---|---:|---:|---:|---:|---|',
+  ];
+
+  for (const result of summary.categories) {
+    lines.push(
+      `| ${result.category} | ${formatScore(result.baseline)} | ${formatScore(
+        result.current
+      )} | ${formatDelta(result.drop)} | ${formatScore(result.floor)} | ${
+        result.status
+      } |`
+    );
+  }
+
+  if (summary.failures.length > 0) {
+    lines.push('', '**Failures**');
+    for (const failure of summary.failures) {
+      lines.push(`- ${failure}`);
+    }
+  } else {
+    lines.push('', 'No regression detected.');
+  }
+
+  return lines.join('\n');
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const baselinePath = args.baseline;
@@ -80,6 +121,7 @@ async function main() {
   const report = JSON.parse(reportRaw);
 
   const failures = [];
+  const categoryResults = [];
 
   console.log(`Lighthouse report: ${reportPath}`);
   console.log(
@@ -98,16 +140,28 @@ async function main() {
       );
     }
 
+    let drop = null;
+    const status = [];
+
     if (currentScore === null) {
       failures.push(
         `[${category}] Missing score in Lighthouse report (baseline ${formatScore(
           baselineScore
         )})`
       );
+      status.push('❌ missing');
+      categoryResults.push({
+        category,
+        baseline: baselineScore,
+        current: null,
+        drop,
+        floor,
+        status: status.join(', '),
+      });
       continue;
     }
 
-    const drop = baselineScore - currentScore;
+    drop = baselineScore - currentScore;
     console.log(
       `[${category}] baseline=${formatScore(
         baselineScore
@@ -122,6 +176,7 @@ async function main() {
           currentScore
         )} is below floor ${floor.toFixed(2)}`
       );
+      status.push('❌ floor');
     }
 
     if (drop > deltaThreshold) {
@@ -130,7 +185,40 @@ async function main() {
           2
         )} exceeds threshold ${deltaThreshold.toFixed(2)}`
       );
+      status.push('❌ delta');
     }
+
+    if (status.length === 0) {
+      status.push('✅ pass');
+    }
+
+    categoryResults.push({
+      category,
+      baseline: baselineScore,
+      current: currentScore,
+      drop,
+      floor,
+      status: status.join(', '),
+    });
+  }
+
+  const summary = {
+    passed: failures.length === 0,
+    baselinePath,
+    reportPath,
+    url: report.finalUrl ?? report.requestedUrl ?? 'unknown',
+    deltaThreshold,
+    categories: categoryResults,
+    failures,
+  };
+
+  if (args['summary-file']) {
+    await fs.writeFile(args['summary-file'], JSON.stringify(summary, null, 2));
+  }
+
+  if (args['markdown-file']) {
+    const markdown = buildMarkdownReport(summary);
+    await fs.writeFile(args['markdown-file'], markdown);
   }
 
   if (failures.length > 0) {
