@@ -163,6 +163,7 @@ export default function Hero({
             className="h-full w-full object-cover"
             loading="eager"
             decoding="async"
+            fetchPriority="high"
           />
         </picture>
       )}
