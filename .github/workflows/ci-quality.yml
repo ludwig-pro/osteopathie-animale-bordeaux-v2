@@ -190,14 +190,16 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const issue_number = context.issue.number;
-            const expectedSha = context.payload.pull_request.head.sha;
+            const prNumber = context.payload.pull_request.number;
 
             const parseFromBody = (body) => {
-              const perf = body.match(/\*\*Performance\*\*:\s*(\d+)/i);
-              const acc = body.match(/\*\*Accessibility\*\*:\s*(\d+)/i);
-              const bp = body.match(/\*\*Best Practices\*\*:\s*(\d+)/i);
-              const seo = body.match(/\*\*SEO\*\*:\s*(\d+)/i);
-              const preview = body.match(/Deploy Preview \|\s*\[(https?:\/\/[^\]]+)\]/i);
+              const perf = body.match(/(?:\*\*)?Performance(?:\*\*)?:\s*(\d+)/i);
+              const acc = body.match(/(?:\*\*)?Accessibility(?:\*\*)?:\s*(\d+)/i);
+              const bp = body.match(/(?:\*\*)?Best Practices(?:\*\*)?:\s*(\d+)/i);
+              const seo = body.match(/(?:\*\*)?SEO(?:\*\*)?:\s*(\d+)/i);
+              const preview = body.match(
+                /Deploy Preview \|\s*\[(https?:\/\/[^\]]+)\]/i
+              );
               const deployLog = body.match(/Latest deploy log \|\s*(https?:\/\/\S+)/i);
               if (!perf || !acc || !bp || !seo) {
                 return null;
@@ -223,12 +225,24 @@ jobs:
                 .filter((c) => c.user?.login === 'netlify')
                 .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 
-              const matchingCommitComment =
-                netlifyComments.find((c) => c.body?.includes(expectedSha)) ??
-                netlifyComments[0];
-
-              if (matchingCommitComment?.body) {
-                parsed = parseFromBody(matchingCommitComment.body);
+              for (const comment of netlifyComments) {
+                if (!comment.body) {
+                  continue;
+                }
+                const candidate = parseFromBody(comment.body);
+                if (!candidate) {
+                  continue;
+                }
+                const hasPreviewForCurrentPr =
+                  candidate.previewUrl &&
+                  candidate.previewUrl.includes(`deploy-preview-${prNumber}--`);
+                if (hasPreviewForCurrentPr) {
+                  parsed = candidate;
+                  break;
+                }
+                if (!parsed) {
+                  parsed = candidate;
+                }
               }
 
               if (parsed) {
