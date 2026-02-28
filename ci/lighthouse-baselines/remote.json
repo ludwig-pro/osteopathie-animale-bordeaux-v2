@@ -1,0 +1,10 @@
+{
+  "generatedAt": "2026-02-28",
+  "source": "initial_ci_baseline",
+  "categories": {
+    "performance": 0.89,
+    "accessibility": 0.91,
+    "best-practices": 0.74,
+    "seo": 0.63
+  }
+}

@@ -1,0 +1,357 @@
+name: CI Quality
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  NODE_VERSION: '20'
+  LIGHTHOUSE_DELTA_THRESHOLD: '0.05'
+
+jobs:
+  lint_build:
+    name: Lint & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Build
+        run: yarn build
+
+  smoke_e2e:
+    name: Smoke E2E
+    runs-on: ubuntu-latest
+    needs: lint_build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run smoke tests
+        run: yarn test:e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+
+  lighthouse_local:
+    name: Lighthouse (Local)
+    runs-on: ubuntu-latest
+    needs: lint_build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build app
+        run: yarn build
+
+      - name: Start preview server
+        run: |
+          yarn preview --host 127.0.0.1 --port 4321 > /tmp/astro-preview.log 2>&1 &
+          echo $! > /tmp/astro-preview.pid
+
+      - name: Wait for preview server
+        run: |
+          for _ in $(seq 1 60); do
+            if curl --silent --fail http://127.0.0.1:4321 > /dev/null; then
+              echo "Preview server is up"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "Preview server did not start in time"
+          cat /tmp/astro-preview.log
+          exit 1
+
+      - name: Run local Lighthouse collection
+        run: |
+          rm -rf .lighthouseci
+          yarn lighthouse:local
+
+      - name: Enforce local Lighthouse regression gate
+        run: yarn ci:lighthouse:regression --baseline ci/lighthouse-baselines/local.json
+
+      - name: Upload local Lighthouse artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-local-artifacts
+          path: |
+            .lighthouseci
+            /tmp/astro-preview.log
+          if-no-files-found: warn
+
+      - name: Stop preview server
+        if: always()
+        run: |
+          if [ -f /tmp/astro-preview.pid ]; then
+            kill "$(cat /tmp/astro-preview.pid)" || true
+          fi
+
+  lighthouse_remote:
+    name: Lighthouse (Remote)
+    runs-on: ubuntu-latest
+    needs: lint_build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Resolve audit URL
+        id: target
+        if: github.event_name != 'pull_request'
+        run: |
+          TARGET_URL="https://www.osteopathie-animale-bordeaux.fr"
+
+          echo "url=$TARGET_URL" >> "$GITHUB_OUTPUT"
+          echo "Resolved Lighthouse target: $TARGET_URL"
+
+      - name: Wait for remote URL availability (max 15 minutes)
+        if: github.event_name != 'pull_request'
+        env:
+          TARGET_URL: ${{ steps.target.outputs.url }}
+        run: |
+          for _ in $(seq 1 90); do
+            if curl --silent --fail --location "$TARGET_URL" > /dev/null; then
+              echo "Remote URL is reachable: $TARGET_URL"
+              exit 0
+            fi
+            sleep 10
+          done
+
+          echo "Timed out after 15 minutes while waiting for $TARGET_URL"
+          exit 1
+
+      - name: Read Netlify Lighthouse scores from PR comment
+        if: github.event_name == 'pull_request'
+        id: netlify_scores
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.issue.number;
+            const prNumber = context.payload.pull_request.number;
+
+            const parseFromBody = (body) => {
+              const perf = body.match(/(?:\*\*)?Performance(?:\*\*)?:\s*(\d+)/i);
+              const acc = body.match(/(?:\*\*)?Accessibility(?:\*\*)?:\s*(\d+)/i);
+              const bp = body.match(/(?:\*\*)?Best Practices(?:\*\*)?:\s*(\d+)/i);
+              const seo = body.match(/(?:\*\*)?SEO(?:\*\*)?:\s*(\d+)/i);
+              const preview = body.match(
+                /Deploy Preview \|\s*\[(https?:\/\/[^\]]+)\]/i
+              );
+              const deployLog = body.match(/Latest deploy log \|\s*(https?:\/\/\S+)/i);
+              if (!perf || !acc || !bp || !seo) {
+                return null;
+              }
+              return {
+                performance: perf[1],
+                accessibility: acc[1],
+                bestPractices: bp[1],
+                seo: seo[1],
+                previewUrl: preview ? preview[1] : '',
+                deployLogUrl: deployLog ? deployLog[1] : '',
+              };
+            };
+
+            let parsed = null;
+            for (let attempt = 1; attempt <= 90; attempt += 1) {
+              const comments = await github.paginate(
+                github.rest.issues.listComments,
+                { owner, repo, issue_number, per_page: 100 }
+              );
+
+              const netlifyComments = comments
+                .filter((c) => c.user?.login === 'netlify')
+                .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+
+              for (const comment of netlifyComments) {
+                if (!comment.body) {
+                  continue;
+                }
+                const candidate = parseFromBody(comment.body);
+                if (!candidate) {
+                  continue;
+                }
+                const hasPreviewForCurrentPr =
+                  candidate.previewUrl &&
+                  candidate.previewUrl.includes(`deploy-preview-${prNumber}--`);
+                if (hasPreviewForCurrentPr) {
+                  parsed = candidate;
+                  break;
+                }
+                if (!parsed) {
+                  parsed = candidate;
+                }
+              }
+
+              if (parsed) {
+                core.info(`Found Netlify Lighthouse scores on attempt ${attempt}.`);
+                break;
+              }
+
+              core.info(`Netlify Lighthouse scores not available yet (attempt ${attempt}/90).`);
+              await sleep(10000);
+            }
+
+            if (!parsed) {
+              core.setFailed('Unable to find Netlify Lighthouse scores in PR comments within 15 minutes.');
+              return;
+            }
+
+            core.setOutput('performance', parsed.performance);
+            core.setOutput('accessibility', parsed.accessibility);
+            core.setOutput('best_practices', parsed.bestPractices);
+            core.setOutput('seo', parsed.seo);
+            core.setOutput('preview_url', parsed.previewUrl);
+            core.setOutput('deploy_log_url', parsed.deployLogUrl);
+            core.info(
+              `Parsed Netlify Lighthouse scores: perf=${parsed.performance}, access=${parsed.accessibility}, bp=${parsed.bestPractices}, seo=${parsed.seo}`
+            );
+
+      - name: Run remote Lighthouse collection
+        if: github.event_name != 'pull_request'
+        env:
+          LIGHTHOUSE_TARGET_URL: ${{ steps.target.outputs.url }}
+        run: |
+          rm -rf .lighthouseci
+          yarn lighthouse:remote
+
+      - name: Enforce remote Lighthouse regression gate
+        id: lighthouse_gate
+        continue-on-error: true
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            yarn ci:lighthouse:regression \
+              --baseline ci/lighthouse-baselines/remote.json \
+              --source netlify-pr-comment \
+              --url "${{ steps.netlify_scores.outputs.preview_url }}" \
+              --score-performance "${{ steps.netlify_scores.outputs.performance }}" \
+              --score-accessibility "${{ steps.netlify_scores.outputs.accessibility }}" \
+              --score-best-practices "${{ steps.netlify_scores.outputs.best_practices }}" \
+              --score-seo "${{ steps.netlify_scores.outputs.seo }}" \
+              --summary-file /tmp/lighthouse-remote-summary.json \
+              --markdown-file /tmp/lighthouse-remote-report.md
+          else
+            yarn ci:lighthouse:regression \
+              --baseline ci/lighthouse-baselines/remote.json \
+              --source lhci-production \
+              --summary-file /tmp/lighthouse-remote-summary.json \
+              --markdown-file /tmp/lighthouse-remote-report.md
+          fi
+
+      - name: Update PR comment with Lighthouse report
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- lighthouse-remote-report -->';
+            const body = fs.existsSync('/tmp/lighthouse-remote-report.md')
+              ? fs.readFileSync('/tmp/lighthouse-remote-report.md', 'utf8')
+              : `${marker}\n## ❌ Lighthouse Remote Report\n\nReport file not found.`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const existing = comments.find(
+              (comment) =>
+                comment.user?.type === 'Bot' && comment.body?.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
+
+      - name: Fail job if regression gate failed
+        if: steps.lighthouse_gate.outcome == 'failure'
+        run: exit 1
+
+      - name: Upload remote Lighthouse artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-remote-artifacts
+          path: |
+            .lighthouseci
+            /tmp/lighthouse-remote-summary.json
+            /tmp/lighthouse-remote-report.md
+          if-no-files-found: warn
