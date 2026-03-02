@@ -15,7 +15,6 @@
     "lint:fix": "eslint \"src/**/*.{js,jsx,ts,tsx,astro}\" --fix",
     "test:e2e": "playwright test",
     "test": "yarn test:e2e",
-    "lighthouse:local": "lhci collect --config=.lighthouserc.local.json",
     "lighthouse:remote": "lhci collect --config=.lighthouserc.remote.json --url=${LIGHTHOUSE_TARGET_URL}",
     "ci:lighthouse:regression": "node scripts/check-lighthouse-regression.mjs"
   },
