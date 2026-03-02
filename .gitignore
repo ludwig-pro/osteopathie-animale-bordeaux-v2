@@ -74,6 +74,11 @@ yarn-error.log
 .astro
 dist/
 
+# CI/test artifacts
+.lighthouseci/
+playwright-report/
+test-results/
+
 src/components/common/ResponsiveImage.tsx
 light-mobile.html
 .gitignore
