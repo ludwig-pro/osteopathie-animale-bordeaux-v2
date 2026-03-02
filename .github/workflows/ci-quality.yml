@@ -222,7 +222,10 @@ jobs:
               );
 
               const netlifyComments = comments
-                .filter((c) => c.user?.login === 'netlify')
+                .filter((c) => {
+                  const login = (c.user?.login || '').toLowerCase();
+                  return login === 'netlify' || login === 'netlify[bot]';
+                })
                 .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 
               for (const comment of netlifyComments) {
@@ -280,8 +283,22 @@ jobs:
       - name: Enforce remote Lighthouse regression gate
         id: lighthouse_gate
         continue-on-error: true
+        if: always()
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
+            if [ -z "${{ steps.netlify_scores.outputs.performance }}" ] || [ -z "${{ steps.netlify_scores.outputs.accessibility }}" ] || [ -z "${{ steps.netlify_scores.outputs.best_practices }}" ] || [ -z "${{ steps.netlify_scores.outputs.seo }}" ]; then
+              printf '%s\n' \
+                '<!-- lighthouse-remote-report -->' \
+                '## ❌ Lighthouse Remote Report' \
+                '' \
+                'Netlify Lighthouse scores were not available for this run.' \
+                '' \
+                '- Source: netlify-pr-comment' \
+                '- Detail: unable to parse Netlify bot comment' \
+                > /tmp/lighthouse-remote-report.md
+              exit 1
+            fi
+
             yarn ci:lighthouse:regression \
               --baseline ci/lighthouse-baselines/remote.json \
               --source netlify-pr-comment \
