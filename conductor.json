@@ -1,0 +1,5 @@
+{
+  "setup": "yarn install",
+  "run": "yarn dev --port $CONDUCTOR_PORT",
+  "runScriptMode": "nonconcurrent"
+}
