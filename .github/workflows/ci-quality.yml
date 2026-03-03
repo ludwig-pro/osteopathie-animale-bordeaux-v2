@@ -125,7 +125,6 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const issue_number = context.issue.number;
-            const prNumber = context.payload.pull_request.number;
 
             const parseFromBody = (body) => {
               const perf = body.match(/(?:\*\*)?Performance(?:\*\*)?:\s*(\d+)/i);
@@ -173,7 +172,7 @@ jobs:
                 }
                 const hasPreviewForCurrentPr =
                   candidate.previewUrl &&
-                  candidate.previewUrl.includes(`deploy-preview-${prNumber}--`);
+                  candidate.previewUrl.includes(`deploy-preview-${issue_number}--`);
                 if (hasPreviewForCurrentPr) {
                   parsed = candidate;
                   break;
@@ -218,10 +217,19 @@ jobs:
       - name: Enforce remote Lighthouse regression gate
         id: lighthouse_gate
         continue-on-error: true
-        if: always()
+        if: >-
+          always() &&
+          (steps.netlify_scores.outcome == 'success' || steps.target.outcome == 'success')
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          LH_PERF: ${{ steps.netlify_scores.outputs.performance }}
+          LH_ACC: ${{ steps.netlify_scores.outputs.accessibility }}
+          LH_BP: ${{ steps.netlify_scores.outputs.best_practices }}
+          LH_SEO: ${{ steps.netlify_scores.outputs.seo }}
+          LH_PREVIEW_URL: ${{ steps.netlify_scores.outputs.preview_url }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            if [ -z "${{ steps.netlify_scores.outputs.performance }}" ] || [ -z "${{ steps.netlify_scores.outputs.accessibility }}" ] || [ -z "${{ steps.netlify_scores.outputs.best_practices }}" ] || [ -z "${{ steps.netlify_scores.outputs.seo }}" ]; then
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            if [ -z "$LH_PERF" ] || [ -z "$LH_ACC" ] || [ -z "$LH_BP" ] || [ -z "$LH_SEO" ]; then
               printf '%s\n' \
                 '<!-- lighthouse-remote-report -->' \
                 '## ❌ Lighthouse Remote Report' \
@@ -237,11 +245,11 @@ jobs:
             yarn ci:lighthouse:regression \
               --baseline ci/lighthouse-baselines/remote.json \
               --source netlify-pr-comment \
-              --url "${{ steps.netlify_scores.outputs.preview_url }}" \
-              --score-performance "${{ steps.netlify_scores.outputs.performance }}" \
-              --score-accessibility "${{ steps.netlify_scores.outputs.accessibility }}" \
-              --score-best-practices "${{ steps.netlify_scores.outputs.best_practices }}" \
-              --score-seo "${{ steps.netlify_scores.outputs.seo }}" \
+              --url "$LH_PREVIEW_URL" \
+              --score-performance "$LH_PERF" \
+              --score-accessibility "$LH_ACC" \
+              --score-best-practices "$LH_BP" \
+              --score-seo "$LH_SEO" \
               --summary-file /tmp/lighthouse-remote-summary.json \
               --markdown-file /tmp/lighthouse-remote-report.md
           else
