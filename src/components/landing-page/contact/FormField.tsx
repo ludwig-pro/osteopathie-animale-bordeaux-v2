@@ -45,7 +45,7 @@ export default function FormField({
         <label htmlFor={name} className="sr-only">
           {placeholder}
         </label>
-        <textarea id={name} name={name} rows={rows || 4} {...sharedProps} />
+        <textarea id={name} name={name} rows={rows ?? 4} {...sharedProps} />
         {error && (
           <p id={descriptionId} className="mt-2 text-sm text-red-600">
             {error}

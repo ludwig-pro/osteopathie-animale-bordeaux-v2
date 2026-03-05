@@ -88,7 +88,7 @@ const MapBox = ({ lng, lat, label, onError, onReady }: MapBoxProps) => {
       }
     };
 
-    initializeMap();
+    void initializeMap();
 
     return () => {
       cancelled = true;

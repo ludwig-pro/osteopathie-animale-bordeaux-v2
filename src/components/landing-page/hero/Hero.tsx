@@ -143,7 +143,7 @@ export default function Hero({
   const fallbackSrc = fallback ?? webp?.src;
   const rootElement =
     typeof document !== 'undefined'
-      ? document.getElementById('root') || document.body
+      ? document.getElementById('root') ?? document.body
       : null;
   const calendlyCtaClassName =
     'flex w-full items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-gold-500 bg-white hover:bg-opacity-70 sm:px-8';
