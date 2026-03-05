@@ -27,8 +27,9 @@ export default function AnimalSection({
   optimizedImages,
 }: AnimalSectionProps) {
   const [animal, setAnimalState] = useState<AnimalKey>('chien');
+  const tabsIdPrefix = id ?? 'animaux';
 
-  const setAnimal = (animalKey: string) => {
+  const setAnimal = (animalKey: AnimalKey | string) => {
     setAnimalState(animalKey as AnimalKey);
   };
   const [height, setHeight] = useState(0);
@@ -56,10 +57,17 @@ export default function AnimalSection({
         </h2>
         <div>
           <AriaSelecMenu initialAnimal="chien" setAnimal={setAnimal} />
-          <AriaSelecMenuWeb setAnimal={setAnimal} />
+          <AriaSelecMenuWeb
+            idPrefix={tabsIdPrefix}
+            selectedAnimal={animal}
+            setAnimal={setAnimal}
+          />
         </div>
         <div
           ref={ref}
+          id={`${tabsIdPrefix}-panel-${animal}`}
+          role="tabpanel"
+          aria-labelledby={`${tabsIdPrefix}-tab-${animal}`}
           className={`mt-12 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-16 lg:grid-cols-2 lg:gap-x-8 lg:gap-y-16 `}
           style={{ minHeight: height !== 0 ? height : undefined }}
         >

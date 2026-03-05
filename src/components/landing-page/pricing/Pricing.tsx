@@ -83,13 +83,18 @@ function Prix({ id, chienetchatImg, furetImg, forfaitImg }: PrixProps) {
     <div id={id} className="bg-white">
       <div className="max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:px-8">
         <div className="sm:flex sm:flex-col sm:align-center">
-          <h1 className="text-5xl font-extrabold text-gold-500 sm:text-center">
+          <h2 className="text-5xl font-extrabold text-gold-500 sm:text-center">
             Tarifs
-          </h1>
+          </h2>
 
-          <div className="relative self-center mt-6 bg-gold-200 rounded-lg p-0.5 flex sm:mt-8">
+          <div
+            className="relative mt-6 flex self-center rounded-lg bg-gold-200 p-0.5 sm:mt-8"
+            role="group"
+            aria-label="Mode de consultation"
+          >
             <button
               type="button"
+              aria-pressed={option === 'cabinet'}
               className={classNames(
                 'relative w-1/2 rounded-md py-2 text-sm font-medium whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-gold-500 focus:z-10 sm:w-auto sm:px-8 shadow-sm border',
                 option === 'cabinet'
@@ -102,6 +107,7 @@ function Prix({ id, chienetchatImg, furetImg, forfaitImg }: PrixProps) {
             </button>
             <button
               type="button"
+              aria-pressed={option === 'domicile'}
               className={classNames(
                 'relative w-1/2 rounded-md py-2 text-sm font-medium whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-gold-500 focus:z-10 sm:w-auto sm:px-8 shadow-sm border',
                 option === 'domicile'

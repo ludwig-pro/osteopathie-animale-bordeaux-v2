@@ -1,5 +1,4 @@
-import { useEffect } from 'react';
-import { useHasMounted } from '../../../lib/hooks/useHasMounted';
+import { useCallback, useState } from 'react';
 
 import { Map } from '../../common/icons';
 import MapBox from './MapBox';
@@ -12,19 +11,19 @@ type CarteCabinetProps = {
 };
 
 export default function CarteCabinet({ id }: CarteCabinetProps) {
-  const hasMounted = useHasMounted();
+  const [mapState, setMapState] = useState<'loading' | 'ready' | 'error'>(
+    'loading'
+  );
 
-  // Lazy load Mapbox CSS only when component mounts
-  useEffect(() => {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.css';
-    document.head.appendChild(link);
+  const openDirections = useCallback((origin?: string) => {
+    const destination = `${LAT},${LNG}`;
+    const googleMapsUrl = origin
+      ? `https://www.google.fr/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`
+      : `https://www.google.fr/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
 
-    return () => {
-      document.head.removeChild(link);
-    };
+    window.open(googleMapsUrl, '_blank', 'noopener,noreferrer');
   }, []);
+
   return (
     <div
       id={id}
@@ -52,7 +51,7 @@ export default function CarteCabinet({ id }: CarteCabinetProps) {
                   Bègles
                 </h2>
                 <p className="mt-4 text-lg text-gray-500">
-                  34 rue du Mérachel Joffre
+                  34 rue du Marechal Joffre
                 </p>
                 <p className="mt-2 text-lg text-gray-500">
                   Parking gratuit place du bi-centenaire <br />
@@ -74,15 +73,22 @@ export default function CarteCabinet({ id }: CarteCabinetProps) {
                 </p>
                 <button
                   onClick={() => {
-                    navigator.geolocation.getCurrentPosition((position) => {
-                      const { latitude, longitude } = position.coords;
-                      const googleMapsUrl = `https://www.google.fr/maps/dir/?api=1&origin=${latitude},${longitude}&destination=44.805434,-0.550281&travelmode=driving`;
-                      window.open(
-                        googleMapsUrl,
-                        '_blank',
-                        'noopener,noreferrer'
-                      );
-                    });
+                    if (!navigator.geolocation) {
+                      openDirections();
+                      return;
+                    }
+
+                    navigator.geolocation.getCurrentPosition(
+                      (position) => {
+                        openDirections(
+                          `${position.coords.latitude},${position.coords.longitude}`
+                        );
+                      },
+                      () => {
+                        openDirections();
+                      },
+                      { timeout: 8000 }
+                    );
                   }}
                   className="inline-flex mt-4 justify-center py-2 px-4 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-gold-500 hover:bg-gold-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500"
                 >
@@ -93,18 +99,39 @@ export default function CarteCabinet({ id }: CarteCabinetProps) {
           </div>
           <div className="mt-12 sm:mt-16 lg:mt-0" style={{ height: '400px' }}>
             <div className="lg:relative h-full sm:p-4">
-              <div className="h-full sm:rounded-xl sm:shadow-xl ring-1 ring-black ring-opacity-5 overflow-hidden">
-                {!hasMounted && (
-                  <div className="h-full w-full flex items-center justify-center bg-gray-100">
+              <div
+                className="relative h-full overflow-hidden sm:rounded-xl sm:shadow-xl ring-1 ring-black ring-opacity-5"
+                aria-busy={mapState !== 'ready'}
+              >
+                {mapState !== 'ready' && (
+                  <div className="absolute inset-0 z-10 flex h-full w-full items-center justify-center bg-gray-100/95 p-6">
                     <div className="text-center">
-                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold-500 mb-4"></div>
-                      <p className="text-gray-500">Chargement de la carte...</p>
+                      <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-b-2 border-gold-500"></div>
+                      <p className="text-gray-700">
+                        {mapState === 'error'
+                          ? "La carte interactive n'a pas pu etre chargee."
+                          : 'Chargement de la carte interactive...'}
+                      </p>
+                      {mapState === 'error' && (
+                        <a
+                          href="https://www.google.fr/maps/dir/?api=1&destination=44.805434,-0.550281&travelmode=driving"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-4 inline-flex rounded-md bg-gold-500 px-4 py-2 text-sm font-medium text-white hover:bg-gold-600"
+                        >
+                          Ouvrir l'itineraire
+                        </a>
+                      )}
                     </div>
                   </div>
                 )}
-                {hasMounted && (
-                  <MapBox lng={LNG} lat={LAT} label="Cabinet de Bègles" />
-                )}
+                <MapBox
+                  lng={LNG}
+                  lat={LAT}
+                  label="Cabinet de Begles"
+                  onReady={() => setMapState('ready')}
+                  onError={() => setMapState('error')}
+                />
               </div>
             </div>
           </div>

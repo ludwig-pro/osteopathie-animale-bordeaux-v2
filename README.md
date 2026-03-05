@@ -21,6 +21,10 @@ Site vitrine d'Agathe Lescout, désormais propulsé par [Astro](https://astro.bu
    ```bash
    yarn preview
    ```
+5. Vérifie le pipeline de non-régression :
+   ```bash
+   yarn test:e2e
+   ```
 
 ## 📁 Structure du projet
 
@@ -45,7 +49,9 @@ Site vitrine d'Agathe Lescout, désormais propulsé par [Astro](https://astro.bu
 - `yarn dev` : serveur de développement Astro (HMR).
 - `yarn build` : génération statique prête pour Netlify.
 - `yarn preview` : prévisualisation du build localement.
+- `yarn preview:static` : sert le dossier `dist/` avec un serveur statique compatible Playwright.
 - `yarn format` : formatage Prettier (`.js`, `.jsx`, `.md`, `.astro`, etc.).
+- `yarn test:e2e` : rebuild + smoke tests Playwright via serveur statique local.
 
 ## 📈 Monitoring (Sentry)
 

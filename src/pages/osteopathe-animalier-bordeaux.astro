@@ -1,0 +1,58 @@
+---
+import ContentPageLayout from '../layouts/ContentPageLayout.astro';
+
+const title = 'Osteopathe animalier a Bordeaux | Agathe Lescout';
+const description =
+  "Consultations d'osteopathie animale a Bordeaux, Begles et en Gironde pour chiens, chats, NAC et animaux de sport.";
+---
+
+<ContentPageLayout title={title} description={description}>
+  <h1 class="text-3xl font-extrabold tracking-tight text-gold-600 sm:text-4xl">
+    Osteopathe animalier a Bordeaux
+  </h1>
+  <div class="mt-8 space-y-8 text-base leading-7 text-gray-700">
+    <section class="space-y-3">
+      <p>
+        Agathe Lescout accompagne les animaux de compagnie et les animaux de
+        travail en cabinet a Begles et a domicile autour de Bordeaux.
+      </p>
+      <p>
+        Les consultations concernent principalement les chiens, chats, NAC,
+        chevaux et bovins, avec une approche adaptee a l'age, a l'activite et
+        aux antecedents de chaque animal.
+      </p>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-bold text-canard">Quand prendre rendez-vous ?</h2>
+      <p>
+        Une consultation peut etre pertinente en cas de boiterie, de baisse de
+        performance, de troubles digestifs, de raideurs, d'arthrose, apres un
+        traumatisme ou simplement en prevention.
+      </p>
+      <p>
+        En cas de signes inflammatoires, de fievre ou de douleur aigue, le
+        premier reflexe doit rester la consultation veterinaire.
+      </p>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-bold text-canard">Cabinet a Begles et deplacements</h2>
+      <p>
+        Les consultations en cabinet ont lieu a Begles. Des rendez-vous a
+        domicile sont egalement proposes sur la region bordelaise pour limiter
+        le stress des animaux et faciliter l'organisation des proprietaires.
+      </p>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-bold text-canard">Prendre contact</h2>
+      <p>
+        Pour decrire la situation de votre animal et choisir le format de
+        consultation le plus adapte, rendez-vous sur le{' '}
+        <a href="/#contact">formulaire de contact</a> ou prenez rendez-vous
+        directement depuis la page d'accueil.
+      </p>
+    </section>
+  </div>
+</ContentPageLayout>

@@ -1,21 +1,22 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import HeroWrapper from '../layouts/wrappers/HeroWrapper.astro';
-import AnimalSectionWrapper from '../layouts/wrappers/AnimalSectionWrapper.astro';
 import MapSection from '../components/landing-page/map/MapSection';
-import WhenToConsult from '../components/landing-page/when-to-consult/WhenToConsult';
-import OsteopathieAnimaleWrapper from '../layouts/wrappers/OsteopathieAnimaleWrapper.astro';
-import QuiSuisJeWrapper from '../layouts/wrappers/QuiSuisJeWrapper.astro';
-import PrixWrapper from '../layouts/wrappers/PrixWrapper.astro';
-import DeroulementConsultationWrapper from '../layouts/wrappers/DeroulementConsultationWrapper.astro';
-import ContactWrapper from '../components/landing-page/contact/ContactWrapper';
 import Footer from '../components/layout/Footer';
+import ContactWrapper from '../components/landing-page/contact/ContactWrapper';
+import WhenToConsult from '../components/landing-page/when-to-consult/WhenToConsult';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AnimalSectionWrapper from '../layouts/wrappers/AnimalSectionWrapper.astro';
+import DeroulementConsultationWrapper from '../layouts/wrappers/DeroulementConsultationWrapper.astro';
+import HeroWrapper from '../layouts/wrappers/HeroWrapper.astro';
+import OsteopathieAnimaleWrapper from '../layouts/wrappers/OsteopathieAnimaleWrapper.astro';
+import PrixWrapper from '../layouts/wrappers/PrixWrapper.astro';
+import QuiSuisJeWrapper from '../layouts/wrappers/QuiSuisJeWrapper.astro';
+import { LOCAL_BUSINESS_SCHEMA, SITE_CONFIG } from '../lib/constants/site';
 
-const title = 'Osteopathe Animalier Bordeaux - Agathe Lescout';
-const description = "L'Ostéopathe animalier Agathe Lescout, intervenant sur Bordeaux et Gironde!";
+const title = SITE_CONFIG.title;
+const description = SITE_CONFIG.description;
 ---
 
-<BaseLayout title={title} description={description}>
+<BaseLayout title={title} description={description} schema={LOCAL_BUSINESS_SCHEMA}>
   <div>
     <main id="root">
       <HeroWrapper />
@@ -23,7 +24,7 @@ const description = "L'Ostéopathe animalier Agathe Lescout, intervenant sur Bor
         <AnimalSectionWrapper />
       </div>
       <MapSection client:visible />
-      <WhenToConsult id="quand-consulter" client:visible />
+      <WhenToConsult id="quand-consulter" />
       <PrixWrapper id="tarifs" />
       <DeroulementConsultationWrapper />
       <OsteopathieAnimaleWrapper id="osteopathie" />

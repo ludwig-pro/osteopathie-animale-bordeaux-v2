@@ -1,0 +1,66 @@
+---
+import ContentPageLayout from '../layouts/ContentPageLayout.astro';
+import { SITE_CONFIG } from '../lib/constants/site';
+
+const title = 'Mentions legales | Agathe Lescout';
+const description =
+  "Mentions legales du site d'Agathe Lescout, osteopathe animalier a Bordeaux et Begles.";
+---
+
+<ContentPageLayout title={title} description={description} robots="noindex,follow">
+  <h1 class="text-3xl font-extrabold tracking-tight text-gold-600 sm:text-4xl">
+    Mentions legales
+  </h1>
+  <div class="mt-8 space-y-8 text-base leading-7 text-gray-700">
+    <section class="space-y-3">
+      <h2 class="text-xl font-bold text-canard">Editeur du site</h2>
+      <p>
+        Le site est edite par <strong>{SITE_CONFIG.name}</strong>, osteopathe
+        animalier intervenant a Begles, Bordeaux et en Gironde.
+      </p>
+      <p>
+        Contact : <a href={`mailto:${SITE_CONFIG.email}`}>{SITE_CONFIG.email}</a>
+        {' - '}
+        <a href={`tel:${SITE_CONFIG.phone}`}>{SITE_CONFIG.phoneDisplay}</a>
+      </p>
+      <p>
+        Adresse du cabinet : {SITE_CONFIG.address.streetAddress},{' '}
+        {SITE_CONFIG.address.postalCode} {SITE_CONFIG.address.addressLocality}.
+      </p>
+      <p class="rounded-2xl bg-gold-50 p-4 text-sm text-gold-800">
+        Informations administratives a completer avant publication definitive :
+        statut juridique, numero SIREN/SIRET, responsable de publication.
+      </p>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-bold text-canard">Hebergement</h2>
+      <p>Le site est heberge sur l'infrastructure Netlify.</p>
+      <p class="text-sm text-gray-600">
+        Coordonnees legales completes de l'hebergeur a confirmer avant
+        publication definitive.
+      </p>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-bold text-canard">Propriete intellectuelle</h2>
+      <p>
+        L'ensemble des contenus presents sur ce site (textes, photographies,
+        illustrations, logo et structure) est protege par le droit d'auteur.
+      </p>
+      <p>
+        Toute reproduction ou reutilisation, meme partielle, sans autorisation
+        prealable ecrite est interdite.
+      </p>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-bold text-canard">Responsabilite</h2>
+      <p>
+        Les informations diffusees sur ce site sont fournies a titre indicatif
+        et ne remplacent pas l'avis d'un veterinaire ou d'un professionnel de
+        sante animale habilite.
+      </p>
+    </section>
+  </div>
+</ContentPageLayout>

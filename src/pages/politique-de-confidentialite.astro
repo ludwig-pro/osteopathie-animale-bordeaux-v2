@@ -1,0 +1,75 @@
+---
+import ContentPageLayout from '../layouts/ContentPageLayout.astro';
+import { SITE_CONFIG } from '../lib/constants/site';
+
+const title = 'Politique de confidentialite | Agathe Lescout';
+const description =
+  "Politique de confidentialite du site d'Agathe Lescout et informations sur le traitement des donnees de contact.";
+---
+
+<ContentPageLayout title={title} description={description} robots="noindex,follow">
+  <h1 class="text-3xl font-extrabold tracking-tight text-gold-600 sm:text-4xl">
+    Politique de confidentialite
+  </h1>
+  <div class="mt-8 space-y-8 text-base leading-7 text-gray-700">
+    <section class="space-y-3">
+      <h2 class="text-xl font-bold text-canard">Donnees collecteess</h2>
+      <p>
+        Lorsque vous utilisez le formulaire de contact, les informations
+        suivantes peuvent etre traitees : nom, nom de l'animal, adresse email,
+        numero de telephone et contenu du message.
+      </p>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-bold text-canard">Finalite du traitement</h2>
+      <p>
+        Ces donnees sont utilisees uniquement pour repondre a votre demande,
+        organiser un rendez-vous ou assurer le suivi de votre prise de contact.
+      </p>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-bold text-canard">Base legale</h2>
+      <p>
+        Le traitement repose sur votre demande de contact et sur l'interet
+        legitime d'assurer le suivi des demandes recues via le site.
+      </p>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-bold text-canard">Destinataires et conservation</h2>
+      <p>
+        Les donnees sont destinees a {SITE_CONFIG.name}. Elles sont conservees
+        pendant la duree necessaire au traitement de votre demande, puis
+        archivees ou supprimees selon les obligations applicables.
+      </p>
+      <p class="rounded-2xl bg-gold-50 p-4 text-sm text-gold-800">
+        Duree de conservation detaillee et procedure interne de suppression a
+        confirmer avant publication definitive.
+      </p>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-bold text-canard">Cookies et mesure d'audience</h2>
+      <p>
+        Le site peut utiliser des outils de mesure d'audience et des services
+        tiers uniquement lorsque leur configuration est active. Vous pouvez
+        ajuster vos preferences cookies depuis le pied de page.
+      </p>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-bold text-canard">Vos droits</h2>
+      <p>
+        Vous disposez d'un droit d'acces, de rectification, d'effacement, de
+        limitation et d'opposition dans les conditions prevues par la
+        reglementation applicable.
+      </p>
+      <p>
+        Pour exercer vos droits, vous pouvez ecrire a{' '}
+        <a href={`mailto:${SITE_CONFIG.email}`}>{SITE_CONFIG.email}</a>.
+      </p>
+    </section>
+  </div>
+</ContentPageLayout>

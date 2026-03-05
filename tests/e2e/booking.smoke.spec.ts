@@ -1,6 +1,24 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Booking smoke checks', () => {
+  test('homepage renders core content and metadata', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page).toHaveTitle(/Agathe Lescout/);
+    await expect(
+      page.getByRole('heading', {
+        level: 1,
+        name: /Agathe Lescout/i,
+      })
+    ).toBeVisible();
+
+    const canonical = page.locator('link[rel="canonical"]');
+    await expect(canonical).toHaveAttribute(
+      'href',
+      'https://www.osteopathie-animale-bordeaux.fr/'
+    );
+  });
+
   test('online booking CTA is visible and initiates Calendly loading', async ({
     page,
   }) => {
@@ -41,5 +59,20 @@ test.describe('Booking smoke checks', () => {
 
     await expect(page).toHaveURL(/#contact$/);
     await expect(page.locator('#contact')).toBeVisible();
+  });
+
+  test('legal and SEO pages render', async ({ page }) => {
+    await page.goto('/mentions-legales');
+    await expect(
+      page.getByRole('heading', { level: 1, name: /Mentions legales/i })
+    ).toBeVisible();
+
+    await page.goto('/osteopathe-animalier-bordeaux');
+    await expect(
+      page.getByRole('heading', {
+        level: 1,
+        name: /Osteopathe animalier a Bordeaux/i,
+      })
+    ).toBeVisible();
   });
 });

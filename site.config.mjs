@@ -1,0 +1,25 @@
+export const SITE_CONFIG = Object.freeze({
+  name: 'Agathe Lescout',
+  businessName: 'Agathe Lescout - Osteopathe Animalier',
+  title: 'Osteopathe Animalier Bordeaux - Agathe Lescout',
+  description:
+    "L'Ostéopathe animalier Agathe Lescout, intervenant sur Bordeaux et Gironde.",
+  url: 'https://www.osteopathie-animale-bordeaux.fr',
+  themeColor: '#c0823f',
+  locale: 'fr_FR',
+  ogImagePath: '/og-image.jpg',
+  gtmId: 'GTM-KCM49LQ',
+  phone: '+33665550792',
+  phoneDisplay: '06 65 55 07 92',
+  email: 'agathe.lescout.osteo@gmail.com',
+  facebookUrl: 'https://www.facebook.com/AgatheLescout/',
+  address: {
+    streetAddress: '34 rue du Marechal Joffre',
+    addressLocality: 'Begles',
+    postalCode: '33130',
+    addressRegion: 'Gironde',
+    addressCountry: 'FR',
+  },
+  serviceAreas: ['Begles', 'Bordeaux', 'Gironde'],
+  openingHours: ['Mo 09:00-19:00', 'Fr 09:00-19:00'],
+});

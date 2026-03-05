@@ -33,7 +33,11 @@ export default function ContactInfoItem({
     <div className="mt-3">
       <dt className="sr-only">{srLabel}</dt>
       <dd className="flex">
-        <a href={href} onClick={handleClick} className="flex text-gray-500">
+        <a
+          href={href}
+          onClick={handleClick}
+          className="flex text-gray-500 hover:text-gold-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500 focus-visible:ring-offset-2"
+        >
           {icon}
           <span className="ml-3">{label}</span>
         </a>

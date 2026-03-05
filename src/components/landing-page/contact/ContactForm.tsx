@@ -1,23 +1,80 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { pushDataLayerEvent } from '../../../lib/analytics';
 import FormField from './FormField';
 
+type FieldName = 'name' | 'email' | 'phone' | 'message';
+type FieldErrors = Partial<Record<FieldName, string>>;
+
 export default function ContactForm() {
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const clearFieldError = (
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name } = event.target;
+
+    setFieldErrors((currentErrors) => {
+      if (!(name in currentErrors) && !['email', 'phone'].includes(name)) {
+        return currentErrors;
+      }
+
+      const nextErrors = { ...currentErrors };
+      delete nextErrors[name as FieldName];
+
+      if (name === 'email' || name === 'phone') {
+        delete nextErrors.email;
+        delete nextErrors.phone;
+      }
+
+      return nextErrors;
+    });
+  };
+
+  const validateForm = (formData: FormData): FieldErrors => {
+    const nextErrors: FieldErrors = {};
+    const name = String(formData.get('name') ?? '').trim();
+    const email = String(formData.get('email') ?? '').trim();
+    const phone = String(formData.get('phone') ?? '').trim();
+    const message = String(formData.get('message') ?? '').trim();
+
+    if (!name) {
+      nextErrors.name = 'Renseignez votre nom.';
+    }
+
+    if (!message) {
+      nextErrors.message = 'Precisez votre demande.';
+    }
+
+    if (!email && !phone) {
+      nextErrors.email = 'Renseignez un email ou un telephone.';
+      nextErrors.phone = 'Renseignez un email ou un telephone.';
+    }
+
+    return nextErrors;
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
     setSuccess(false);
     setError(false);
-    pushDataLayerEvent('contact_form_submit_started', {
-      formName: 'contact',
-    });
 
     const form = e.currentTarget;
     const formData = new FormData(form);
+    const nextErrors = validateForm(formData);
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      return;
+    }
+
+    setFieldErrors({});
+    setLoading(true);
+    pushDataLayerEvent('contact_form_submit_started', {
+      formName: 'contact',
+    });
 
     // Add form-name for Netlify
     formData.append('form-name', 'contact');
@@ -85,6 +142,9 @@ export default function ContactForm() {
             placeholder="Nom"
             type="text"
             autoComplete="name"
+            error={fieldErrors.name}
+            onChange={clearFieldError}
+            required
           />
 
           <FormField
@@ -92,6 +152,7 @@ export default function ContactForm() {
             placeholder="Nom de l'animal"
             type="text"
             autoComplete="name"
+            onChange={clearFieldError}
           />
 
           <FormField
@@ -99,6 +160,9 @@ export default function ContactForm() {
             placeholder="Email"
             type="email"
             autoComplete="email"
+            error={fieldErrors.email}
+            inputMode="email"
+            onChange={clearFieldError}
           />
 
           <FormField
@@ -106,6 +170,9 @@ export default function ContactForm() {
             placeholder="Téléphone"
             type="tel"
             autoComplete="tel"
+            error={fieldErrors.phone}
+            inputMode="tel"
+            onChange={clearFieldError}
           />
 
           <FormField
@@ -113,17 +180,43 @@ export default function ContactForm() {
             placeholder="Message"
             type="textarea"
             rows={4}
+            error={fieldErrors.message}
+            onChange={clearFieldError}
+            required
           />
 
           {/* RGPD compliance text */}
           <p className="text-sm text-gray-500">
-            En soumettant ce formulaire, vous acceptez que vos données soient
-            traitées pour vous contacter.
+            Nom, message et un moyen de contact sont requis. En soumettant ce
+            formulaire, vous acceptez que vos donnees soient traitees pour vous
+            contacter conformement a notre{' '}
+            <a
+              href="/politique-de-confidentialite"
+              className="font-medium text-gold-600 hover:text-gold-700"
+            >
+              politique de confidentialite
+            </a>
+            .
           </p>
+
+          {Object.keys(fieldErrors).length > 0 && (
+            <div
+              className="rounded-md border border-red-200 bg-red-50 p-4"
+              role="alert"
+            >
+              <p className="text-sm font-medium text-red-800">
+                Corrigez les champs signales avant d'envoyer le formulaire.
+              </p>
+            </div>
+          )}
 
           {/* Success message */}
           {success && (
-            <div className="rounded-md bg-green-50 p-4">
+            <div
+              className="rounded-md bg-green-50 p-4"
+              role="status"
+              aria-live="polite"
+            >
               <div className="flex">
                 <div className="flex-shrink-0">
                   <svg
@@ -151,7 +244,11 @@ export default function ContactForm() {
 
           {/* Error message */}
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
+            <div
+              className="rounded-md bg-red-50 p-4"
+              role="alert"
+              aria-live="assertive"
+            >
               <div className="flex">
                 <div className="flex-shrink-0">
                   <svg
@@ -170,7 +267,8 @@ export default function ContactForm() {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-red-800">
-                    Une erreur est survenue. Veuillez réessayer.
+                    Une erreur est survenue. Veuillez reessayer ou nous appeler
+                    directement.
                   </p>
                 </div>
               </div>

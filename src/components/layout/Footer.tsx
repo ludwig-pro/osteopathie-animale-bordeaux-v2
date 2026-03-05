@@ -1,14 +1,54 @@
 import React from 'react';
+import { SITE_CONFIG } from '../../../site.config.mjs';
 
 export default function Footer() {
   const year = new Date().getFullYear();
+  const footerLinks = [
+    {
+      href: '/osteopathe-animalier-bordeaux',
+      label: 'Osteopathe animalier Bordeaux',
+    },
+    {
+      href: '/osteopathie-animale-chien-chat-bordeaux',
+      label: 'Osteopathie chien & chat',
+    },
+    { href: '/mentions-legales', label: 'Mentions legales' },
+    {
+      href: '/politique-de-confidentialite',
+      label: 'Politique de confidentialite',
+    },
+  ];
+
   return (
     <footer className="bg-gray-50">
-      <div className="max-w-7xl mx-auto pt-4 pb-4 px-4 sm:px-6 lg:pt-4 lg:px-4">
-        <div className="mt-12 border-t border-gray-200 pt-8 md:flex md:items-center md:justify-between lg:mt-16">
-          <div className="flex space-x-6 md:order-2">
+      <div className="mx-auto max-w-7xl px-4 pb-4 pt-8 sm:px-6 lg:px-4">
+        <div className="flex flex-col gap-8 border-t border-gray-200 pt-8 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-xl">
+            <p className="text-base font-semibold text-canard">
+              Agathe Lescout, osteopathe animalier
+            </p>
+            <p className="mt-2 text-sm text-gray-500">
+              Consultations en cabinet a Begles et a domicile autour de
+              Bordeaux.
+            </p>
+            <nav
+              className="mt-4 flex flex-wrap gap-x-4 gap-y-2"
+              aria-label="Liens de pied de page"
+            >
+              {footerLinks.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className="text-sm font-medium text-gold-600 hover:text-gold-700"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </nav>
+          </div>
+          <div className="flex space-x-6 lg:justify-end">
             <a
-              href="https://www.facebook.com/AgatheLescout/"
+              href={SITE_CONFIG.facebookUrl}
               className="text-gray-400 hover:text-gold-500"
             >
               <span className="sr-only">Facebook</span>
@@ -26,23 +66,19 @@ export default function Footer() {
               </svg>
             </a>
           </div>
-          <p className="mt-8 text-base text-gray-400 md:mt-0 md:order-1">
-            &copy;{' '}
-            {`${year} Agathe Lescout, Ostéopathe Animalier. Tous droits
-            réservés.`}
-            <span>
-              <button
-                onClick={() => {
-                  window.openAxeptioCookie?.();
-                  window.openAxeptioCookies?.();
-                }}
-                className="text-gray-400 hover:text-gray-400"
-              >
-                {' '}
-                Vos préférences en matière de cookies
-              </button>
-            </span>
-          </p>
+        </div>
+        <div className="mt-8 flex flex-col gap-3 border-t border-gray-200 pt-6 text-sm text-gray-400 md:flex-row md:items-center md:justify-between">
+          <p>{`${year} Agathe Lescout, Osteopathe Animalier. Tous droits reserves.`}</p>
+          <button
+            type="button"
+            onClick={() => {
+              window.openAxeptioCookie?.();
+              window.openAxeptioCookies?.();
+            }}
+            className="text-left text-gray-500 hover:text-gray-700"
+          >
+            Vos preferences en matiere de cookies
+          </button>
         </div>
       </div>
     </footer>

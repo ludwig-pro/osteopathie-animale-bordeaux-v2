@@ -1,11 +1,26 @@
 ---
+import { SITE_CONFIG, buildAbsoluteUrl } from '../lib/constants/site';
+
 export interface Props {
-  title: string;
-  description?: string;
-  siteUrl?: string;
+  title?: string;
+  description?: string | undefined;
+  siteUrl?: string | undefined;
+  ogImagePath?: string | undefined;
+  robots?: string | undefined;
+  schema?:
+    | Record<string, unknown>
+    | Array<Record<string, unknown>>
+    | undefined;
 }
 
-const { title, description = "L'Ostéopathe animalier Agathe Lescout, intervenant sur Bordeaux et Gironde!", siteUrl = 'https://www.osteopathie-animale-bordeaux.fr' } = Astro.props;
+const {
+  title = SITE_CONFIG.title,
+  description = SITE_CONFIG.description,
+  siteUrl = SITE_CONFIG.url,
+  ogImagePath = SITE_CONFIG.ogImagePath,
+  robots = 'index,follow',
+  schema,
+} = Astro.props;
 const gtmId = import.meta.env.PUBLIC_GTM_ID;
 const isGtmEnabled = Boolean(gtmId);
 const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
@@ -19,6 +34,8 @@ const posthogDelayMs = Number.parseInt(
   import.meta.env.PUBLIC_ANALYTICS_POSTHOG_DELAY_MS ?? '5000',
   10
 );
+const currentUrl = new URL(Astro.url.pathname, siteUrl).toString();
+const ogImageUrl = buildAbsoluteUrl(ogImagePath);
 ---
 
 <!DOCTYPE html>
@@ -28,12 +45,29 @@ const posthogDelayMs = Number.parseInt(
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="robots" content={robots} />
+    <link rel="canonical" href={currentUrl} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
+    <meta property="og:site_name" content={SITE_CONFIG.businessName} />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content={siteUrl} />
-    <meta name="theme-color" content="#c0823f" />
+    <meta property="og:url" content={currentUrl} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:alt" content={title} />
+    <meta property="og:locale" content={SITE_CONFIG.locale} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <meta name="theme-color" content={SITE_CONFIG.themeColor} />
     <link rel="icon" type="image/png" href="/icon.png" />
+    {schema && (
+      <script
+        is:inline
+        type="application/ld+json"
+        set:html={JSON.stringify(schema)}
+      />
+    )}
 
     <!-- Preconnect to third-party domains for faster loading -->
     <link rel="preconnect" href="https://api.mapbox.com" />

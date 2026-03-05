@@ -1,7 +1,9 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
+import sitemap from '@astrojs/sitemap';
 import tailwind from '@astrojs/tailwind';
 import sentry from '@sentry/astro';
+import { SITE_CONFIG } from './site.config.mjs';
 
 const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN;
 const sentryOrg = process.env.SENTRY_ORG;
@@ -19,7 +21,8 @@ const sentryIntegration = sentry({
 });
 
 export default defineConfig({
-  integrations: [react(), tailwind(), sentryIntegration],
+  site: SITE_CONFIG.url,
+  integrations: [react(), tailwind(), sitemap(), sentryIntegration],
   output: 'static',
   image: {
     responsiveStyles: true,
