@@ -3,9 +3,17 @@ export interface Props {
   title: string;
   description?: string;
   siteUrl?: string;
+  canonicalUrl?: string;
+  schema?: unknown;
 }
 
-const { title, description = "L'Ostéopathe animalier Agathe Lescout, intervenant sur Bordeaux et Gironde!", siteUrl = 'https://www.osteopathie-animale-bordeaux.fr' } = Astro.props;
+const {
+  title,
+  description = "L'Ostéopathe animalier Agathe Lescout, intervenant sur Bordeaux et Gironde!",
+  siteUrl = 'https://www.osteopathie-animale-bordeaux.fr',
+  canonicalUrl = siteUrl,
+  schema,
+} = Astro.props;
 const gtmId = import.meta.env.PUBLIC_GTM_ID;
 const isGtmEnabled = Boolean(gtmId);
 const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
@@ -28,12 +36,22 @@ const posthogDelayMs = Number.parseInt(
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content={siteUrl} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content="fr_FR" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#c0823f" />
     <link rel="icon" type="image/png" href="/icon.png" />
+    {schema && (
+      <script
+        is:inline
+        type="application/ld+json"
+        set:html={JSON.stringify(schema)}
+      />
+    )}
 
     <!-- Preconnect to third-party domains for faster loading -->
     <link rel="preconnect" href="https://api.mapbox.com" />
@@ -134,7 +152,9 @@ const posthogDelayMs = Number.parseInt(
             }
 
             target[methodName] = function () {
-              target.push([methodName].concat(Array.prototype.slice.call(arguments, 0)));
+              target.push(
+                [methodName].concat(Array.prototype.slice.call(arguments, 0))
+              );
             };
           };
 
@@ -159,7 +179,10 @@ const posthogDelayMs = Number.parseInt(
 
             var props = {};
             for (var key in item) {
-              if (Object.prototype.hasOwnProperty.call(item, key) && key !== 'event') {
+              if (
+                Object.prototype.hasOwnProperty.call(item, key) &&
+                key !== 'event'
+              ) {
                 props[key] = item[key];
               }
             }
@@ -233,7 +256,12 @@ const posthogDelayMs = Number.parseInt(
   <body>
     {isGtmEnabled && (
       <noscript>
-        <iframe src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`} height="0" width="0" style="display:none;visibility:hidden"></iframe>
+        <iframe
+          src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+          height="0"
+          width="0"
+          style="display:none;visibility:hidden"
+        ></iframe>
       </noscript>
     )}
     <slot />

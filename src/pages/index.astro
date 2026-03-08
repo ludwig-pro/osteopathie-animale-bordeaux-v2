@@ -1,21 +1,76 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import HeroWrapper from '../layouts/wrappers/HeroWrapper.astro';
-import AnimalSectionWrapper from '../layouts/wrappers/AnimalSectionWrapper.astro';
+import Footer from '../components/layout/Footer';
+import ContactWrapper from '../components/landing-page/contact/ContactWrapper';
 import MapSection from '../components/landing-page/map/MapSection';
 import WhenToConsult from '../components/landing-page/when-to-consult/WhenToConsult';
-import OsteopathieAnimaleWrapper from '../layouts/wrappers/OsteopathieAnimaleWrapper.astro';
-import QuiSuisJeWrapper from '../layouts/wrappers/QuiSuisJeWrapper.astro';
-import PrixWrapper from '../layouts/wrappers/PrixWrapper.astro';
+import agathePortrait from '../images/agathe.jpg';
+import heroImage from '../images/dog-homepage.jpg';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AnimalSectionWrapper from '../layouts/wrappers/AnimalSectionWrapper.astro';
 import DeroulementConsultationWrapper from '../layouts/wrappers/DeroulementConsultationWrapper.astro';
-import ContactWrapper from '../components/landing-page/contact/ContactWrapper';
-import Footer from '../components/layout/Footer';
+import HeroWrapper from '../layouts/wrappers/HeroWrapper.astro';
+import OsteopathieAnimaleWrapper from '../layouts/wrappers/OsteopathieAnimaleWrapper.astro';
+import PrixWrapper from '../layouts/wrappers/PrixWrapper.astro';
+import QuiSuisJeWrapper from '../layouts/wrappers/QuiSuisJeWrapper.astro';
+import { BUSINESS_CONFIG, SITE_CONFIG } from '../lib/constants/site';
 
-const title = 'Osteopathe Animalier Bordeaux - Agathe Lescout';
-const description = "L'Ostéopathe animalier Agathe Lescout, intervenant sur Bordeaux et Gironde!";
+const title = SITE_CONFIG.title;
+const description = SITE_CONFIG.description;
+const siteUrl = SITE_CONFIG.url;
+
+const homepageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'LocalBusiness',
+  '@id': `${siteUrl}#local-business`,
+  name: BUSINESS_CONFIG.name,
+  description,
+  url: siteUrl,
+  image: [
+    new URL(heroImage.src, siteUrl).toString(),
+    new URL(agathePortrait.src, siteUrl).toString(),
+  ],
+  telephone: BUSINESS_CONFIG.telephone,
+  email: BUSINESS_CONFIG.email,
+  priceRange: BUSINESS_CONFIG.priceRange,
+  address: {
+    '@type': 'PostalAddress',
+    ...BUSINESS_CONFIG.address,
+  },
+  geo: {
+    '@type': 'GeoCoordinates',
+    ...BUSINESS_CONFIG.geo,
+  },
+  openingHoursSpecification: BUSINESS_CONFIG.openingHoursSpecification.map(
+    (hours) => ({
+      '@type': 'OpeningHoursSpecification',
+      ...hours,
+    })
+  ),
+  areaServed: BUSINESS_CONFIG.areaServed,
+  sameAs: BUSINESS_CONFIG.sameAs,
+  founder: {
+    '@type': 'Person',
+    name: BUSINESS_CONFIG.practitionerName,
+    jobTitle: BUSINESS_CONFIG.practitionerJobTitle,
+  },
+  contactPoint: {
+    '@type': 'ContactPoint',
+    contactType: 'customer support',
+    telephone: BUSINESS_CONFIG.telephone,
+    email: BUSINESS_CONFIG.email,
+    availableLanguage: ['fr'],
+    areaServed: 'FR',
+  },
+};
 ---
 
-<BaseLayout title={title} description={description}>
+<BaseLayout
+  title={title}
+  description={description}
+  siteUrl={siteUrl}
+  canonicalUrl={siteUrl}
+  schema={homepageSchema}
+>
   <div>
     <main id="root">
       <HeroWrapper />

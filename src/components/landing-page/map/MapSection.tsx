@@ -52,7 +52,7 @@ export default function CarteCabinet({ id }: CarteCabinetProps) {
                   Bègles
                 </h2>
                 <p className="mt-4 text-lg text-gray-500">
-                  34 rue du Mérachel Joffre
+                  34 rue du Maréchal Joffre
                 </p>
                 <p className="mt-2 text-lg text-gray-500">
                   Parking gratuit place du bi-centenaire <br />
