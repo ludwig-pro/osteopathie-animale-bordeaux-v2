@@ -113,6 +113,15 @@
     ultrahtml "^1.6.0"
     vite "^6.3.6"
 
+"@astrojs/sitemap@^3.7.0":
+  version "3.7.0"
+  resolved "https://registry.yarnpkg.com/@astrojs/sitemap/-/sitemap-3.7.0.tgz#26ffe9b2f51e2720e5e96f358ecc20f4d87f7218"
+  integrity sha512-+qxjUrz6Jcgh+D5VE1gKUJTA3pSthuPHe6Ao5JCxok794Lewx8hBFaWHtOnN0ntb2lfOf7gvOi9TefUswQ/ZVA==
+  dependencies:
+    sitemap "^8.0.2"
+    stream-replace-string "^2.0.0"
+    zod "^3.25.76"
+
 "@astrojs/tailwind@^6.0.0":
   version "6.0.2"
   resolved "https://registry.yarnpkg.com/@astrojs/tailwind/-/tailwind-6.0.2.tgz#ecba42afff5e52656229bffe3547a7667a1dd64f"
@@ -2441,6 +2450,11 @@
   dependencies:
     undici-types "~7.12.0"
 
+"@types/node@^17.0.5":
+  version "17.0.45"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-17.0.45.tgz#2c0fafd78705e7a18b7906b5201a522719dc5190"
+  integrity sha512-w+tIMs3rq2afQdsPJlODhoUEKzFP1ayaoyl1CcnwtIlsVe7K7bA1NGm4s3PraqTLlXnbIN84zuBlxBWo1u9BLw==
+
 "@types/pg-pool@2.0.7":
   version "2.0.7"
   resolved "https://registry.yarnpkg.com/@types/pg-pool/-/pg-pool-2.0.7.tgz#c17945a74472d9a3beaf8e66d5aa6fc938328734"
@@ -2484,6 +2498,13 @@
   integrity sha512-hHkbU/eoO3EG5/MZkuFSKmYqPbSVk5byPFa3e7y/8TybHiLMACgI8seVYlicwk7H5K/rI2px9xrQp/C+AUDTiQ==
   dependencies:
     csstype "^3.0.2"
+
+"@types/sax@^1.2.1":
+  version "1.2.7"
+  resolved "https://registry.yarnpkg.com/@types/sax/-/sax-1.2.7.tgz#ba5fe7df9aa9c89b6dff7688a19023dd2963091d"
+  integrity sha512-rO73L89PJxeYM3s3pPPjiPgVVcymqU490g0YO5n5By0k2Erzj6tay/4lr1CHAAU4JyOWd1rpQ8bCf6cZfHU96A==
+  dependencies:
+    "@types/node" "*"
 
 "@types/tedious@^4.0.14":
   version "4.0.14"
@@ -2821,7 +2842,7 @@ anymatch@^3.1.3, anymatch@~3.1.2:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
 
-arg@^5.0.2:
+arg@^5.0.0, arg@^5.0.2:
   version "5.0.2"
   resolved "https://registry.yarnpkg.com/arg/-/arg-5.0.2.tgz#c81433cc427c92c4dcf4865142dbca6f15acd59c"
   integrity sha512-PYjyFOLKQ9y57JvQ6QLo8dAgNqswh8M1RMJYdQduT6xbWSgK36P/Z/v+p888pM69jMMfS8Xd8F6I1kQ/I9HUGg==
@@ -6832,6 +6853,11 @@ sass-formatter@^0.7.6:
   dependencies:
     suf-log "^2.5.3"
 
+sax@^1.4.1:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/sax/-/sax-1.5.0.tgz#b5549b671069b7aa392df55ec7574cf411179eb8"
+  integrity sha512-21IYA3Q5cQf089Z6tgaUTr7lDAyzoTPx5HRtbhsME8Udispad8dC/+sziTNugOEx54ilvatQ9YCzl4KQLPcRHA==
+
 scheduler@^0.23.0:
   version "0.23.2"
   resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.23.2.tgz#414ba64a3b282892e944cf2108ecc078d115cdc3"
@@ -7011,6 +7037,16 @@ sisteransi@^1.0.5:
   resolved "https://registry.yarnpkg.com/sisteransi/-/sisteransi-1.0.5.tgz#134d681297756437cc05ca01370d3a7a571075ed"
   integrity sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==
 
+sitemap@^8.0.2:
+  version "8.0.3"
+  resolved "https://registry.yarnpkg.com/sitemap/-/sitemap-8.0.3.tgz#f85782422c527b3e149d3da9ea96ab02cab1f301"
+  integrity sha512-9Ew1tR2WYw8RGE2XLy7GjkusvYXy8Rg6y8TYuBuQMfIEdGcWoJpY2Wr5DzsEiL/TKCw56+YKTCCUHglorEYK+A==
+  dependencies:
+    "@types/node" "^17.0.5"
+    "@types/sax" "^1.2.1"
+    arg "^5.0.0"
+    sax "^1.4.1"
+
 smart-buffer@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/smart-buffer/-/smart-buffer-4.2.0.tgz#6e1d71fa4f18c05f7d0ff216dd16a481d0e8d9ae"
@@ -7076,6 +7112,11 @@ statuses@~2.0.1, statuses@~2.0.2:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/statuses/-/statuses-2.0.2.tgz#8f75eecef765b5e1cfcdc080da59409ed424e382"
   integrity sha512-DvEy55V3DB7uknRo+4iOGT5fP1slR8wQohVdknigZPMpMstaKJQWhwiYBACJE3Ul2pTnATihhBYnRhZQHGBiRw==
+
+stream-replace-string@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/stream-replace-string/-/stream-replace-string-2.0.0.tgz#e49fd584bd1c633613e010bc73b9db49cb5024ad"
+  integrity sha512-TlnjJ1C0QrmxRNrON00JvaFFlNh5TTG00APw23j74ET7gkQpTASi6/L2fuiav8pzK715HXtUeClpBTw2NPSn6w==
 
 streamx@^2.12.5, streamx@^2.15.0, streamx@^2.21.0:
   version "2.23.0"

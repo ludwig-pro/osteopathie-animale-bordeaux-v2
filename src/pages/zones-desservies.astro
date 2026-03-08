@@ -1,0 +1,70 @@
+---
+import MarketingPageLayout from '../layouts/MarketingPageLayout.astro';
+import { serviceAreas } from '../lib/constants/siteArchitecture';
+import {
+  buildBreadcrumbSchema,
+  buildPersonSchema,
+  buildProfessionalServiceSchema,
+  getCanonicalUrl,
+} from '../lib/constants/site';
+
+const canonicalPath = '/zones-desservies';
+const canonicalUrl = getCanonicalUrl(canonicalPath);
+const title = 'Zones desservies pour les consultations à domicile | Agathe Lescout';
+const description =
+  "Interventions à domicile autour de Bordeaux, Bègles et en Gironde: zones desservies, organisation des déplacements et repères pour votre consultation.";
+const schema = [
+  buildProfessionalServiceSchema({
+    canonicalUrl,
+    description,
+    areaServed: serviceAreas,
+  }),
+  buildPersonSchema(),
+  buildBreadcrumbSchema([
+    { name: 'Accueil', item: getCanonicalUrl('/') },
+    { name: 'Zones desservies', item: canonicalUrl },
+  ]),
+];
+---
+
+<MarketingPageLayout
+  title={title}
+  description={description}
+  canonicalPath={canonicalPath}
+  eyebrow="Gironde"
+  introTitle="Zones desservies autour de Bordeaux pour les consultations à domicile"
+  introDescription="Les déplacements sont organisés autour de Bordeaux et Bègles afin de proposer une prise en charge confortable pour l'animal et pratique pour le propriétaire."
+  breadcrumbs={[{ label: 'Zones desservies', href: canonicalPath }]}
+  schema={schema}
+>
+  <section class="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-stone-200">
+    <h2 class="text-2xl font-bold text-canard">Secteurs régulièrement couverts</h2>
+    <ul class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        serviceAreas.map((area) => (
+          <li class="rounded-2xl bg-stone-50 px-4 py-3 text-stone-700">{area}</li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="mt-12 grid gap-8 lg:grid-cols-2">
+    <article class="rounded-3xl bg-gold-50 p-8">
+      <h2 class="text-2xl font-bold text-canard">Comment organiser le déplacement</h2>
+      <p class="mt-4 leading-8 text-stone-700">
+        Le rendez-vous à domicile est particulièrement utile pour les animaux stressés par le transport, les chevaux,
+        les bovins ou les situations où le cadre habituel facilite l'examen et le suivi post-consultation.
+      </p>
+    </article>
+    <article class="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-stone-200">
+      <h2 class="text-2xl font-bold text-canard">Alternative en cabinet</h2>
+      <p class="mt-4 leading-8 text-stone-700">
+        Si vous préférez vous déplacer, des créneaux sont disponibles au cabinet de Bègles. Les deux modalités se
+        complètent selon le besoin.
+      </p>
+      <a href="/cabinet-begles" class="mt-6 inline-flex rounded-full bg-gold-500 px-5 py-3 text-sm font-semibold text-white">
+        Consulter les infos du cabinet
+      </a>
+    </article>
+  </section>
+</MarketingPageLayout>

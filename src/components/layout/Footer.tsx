@@ -1,10 +1,22 @@
 import React from 'react';
+import { footerNavigation } from '../../lib/constants/navigation';
 
 export default function Footer() {
   const year = new Date().getFullYear();
   return (
     <footer className="bg-gray-50">
-      <div className="max-w-7xl mx-auto pt-4 pb-4 px-4 sm:px-6 lg:pt-4 lg:px-4">
+      <div className="max-w-7xl mx-auto px-4 pb-4 pt-10 sm:px-6 lg:px-4">
+        <div className="flex flex-wrap gap-4 border-b border-gray-200 pb-6">
+          {footerNavigation.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className="text-sm font-medium text-gray-500 hover:text-gold-500"
+            >
+              {item.label}
+            </a>
+          ))}
+        </div>
         <div className="mt-12 border-t border-gray-200 pt-8 md:flex md:items-center md:justify-between lg:mt-16">
           <div className="flex space-x-6 md:order-2">
             <a
@@ -27,9 +39,7 @@ export default function Footer() {
             </a>
           </div>
           <p className="mt-8 text-base text-gray-400 md:mt-0 md:order-1">
-            &copy;{' '}
-            {`${year} Agathe Lescout, Ostéopathe Animalier. Tous droits
-            réservés.`}
+            &copy; {`${year} Agathe Lescout, Ostéopathe Animalier. Tous droits réservés.`}
             <span>
               <button
                 onClick={() => {

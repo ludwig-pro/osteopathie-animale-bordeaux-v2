@@ -1,0 +1,55 @@
+---
+import MarketingPageLayout from '../layouts/MarketingPageLayout.astro';
+import { useCases } from '../lib/constants/siteArchitecture';
+import {
+  buildBreadcrumbSchema,
+  buildPersonSchema,
+  buildProfessionalServiceSchema,
+  getCanonicalUrl,
+} from '../lib/constants/site';
+
+const canonicalPath = '/cas-d-usage';
+const canonicalUrl = getCanonicalUrl(canonicalPath);
+const title = "Cas d'usage en ostéopathie animale | Agathe Lescout";
+const description =
+  "Exemples concrets de situations où une consultation d'ostéopathie animale peut être utile pour chiens, chats, chevaux, bovins et NAC.";
+const schema = [
+  buildProfessionalServiceSchema({ canonicalUrl, description }),
+  buildPersonSchema(),
+  buildBreadcrumbSchema([
+    { name: 'Accueil', item: getCanonicalUrl('/') },
+    { name: "Cas d'usage", item: canonicalUrl },
+  ]),
+];
+---
+
+<MarketingPageLayout
+  title={title}
+  description={description}
+  canonicalPath={canonicalPath}
+  eyebrow="Cas d'usage"
+  introTitle="Situations fréquentes qui motivent une consultation"
+  introDescription="Chaque animal présente son propre contexte. Cette page illustre des situations courantes pour aider les propriétaires à se repérer avant de demander un rendez-vous."
+  breadcrumbs={[{ label: "Cas d'usage", href: canonicalPath }]}
+  schema={schema}
+>
+  <section class="grid gap-6 md:grid-cols-2">
+    {
+      useCases.map((item) => (
+        <article class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-stone-200">
+          <p class="text-sm font-semibold uppercase tracking-[0.18em] text-gold-600">{item.animals}</p>
+          <h2 class="mt-3 text-2xl font-bold text-canard">{item.title}</h2>
+          <p class="mt-4 leading-8 text-stone-700">{item.summary}</p>
+        </article>
+      ))
+    }
+  </section>
+
+  <section class="mt-12 rounded-3xl bg-gold-50 p-8">
+    <h2 class="text-2xl font-bold text-canard">Toujours en complément du vétérinaire</h2>
+    <p class="mt-4 leading-8 text-stone-700">
+      L'ostéopathie n'a pas vocation à remplacer le vétérinaire en première intention lors de signes inflammatoires,
+      fiévreux, d'abattement ou de douleur aiguë. En cas de doute, l'évaluation vétérinaire reste prioritaire.
+    </p>
+  </section>
+</MarketingPageLayout>

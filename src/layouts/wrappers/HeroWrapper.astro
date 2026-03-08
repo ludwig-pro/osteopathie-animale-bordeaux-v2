@@ -3,25 +3,23 @@ import { getImage } from 'astro:assets';
 import Hero from '../../components/landing-page/hero/Hero';
 import dogHomepage from '../../images/dog-homepage.jpg';
 
-// Responsive widths: mobile, tablet, desktop
 const widths = [768, 1024, 1920];
 
-// Generate WebP images
 const webpImages = await Promise.all(
-  widths.map(width =>
+  widths.map((width) =>
     getImage({
       src: dogHomepage,
       width,
       format: 'webp',
-      quality: 75
+      quality: 75,
     })
   )
 );
 
-// Construct srcset
-const webpSrcset = webpImages.map((img, i) => `${img.src} ${widths[i]}w`).join(', ');
+const webpSrcset = webpImages
+  .map((image, index) => `${image.src} ${widths[index]}w`)
+  .join(', ');
 
-// Use the largest image as default src
 const webpSrc = webpImages[webpImages.length - 1]?.src ?? '';
 ---
 
@@ -30,8 +28,8 @@ const webpSrc = webpImages[webpImages.length - 1]?.src ?? '';
   backgroundSources={{
     webp: {
       src: webpSrc,
-      srcset: webpSrcset
-    }
+      srcset: webpSrcset,
+    },
   }}
   backgroundAlt="Chien recevant un soin ostéopathique"
 />

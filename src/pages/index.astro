@@ -12,63 +12,73 @@ import HeroWrapper from '../layouts/wrappers/HeroWrapper.astro';
 import OsteopathieAnimaleWrapper from '../layouts/wrappers/OsteopathieAnimaleWrapper.astro';
 import PrixWrapper from '../layouts/wrappers/PrixWrapper.astro';
 import QuiSuisJeWrapper from '../layouts/wrappers/QuiSuisJeWrapper.astro';
-import { BUSINESS_CONFIG, SITE_CONFIG } from '../lib/constants/site';
+import {
+  BUSINESS_CONFIG,
+  SITE_CONFIG,
+  buildFaqSchema,
+  buildPersonSchema,
+  getCanonicalUrl,
+} from '../lib/constants/site';
+import { faqItems } from '../lib/constants/siteArchitecture';
 
 const title = SITE_CONFIG.title;
 const description = SITE_CONFIG.description;
 const siteUrl = SITE_CONFIG.url;
+const canonicalUrl = getCanonicalUrl('/');
 
-const homepageSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'LocalBusiness',
-  '@id': `${siteUrl}#local-business`,
-  name: BUSINESS_CONFIG.name,
-  description,
-  url: siteUrl,
-  image: [
-    new URL(heroImage.src, siteUrl).toString(),
-    new URL(agathePortrait.src, siteUrl).toString(),
-  ],
-  telephone: BUSINESS_CONFIG.telephone,
-  email: BUSINESS_CONFIG.email,
-  priceRange: BUSINESS_CONFIG.priceRange,
-  address: {
-    '@type': 'PostalAddress',
-    ...BUSINESS_CONFIG.address,
-  },
-  geo: {
-    '@type': 'GeoCoordinates',
-    ...BUSINESS_CONFIG.geo,
-  },
-  openingHoursSpecification: BUSINESS_CONFIG.openingHoursSpecification.map(
-    (hours) => ({
-      '@type': 'OpeningHoursSpecification',
-      ...hours,
-    })
-  ),
-  areaServed: BUSINESS_CONFIG.areaServed,
-  sameAs: BUSINESS_CONFIG.sameAs,
-  founder: {
-    '@type': 'Person',
-    name: BUSINESS_CONFIG.practitionerName,
-    jobTitle: BUSINESS_CONFIG.practitionerJobTitle,
-  },
-  contactPoint: {
-    '@type': 'ContactPoint',
-    contactType: 'customer support',
+const homepageSchema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    '@id': `${siteUrl}#local-business`,
+    name: BUSINESS_CONFIG.name,
+    description,
+    url: siteUrl,
+    image: [
+      new URL(heroImage.src, siteUrl).toString(),
+      new URL(agathePortrait.src, siteUrl).toString(),
+    ],
     telephone: BUSINESS_CONFIG.telephone,
     email: BUSINESS_CONFIG.email,
-    availableLanguage: ['fr'],
-    areaServed: 'FR',
+    priceRange: BUSINESS_CONFIG.priceRange,
+    address: {
+      '@type': 'PostalAddress',
+      ...BUSINESS_CONFIG.address,
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      ...BUSINESS_CONFIG.geo,
+    },
+    openingHoursSpecification: BUSINESS_CONFIG.openingHoursSpecification.map((hours) => ({
+      '@type': 'OpeningHoursSpecification',
+      ...hours,
+    })),
+    areaServed: BUSINESS_CONFIG.areaServed,
+    sameAs: BUSINESS_CONFIG.sameAs,
+    founder: {
+      '@type': 'Person',
+      name: BUSINESS_CONFIG.practitionerName,
+      jobTitle: BUSINESS_CONFIG.practitionerJobTitle,
+    },
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'customer support',
+      telephone: BUSINESS_CONFIG.telephone,
+      email: BUSINESS_CONFIG.email,
+      availableLanguage: ['fr'],
+      areaServed: 'FR',
+    },
   },
-};
+  buildPersonSchema(),
+  buildFaqSchema(faqItems.slice(0, 4)),
+];
 ---
 
 <BaseLayout
   title={title}
   description={description}
   siteUrl={siteUrl}
-  canonicalUrl={siteUrl}
+  canonicalUrl={canonicalUrl}
   schema={homepageSchema}
 >
   <div>

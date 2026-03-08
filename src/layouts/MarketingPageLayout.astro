@@ -1,0 +1,56 @@
+---
+import Breadcrumbs from '../components/common/Breadcrumbs.astro';
+import Footer from '../components/layout/Footer';
+import PageIntro from '../components/layout/PageIntro.astro';
+import SiteHeader from '../components/layout/SiteHeader';
+import { getCanonicalUrl } from '../lib/constants/site';
+import BaseLayout from './BaseLayout.astro';
+
+type BreadcrumbItem = {
+  label: string;
+  href: string;
+};
+
+interface Props {
+  title: string;
+  description: string;
+  canonicalPath: string;
+  introTitle: string;
+  introDescription: string;
+  eyebrow?: string;
+  breadcrumbs?: BreadcrumbItem[];
+  schema?: unknown;
+}
+
+const {
+  title,
+  description,
+  canonicalPath,
+  introTitle,
+  introDescription,
+  eyebrow,
+  breadcrumbs = [],
+  schema,
+} = Astro.props;
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonicalUrl={getCanonicalUrl(canonicalPath)}
+  schema={schema}
+>
+  <div class="min-h-screen bg-stone-50">
+    <SiteHeader client:load />
+    <main class="pb-16">
+      <div class="mx-auto max-w-5xl px-4 pt-8 sm:px-6 lg:px-8">
+        <Breadcrumbs items={breadcrumbs} />
+      </div>
+      <PageIntro eyebrow={eyebrow} title={introTitle} description={introDescription} />
+      <div class="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+        <slot />
+      </div>
+    </main>
+    <Footer client:visible />
+  </div>
+</BaseLayout>

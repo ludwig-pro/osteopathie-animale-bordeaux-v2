@@ -1,0 +1,48 @@
+---
+import MarketingPageLayout from '../layouts/MarketingPageLayout.astro';
+import { faqItems } from '../lib/constants/siteArchitecture';
+import {
+  buildBreadcrumbSchema,
+  buildFaqSchema,
+  buildPersonSchema,
+  buildProfessionalServiceSchema,
+  getCanonicalUrl,
+} from '../lib/constants/site';
+
+const canonicalPath = '/faq';
+const canonicalUrl = getCanonicalUrl(canonicalPath);
+const title = "FAQ ostéopathie animale à Bordeaux et Bègles | Agathe Lescout";
+const description =
+  "Questions fréquentes sur l'ostéopathie animale: indications, contre-indications, espèces prises en charge, domicile, cabinet et tarifs.";
+const schema = [
+  buildProfessionalServiceSchema({ canonicalUrl, description }),
+  buildPersonSchema(),
+  buildBreadcrumbSchema([
+    { name: 'Accueil', item: getCanonicalUrl('/') },
+    { name: 'FAQ', item: canonicalUrl },
+  ]),
+  buildFaqSchema(faqItems),
+];
+---
+
+<MarketingPageLayout
+  title={title}
+  description={description}
+  canonicalPath={canonicalPath}
+  eyebrow="FAQ"
+  introTitle="Questions fréquentes sur l'ostéopathie animale"
+  introDescription="Cette FAQ répond aux questions les plus courantes avant une première consultation à Bordeaux, Bègles ou dans les communes voisines."
+  breadcrumbs={[{ label: 'FAQ', href: canonicalPath }]}
+  schema={schema}
+>
+  <div class="space-y-4">
+    {
+      faqItems.map((item) => (
+        <details class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-stone-200">
+          <summary class="cursor-pointer text-lg font-semibold text-canard">{item.question}</summary>
+          <p class="mt-4 leading-8 text-stone-700">{item.answer}</p>
+        </details>
+      ))
+    }
+  </div>
+</MarketingPageLayout>

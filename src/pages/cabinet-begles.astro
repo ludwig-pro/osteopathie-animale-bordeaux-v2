@@ -1,0 +1,74 @@
+---
+import MarketingPageLayout from '../layouts/MarketingPageLayout.astro';
+import {
+  BUSINESS_CONFIG,
+  buildBreadcrumbSchema,
+  buildPersonSchema,
+  buildProfessionalServiceSchema,
+  getCanonicalUrl,
+} from '../lib/constants/site';
+
+const canonicalPath = '/cabinet-begles';
+const canonicalUrl = getCanonicalUrl(canonicalPath);
+const title = "Cabinet d'ostéopathie animale à Bègles | Agathe Lescout";
+const description =
+  "Adresse, accès, stationnement, horaires et déroulé d'une consultation d'ostéopathie animale au cabinet de Bègles.";
+const schema = [
+  buildProfessionalServiceSchema({ canonicalUrl, description }),
+  buildPersonSchema(),
+  buildBreadcrumbSchema([
+    { name: 'Accueil', item: getCanonicalUrl('/') },
+    { name: 'Cabinet à Bègles', item: canonicalUrl },
+  ]),
+];
+---
+
+<MarketingPageLayout
+  title={title}
+  description={description}
+  canonicalPath={canonicalPath}
+  eyebrow="Cabinet"
+  introTitle="Consultations d'ostéopathie animale au cabinet de Bègles"
+  introDescription="Le cabinet permet d'accueillir les propriétaires souhaitant un rendez-vous sur place, avec un environnement calme, un accès simple et des repères clairs pour l'arrivée."
+  breadcrumbs={[{ label: 'Cabinet à Bègles', href: canonicalPath }]}
+  schema={schema}
+>
+  <section class="grid gap-8 lg:grid-cols-[1.2fr,0.8fr]">
+    <article class="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-stone-200">
+      <h2 class="text-2xl font-bold text-canard">Adresse et accès</h2>
+      <p class="mt-4 leading-8 text-stone-700">
+        {BUSINESS_CONFIG.address.streetAddress}, {BUSINESS_CONFIG.address.postalCode}{' '}
+        {BUSINESS_CONFIG.address.addressLocality}. Le cabinet est accessible via la
+        rocade sortie 20 Cadaujac / Bègles et le tram C arrêt Stade Musard.
+      </p>
+      <p class="mt-4 leading-8 text-stone-700">
+        Un stationnement est possible place du Bicentenaire ou au parking du Stade André Moga à proximité.
+      </p>
+    </article>
+    <article class="rounded-3xl bg-gold-50 p-8">
+      <h2 class="text-2xl font-bold text-canard">Horaires</h2>
+      <p class="mt-4 leading-8 text-stone-700">
+        Consultations en cabinet le lundi et le vendredi, de 9h à 19h.
+      </p>
+      <p class="mt-4 leading-8 text-stone-700">
+        Téléphone: <a href="tel:+33665550792" class="font-semibold text-gold-700">06 65 55 07 92</a>
+      </p>
+      <p class="mt-2 leading-8 text-stone-700">
+        Email:
+        <a href="mailto:agathe.lescout.osteo@gmail.com" class="font-semibold text-gold-700">
+          {' '}agathe.lescout.osteo@gmail.com
+        </a>
+      </p>
+    </article>
+  </section>
+
+  <section class="mt-12 rounded-3xl bg-white p-8 shadow-sm ring-1 ring-stone-200">
+    <h2 class="text-2xl font-bold text-canard">Déroulé de la consultation</h2>
+    <ol class="mt-6 space-y-4 text-stone-700">
+      <li>1. Anamnèse et échange sur les antécédents, le mode de vie et le motif de consultation.</li>
+      <li>2. Examen clinique et observation de la posture, de la locomotion et du comportement.</li>
+      <li>3. Examen ostéopathique puis traitement adapté à l'animal et à son historique.</li>
+      <li>4. Conseils de suivi, repos recommandé et repères pour la reprise d'activité.</li>
+    </ol>
+  </section>
+</MarketingPageLayout>

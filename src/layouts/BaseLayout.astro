@@ -5,6 +5,8 @@ export interface Props {
   siteUrl?: string;
   canonicalUrl?: string;
   schema?: unknown;
+  ogImageUrl?: string;
+  robots?: string;
 }
 
 const {
@@ -13,6 +15,8 @@ const {
   siteUrl = 'https://www.osteopathie-animale-bordeaux.fr',
   canonicalUrl = siteUrl,
   schema,
+  ogImageUrl = new URL('/icon.png', siteUrl).toString(),
+  robots = 'index, follow',
 } = Astro.props;
 const gtmId = import.meta.env.PUBLIC_GTM_ID;
 const isGtmEnabled = Boolean(gtmId);
@@ -36,13 +40,19 @@ const posthogDelayMs = Number.parseInt(
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="robots" content={robots} />
     <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:site_name" content="Agathe Lescout" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={ogImageUrl} />
     <meta property="og:locale" content="fr_FR" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
     <meta name="theme-color" content="#c0823f" />
     <link rel="icon" type="image/png" href="/icon.png" />
     {schema && (
@@ -53,7 +63,6 @@ const posthogDelayMs = Number.parseInt(
       />
     )}
 
-    <!-- Preconnect to third-party domains for faster loading -->
     <link rel="preconnect" href="https://api.mapbox.com" />
     <link rel="preconnect" href="https://www.google.com" />
     <link rel="preconnect" href="https://calendly.com" />
@@ -78,10 +87,7 @@ const posthogDelayMs = Number.parseInt(
         w.dataLayer = w.dataLayer || [];
 
         var injectPreconnect = function (url) {
-          if (!url) {
-            return;
-          }
-
+          if (!url) return;
           var link = d.createElement('link');
           link.rel = 'preconnect';
           link.href = url;
@@ -90,23 +96,14 @@ const posthogDelayMs = Number.parseInt(
 
         var runWhenIdle = function (callback) {
           if ('requestIdleCallback' in w) {
-            w.requestIdleCallback(
-              function () {
-                callback();
-              },
-              { timeout: 2000 }
-            );
+            w.requestIdleCallback(function () { callback(); }, { timeout: 2000 });
             return;
           }
-
           w.setTimeout(callback, 0);
         };
 
         var loadGtm = function () {
-          if (!isGtmEnabled || w.__gtm_loaded__) {
-            return;
-          }
-
+          if (!isGtmEnabled || w.__gtm_loaded__) return;
           w.__gtm_loaded__ = true;
           injectPreconnect('https://www.googletagmanager.com');
           w.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
@@ -118,16 +115,9 @@ const posthogDelayMs = Number.parseInt(
         };
 
         var loadPosthog = function () {
-          if (!isPostHogEnabled || w.__posthog_initialized__) {
-            return;
-          }
+          if (!isPostHogEnabled || w.__posthog_initialized__) return;
 
-          var o;
-          var n;
-          var p;
-          var r;
-          var posthogAssetHost =
-            posthogHost.replace('.i.posthog.com', '-assets.i.posthog.com');
+          var posthogAssetHost = posthogHost.replace('.i.posthog.com', '-assets.i.posthog.com');
 
           w.__posthog_initialized__ = true;
           w.posthog = w.posthog || [];
@@ -136,14 +126,14 @@ const posthogDelayMs = Number.parseInt(
           injectPreconnect(posthogHost);
           injectPreconnect(posthogAssetHost);
 
-          o = d.createElement('script');
+          var o = d.createElement('script');
           o.type = 'text/javascript';
           o.async = true;
           o.src = posthogAssetHost + '/static/array.js';
-          n = d.getElementsByTagName('script')[0];
+          var n = d.getElementsByTagName('script')[0];
           n.parentNode.insertBefore(o, n);
 
-          p = function (target, methodName) {
+          var p = function (target, methodName) {
             var parts = methodName.split('.');
             if (parts.length === 2) {
               target[parts[0]] = target[parts[0]] || [];
@@ -152,13 +142,11 @@ const posthogDelayMs = Number.parseInt(
             }
 
             target[methodName] = function () {
-              target.push(
-                [methodName].concat(Array.prototype.slice.call(arguments, 0))
-              );
+              target.push([methodName].concat(Array.prototype.slice.call(arguments, 0)));
             };
           };
 
-          r = w.posthog;
+          var r = w.posthog;
           r.people = r.people || [];
           ['init', 'capture', 'identify', 'alias', 'people.set', 'set_config'].forEach(
             function (methodName) {
@@ -168,21 +156,14 @@ const posthogDelayMs = Number.parseInt(
 
           var ignored = { 'gtm.js': true, 'gtm.dom': true, 'gtm.load': true };
           var mirrorDataLayerItem = function (item) {
-            if (!item || typeof item !== 'object') {
-              return;
-            }
+            if (!item || typeof item !== 'object') return;
 
             var eventName = item.event;
-            if (typeof eventName !== 'string' || ignored[eventName]) {
-              return;
-            }
+            if (typeof eventName !== 'string' || ignored[eventName]) return;
 
             var props = {};
             for (var key in item) {
-              if (
-                Object.prototype.hasOwnProperty.call(item, key) &&
-                key !== 'event'
-              ) {
+              if (Object.prototype.hasOwnProperty.call(item, key) && key !== 'event') {
                 props[key] = item[key];
               }
             }
@@ -222,23 +203,16 @@ const posthogDelayMs = Number.parseInt(
         });
 
         var scheduleDeferredAnalytics = function () {
-          w.setTimeout(function () {
-            runWhenIdle(loadGtm);
-          }, GTM_LOAD_DELAY_MS);
-
-          w.setTimeout(function () {
-            runWhenIdle(loadPosthog);
-          }, POSTHOG_LOAD_DELAY_MS);
+          w.setTimeout(function () { runWhenIdle(loadGtm); }, GTM_LOAD_DELAY_MS);
+          w.setTimeout(function () { runWhenIdle(loadPosthog); }, POSTHOG_LOAD_DELAY_MS);
         };
 
         var flushBeforeHidden = function () {
-          if (d.visibilityState !== 'hidden') {
-            return;
-          }
-
+          if (d.visibilityState !== 'hidden') return;
           loadGtm();
           loadPosthog();
         };
+
         d.addEventListener('visibilitychange', flushBeforeHidden);
         w.addEventListener('pagehide', function () {
           loadGtm();
