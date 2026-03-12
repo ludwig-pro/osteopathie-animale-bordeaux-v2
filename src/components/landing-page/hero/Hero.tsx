@@ -1,14 +1,6 @@
 import { Popover, Transition } from '@headlessui/react';
 import { MenuIcon, XIcon } from '@heroicons/react/outline';
-import * as Sentry from '@sentry/astro';
-import React, {
-  Fragment,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
-import { PopupButton, useCalendlyEventListener } from 'react-calendly';
+import React, { Fragment, useCallback } from 'react';
 import {
   pushDataLayerEvent,
   type AnalyticsPayload,
@@ -49,106 +41,25 @@ export default function Hero({
   backgroundSources,
   backgroundAlt = '',
 }: HeroProps) {
-  const [isCalendlyPopupReady, setIsCalendlyPopupReady] = useState(false);
-  const calendlyLoadTimeoutRef = useRef<number | null>(null);
-  const hasCalendlyLoadedEventRef = useRef(false);
-
-  useEffect(() => {
-    setIsCalendlyPopupReady(true);
-  }, []);
-
-  const clearCalendlyLoadTimeout = useCallback(() => {
-    if (calendlyLoadTimeoutRef.current === null) {
-      return;
-    }
-
-    window.clearTimeout(calendlyLoadTimeoutRef.current);
-    calendlyLoadTimeoutRef.current = null;
-  }, []);
-
   const trackCalendlyStep = useCallback(
     (event: string, payload: AnalyticsPayload = {}) => {
       pushDataLayerEvent(event, payload);
-      Sentry.addBreadcrumb({
-        category: 'calendly',
-        message: event,
-        level: 'info',
-        data: payload,
-      });
     },
     []
   );
 
   const handleCalendlyOpenClick = useCallback(() => {
-    hasCalendlyLoadedEventRef.current = false;
-    clearCalendlyLoadTimeout();
-    trackCalendlyStep('calendly_popup_open_clicked');
-
-    calendlyLoadTimeoutRef.current = window.setTimeout(() => {
-      if (hasCalendlyLoadedEventRef.current) {
-        return;
-      }
-
-      Sentry.withScope((scope) => {
-        scope.setLevel('warning');
-        scope.setTag('feature', 'calendly');
-        scope.setTag('stage', 'popup_open');
-        scope.setContext('calendly_debug', {
-          calendlyUrl: url_calendly,
-          path: window.location.pathname,
-        });
-        Sentry.captureMessage(
-          'Calendly popup opened but no Calendly load event was received within 8s.'
-        );
-      });
-
-      trackCalendlyStep('calendly_popup_open_timeout');
-    }, 8000);
-  }, [clearCalendlyLoadTimeout, trackCalendlyStep]);
-
-  const markCalendlyLoaded = useCallback(() => {
-    hasCalendlyLoadedEventRef.current = true;
-    clearCalendlyLoadTimeout();
-  }, [clearCalendlyLoadTimeout]);
-
-  useCalendlyEventListener({
-    onProfilePageViewed: () => {
-      markCalendlyLoaded();
-      trackCalendlyStep('calendly_profile_page_viewed');
-    },
-    onEventTypeViewed: () => {
-      markCalendlyLoaded();
-      trackCalendlyStep('calendly_event_type_viewed');
-    },
-    onDateAndTimeSelected: () => {
-      markCalendlyLoaded();
-      trackCalendlyStep('calendly_date_and_time_selected');
-    },
-    onEventScheduled: (event) => {
-      markCalendlyLoaded();
-      trackCalendlyStep('calendly_event_scheduled', {
-        calendlyEventUri: event.data.payload.event.uri,
-        calendlyInviteeUri: event.data.payload.invitee.uri,
-      });
-    },
-  });
-
-  useEffect(() => {
-    return () => {
-      clearCalendlyLoadTimeout();
-    };
-  }, [clearCalendlyLoadTimeout]);
+    trackCalendlyStep('calendly_external_link_clicked', {
+      destination: url_calendly,
+      source: 'hero',
+      target: '_blank',
+    });
+  }, [trackCalendlyStep]);
 
   const { webp, fallback } = backgroundSources ?? {};
   const fallbackSrc = fallback ?? webp?.src;
-  const rootElement =
-    typeof document !== 'undefined'
-      ? document.getElementById('root') || document.body
-      : null;
   const calendlyCtaClassName =
     'flex w-full items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-gold-500 bg-white hover:bg-opacity-70 sm:px-8';
-  const canUsePopupButton =
-    isCalendlyPopupReady && rootElement instanceof HTMLElement;
 
   return (
     <div className="relative h-screen w-full bg-no-repeat bg-cover bg-center">
@@ -277,33 +188,16 @@ export default function Hero({
                 </h1>
                 <div className="mt-10 max-w-sm mx-auto sm:max-w-none sm:flex sm:justify-center">
                   <div className="space-y-4 sm:space-y-0 sm:mx-auto sm:inline-grid sm:grid-cols-2 sm:gap-5">
-                    {canUsePopupButton ? (
-                      <div
-                        className="w-full"
-                        onClick={handleCalendlyOpenClick}
-                        data-testid="cta-booking-online"
-                      >
-                        <PopupButton
-                          url={url_calendly}
-                          rootElement={rootElement}
-                          text="Prendre rendez-vous en ligne"
-                          className={calendlyCtaClassName}
-                        />
-                      </div>
-                    ) : (
-                      <a
-                        href={url_calendly}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        data-testid="cta-booking-online"
-                        onClick={() =>
-                          trackCalendlyStep('calendly_fallback_link_clicked')
-                        }
-                        className={calendlyCtaClassName}
-                      >
-                        Prendre rendez-vous en ligne
-                      </a>
-                    )}
+                    <a
+                      href={url_calendly}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-testid="cta-booking-online"
+                      onClick={handleCalendlyOpenClick}
+                      className={calendlyCtaClassName}
+                    >
+                      Prendre rendez-vous en ligne
+                    </a>
                     <a
                       href="#contact"
                       data-testid="cta-booking-phone"
