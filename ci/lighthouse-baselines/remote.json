@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-02-28",
-  "source": "initial_ci_baseline",
+  "generatedAt": "2026-03-12",
+  "source": "netlify-pr-comment",
   "categories": {
-    "performance": 0.89,
-    "accessibility": 0.91,
-    "best-practices": 0.74,
-    "seo": 0.63
+    "performance": 0.74,
+    "accessibility": 0.98,
+    "best-practices": 1.00,
+    "seo": 1.00
   }
 }

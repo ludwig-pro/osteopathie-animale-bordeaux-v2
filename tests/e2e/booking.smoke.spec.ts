@@ -1,35 +1,17 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Booking smoke checks', () => {
-  test('online booking CTA is visible and initiates Calendly loading', async ({
-    page,
-  }) => {
+  test('online booking CTA links to Calendly', async ({ page }) => {
     await page.goto('/');
 
     const onlineBookingCta = page.locator('[data-testid="cta-booking-online"]');
     await expect(onlineBookingCta).toBeVisible();
 
-    const calendlyRequestPromise = page.waitForRequest(
-      (request) => request.url().includes('calendly.com'),
-      { timeout: 10000 }
-    );
+    const href = await onlineBookingCta.getAttribute('href');
+    expect(href).toContain('calendly.com');
 
-    const calendlyIframePromise = page
-      .waitForSelector('iframe[src*="calendly.com"]', { timeout: 10000 })
-      .then(() => true)
-      .catch(() => false);
-
-    const popupButton = onlineBookingCta.locator('button');
-    if ((await popupButton.count()) > 0) {
-      await popupButton.first().click();
-    } else {
-      await onlineBookingCta.click();
-    }
-
-    const iframeDetected = await calendlyIframePromise;
-    if (!iframeDetected) {
-      await calendlyRequestPromise;
-    }
+    await expect(onlineBookingCta).toHaveAttribute('target', '_blank');
+    await expect(onlineBookingCta).toHaveAttribute('rel', /noopener/);
   });
 
   test('phone booking CTA navigates to contact section', async ({ page }) => {
