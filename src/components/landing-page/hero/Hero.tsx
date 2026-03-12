@@ -8,7 +8,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { PopupButton, useCalendlyEventListener } from 'react-calendly';
+import { PopupModal, useCalendlyEventListener } from 'react-calendly';
 import {
   pushDataLayerEvent,
   type AnalyticsPayload,
@@ -50,6 +50,7 @@ export default function Hero({
   backgroundAlt = '',
 }: HeroProps) {
   const [isCalendlyPopupReady, setIsCalendlyPopupReady] = useState(false);
+  const [isCalendlyModalOpen, setIsCalendlyModalOpen] = useState(false);
   const calendlyLoadTimeoutRef = useRef<number | null>(null);
   const hasCalendlyLoadedEventRef = useRef(false);
 
@@ -80,31 +81,15 @@ export default function Hero({
   );
 
   const handleCalendlyOpenClick = useCallback(() => {
-    hasCalendlyLoadedEventRef.current = false;
-    clearCalendlyLoadTimeout();
     trackCalendlyStep('calendly_popup_open_clicked');
+    setIsCalendlyModalOpen(true);
+  }, [trackCalendlyStep]);
 
-    calendlyLoadTimeoutRef.current = window.setTimeout(() => {
-      if (hasCalendlyLoadedEventRef.current) {
-        return;
-      }
-
-      Sentry.withScope((scope) => {
-        scope.setLevel('warning');
-        scope.setTag('feature', 'calendly');
-        scope.setTag('stage', 'popup_open');
-        scope.setContext('calendly_debug', {
-          calendlyUrl: url_calendly,
-          path: window.location.pathname,
-        });
-        Sentry.captureMessage(
-          'Calendly popup opened but no Calendly load event was received within 8s.'
-        );
-      });
-
-      trackCalendlyStep('calendly_popup_open_timeout');
-    }, 8000);
-  }, [clearCalendlyLoadTimeout, trackCalendlyStep]);
+  const handleCalendlyModalClose = useCallback(() => {
+    clearCalendlyLoadTimeout();
+    hasCalendlyLoadedEventRef.current = false;
+    setIsCalendlyModalOpen(false);
+  }, [clearCalendlyLoadTimeout]);
 
   const markCalendlyLoaded = useCallback(() => {
     hasCalendlyLoadedEventRef.current = true;
@@ -134,10 +119,39 @@ export default function Hero({
   });
 
   useEffect(() => {
+    if (!isCalendlyModalOpen) {
+      return;
+    }
+
+    hasCalendlyLoadedEventRef.current = false;
+    clearCalendlyLoadTimeout();
+
+    calendlyLoadTimeoutRef.current = window.setTimeout(() => {
+      if (hasCalendlyLoadedEventRef.current) {
+        return;
+      }
+
+      Sentry.withScope((scope) => {
+        scope.setLevel('warning');
+        scope.setTag('feature', 'calendly');
+        scope.setTag('stage', 'popup_open');
+        scope.setContext('calendly_debug', {
+          calendlyUrl: url_calendly,
+          path: window.location.pathname,
+          modalOpen: true,
+        });
+        Sentry.captureMessage(
+          'Calendly popup opened but no Calendly load event was received within 8s.'
+        );
+      });
+
+      trackCalendlyStep('calendly_popup_open_timeout');
+    }, 8000);
+
     return () => {
       clearCalendlyLoadTimeout();
     };
-  }, [clearCalendlyLoadTimeout]);
+  }, [clearCalendlyLoadTimeout, isCalendlyModalOpen, trackCalendlyStep]);
 
   const { webp, fallback } = backgroundSources ?? {};
   const fallbackSrc = fallback ?? webp?.src;
@@ -145,10 +159,12 @@ export default function Hero({
     typeof document !== 'undefined'
       ? document.getElementById('root') || document.body
       : null;
+  const popupRootElement =
+    isCalendlyPopupReady && rootElement instanceof HTMLElement
+      ? rootElement
+      : null;
   const calendlyCtaClassName =
     'flex w-full items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-gold-500 bg-white hover:bg-opacity-70 sm:px-8';
-  const canUsePopupButton =
-    isCalendlyPopupReady && rootElement instanceof HTMLElement;
 
   return (
     <div className="relative h-screen w-full bg-no-repeat bg-cover bg-center">
@@ -277,19 +293,23 @@ export default function Hero({
                 </h1>
                 <div className="mt-10 max-w-sm mx-auto sm:max-w-none sm:flex sm:justify-center">
                   <div className="space-y-4 sm:space-y-0 sm:mx-auto sm:inline-grid sm:grid-cols-2 sm:gap-5">
-                    {canUsePopupButton ? (
-                      <div
-                        className="w-full"
-                        onClick={handleCalendlyOpenClick}
-                        data-testid="cta-booking-online"
-                      >
-                        <PopupButton
-                          url={url_calendly}
-                          rootElement={rootElement}
-                          text="Prendre rendez-vous en ligne"
+                    {popupRootElement ? (
+                      <>
+                        <button
+                          type="button"
                           className={calendlyCtaClassName}
+                          onClick={handleCalendlyOpenClick}
+                          data-testid="cta-booking-online"
+                        >
+                          Prendre rendez-vous en ligne
+                        </button>
+                        <PopupModal
+                          url={url_calendly}
+                          rootElement={popupRootElement}
+                          open={isCalendlyModalOpen}
+                          onModalClose={handleCalendlyModalClose}
                         />
-                      </div>
+                      </>
                     ) : (
                       <a
                         href={url_calendly}
