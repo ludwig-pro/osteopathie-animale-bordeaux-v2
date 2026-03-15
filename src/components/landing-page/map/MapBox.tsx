@@ -30,6 +30,10 @@ const MapBox = ({ lng, lat, label }: MapBoxProps) => {
     // Set the access token globally (recommended by Mapbox)
     mapboxgl.accessToken = mapboxToken;
 
+    if (!mapboxgl.supported()) {
+      return;
+    }
+
     const map = new mapboxgl.Map({
       container: mapContainerRef.current!,
       style: 'mapbox://styles/mapbox/streets-v11',
