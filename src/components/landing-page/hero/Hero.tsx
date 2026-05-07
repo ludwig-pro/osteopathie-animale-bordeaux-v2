@@ -1,6 +1,6 @@
 import { Popover, Transition } from '@headlessui/react';
 import { MenuIcon, XIcon } from '@heroicons/react/outline';
-import React, { Fragment, useCallback } from 'react';
+import { Fragment, useCallback, type ReactNode } from 'react';
 import {
   pushDataLayerEvent,
   type AnalyticsPayload,
@@ -25,7 +25,7 @@ const url_calendly =
   'https://calendly.com/osteopathe-animalier/consultation-osteopathique'; // 'https://calendly.com/osteopathe-animalier/';
 
 type HeroProps = {
-  children?: React.ReactNode;
+  children?: ReactNode;
   backgroundSources?: {
     webp?: {
       src: string;

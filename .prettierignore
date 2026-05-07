@@ -1,6 +1,9 @@
 .cache
+.agents
 .astro
+.claude
 dist
 package.json
 package-lock.json
 public
+skills-lock.json

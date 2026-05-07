@@ -6,7 +6,6 @@ export const API_CONFIG = {
   },
   mapbox: {
     token: import.meta.env['PUBLIC_MAPBOX_TOKEN'],
-    cssUrl: 'https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.css',
   },
   gtm: {
     id: import.meta.env['PUBLIC_GTM_ID'],

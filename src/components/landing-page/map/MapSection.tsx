@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useHasMounted } from '../../../lib/hooks/useHasMounted';
 
 import { Map } from '../../common/icons';
@@ -14,17 +13,6 @@ type CarteCabinetProps = {
 export default function CarteCabinet({ id }: CarteCabinetProps) {
   const hasMounted = useHasMounted();
 
-  // Lazy load Mapbox CSS only when component mounts
-  useEffect(() => {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.css';
-    document.head.appendChild(link);
-
-    return () => {
-      document.head.removeChild(link);
-    };
-  }, []);
   return (
     <div
       id={id}

@@ -17,7 +17,8 @@ const {
 const gtmId = import.meta.env.PUBLIC_GTM_ID;
 const isGtmEnabled = Boolean(gtmId);
 const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
-const posthogHost = import.meta.env.PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com';
+const posthogHost =
+  import.meta.env.PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com';
 const isPostHogEnabled = Boolean(posthogKey);
 const gtmDelayMs = Number.parseInt(
   import.meta.env.PUBLIC_ANALYTICS_GTM_DELAY_MS ?? '3000',
@@ -29,7 +30,7 @@ const posthogDelayMs = Number.parseInt(
 );
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
   <head>
     <meta charset="utf-8" />
@@ -45,13 +46,15 @@ const posthogDelayMs = Number.parseInt(
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#c0823f" />
     <link rel="icon" type="image/png" href="/icon.png" />
-    {schema && (
-      <script
-        is:inline
-        type="application/ld+json"
-        set:html={JSON.stringify(schema)}
-      />
-    )}
+    {
+      schema && (
+        <script
+          is:inline
+          type="application/ld+json"
+          set:html={JSON.stringify(schema)}
+        />
+      )
+    }
 
     <!-- Preconnect to third-party domains for faster loading -->
     <link rel="preconnect" href="https://api.mapbox.com" />
@@ -230,7 +233,10 @@ const posthogDelayMs = Number.parseInt(
 
           w.__gtm_loaded__ = true;
           injectPreconnect('https://www.googletagmanager.com');
-          w.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+          w.dataLayer.push({
+            'gtm.start': new Date().getTime(),
+            event: 'gtm.js',
+          });
 
           var gtmScript = d.createElement('script');
           gtmScript.async = true;
@@ -247,8 +253,10 @@ const posthogDelayMs = Number.parseInt(
           var n;
           var p;
           var r;
-          var posthogAssetHost =
-            posthogHost.replace('.i.posthog.com', '-assets.i.posthog.com');
+          var posthogAssetHost = posthogHost.replace(
+            '.i.posthog.com',
+            '-assets.i.posthog.com'
+          );
 
           w.__posthog_initialized__ = true;
           w.posthog = w.posthog || [];
@@ -281,11 +289,16 @@ const posthogDelayMs = Number.parseInt(
 
           r = w.posthog;
           r.people = r.people || [];
-          ['init', 'capture', 'identify', 'alias', 'people.set', 'set_config'].forEach(
-            function (methodName) {
-              p(r, methodName);
-            }
-          );
+          [
+            'init',
+            'capture',
+            'identify',
+            'alias',
+            'people.set',
+            'set_config',
+          ].forEach(function (methodName) {
+            p(r, methodName);
+          });
 
           var ignored = { 'gtm.js': true, 'gtm.dom': true, 'gtm.load': true };
           var mirrorDataLayerItem = function (item) {
@@ -375,16 +388,18 @@ const posthogDelayMs = Number.parseInt(
     </script>
   </head>
   <body>
-    {isGtmEnabled && (
-      <noscript>
-        <iframe
-          src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
-          height="0"
-          width="0"
-          style="display:none;visibility:hidden"
-        ></iframe>
-      </noscript>
-    )}
+    {
+      isGtmEnabled && (
+        <noscript>
+          <iframe
+            src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+            height="0"
+            width="0"
+            style="display:none;visibility:hidden"
+          />
+        </noscript>
+      )
+    }
     <slot />
   </body>
 </html>

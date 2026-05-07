@@ -1,9 +1,8 @@
 import { XIcon } from '@heroicons/react/outline';
-
-import React from 'react';
+import { useState } from 'react';
 
 export default function Banner() {
-  const [show, setShow] = React.useState(true);
+  const [show, setShow] = useState(true);
 
   // if(!show) return null
 

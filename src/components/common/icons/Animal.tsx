@@ -1,13 +1,11 @@
-import React from 'react';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { HTMLAttributes } from 'astro/types';
+import type { SVGProps } from 'react';
 
 type AnimalProps = {
   width?: number | string;
   height?: number | string;
   className?: string;
 } & Omit<
-  React.SVGProps<SVGSVGElement>,
+  SVGProps<SVGSVGElement>,
   'width' | 'height' | 'viewBox' | 'fill' | 'xmlns'
 >;
 
