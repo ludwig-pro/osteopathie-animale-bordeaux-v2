@@ -1,4 +1,4 @@
-import React from 'react';
+import type { ReactElement } from 'react';
 import {
   Bilan,
   BreakBone,
@@ -16,7 +16,7 @@ type QuandConsulterProps = {
 type ReasonProps = {
   title: string;
   description: string;
-  icon: () => React.ReactElement;
+  icon: () => ReactElement;
 };
 
 const reasons = [

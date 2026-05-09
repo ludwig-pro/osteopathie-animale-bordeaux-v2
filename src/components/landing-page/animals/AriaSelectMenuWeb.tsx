@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Item } from '@react-stately/collections';
 import { mergeProps } from '@react-aria/utils';
 import { useFocus } from '@react-aria/interactions';
@@ -7,7 +7,7 @@ import { useTreeState } from '@react-stately/tree';
 import { useMenu, useMenuItem } from '@react-aria/menu';
 
 type MenuProps = {
-  children: React.ReactNode;
+  children: ReactNode;
   onAction?: (key: any) => void;
   'aria-label'?: string;
 };
@@ -24,7 +24,7 @@ function Menu(props: MenuProps) {
   let state = useTreeState(treeStateProps);
 
   // Get props for the menu element
-  let ref = React.useRef<HTMLUListElement>(null);
+  let ref = useRef<HTMLUListElement>(null);
   // useMenu expects specific props interface, but we only need aria-label
   let { menuProps } = useMenu(
     { 'aria-label': props['aria-label'] } as any,
@@ -54,7 +54,7 @@ type MenuItemProps = {
 
 function MenuItem({ item, state, onAction }: MenuItemProps) {
   // Get props for the menu item element
-  let ref = React.useRef<HTMLLIElement>(null);
+  let ref = useRef<HTMLLIElement>(null);
   let isDisabled = state.disabledKeys.has(item.key);
 
   // useMenuItem expects a more complex props interface than what we provide
@@ -71,7 +71,7 @@ function MenuItem({ item, state, onAction }: MenuItemProps) {
 
   // Handle focus events so we can apply highlighted
   // style to the focused menu item
-  let [isFocused, setFocused] = React.useState(false);
+  let [isFocused, setFocused] = useState(false);
   let { focusProps } = useFocus({ onFocusChange: setFocused });
 
   const selectedStyle = 'border-gold-500 border-b-2 text-gold-600';

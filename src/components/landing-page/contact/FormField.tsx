@@ -27,7 +27,7 @@ export default function FormField({
         <textarea
           id={name}
           name={name}
-          rows={rows || 4}
+          rows={rows ?? 4}
           className={baseClassName}
           placeholder={placeholder}
           required={required}

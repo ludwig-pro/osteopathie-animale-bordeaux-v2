@@ -2,6 +2,9 @@
   command = "yarn build"
   publish = "dist"
 
+[build.environment]
+  NODE_VERSION = "22.13.0"
+
 [[headers]]
   for = "/_astro/*"
   [headers.values]
