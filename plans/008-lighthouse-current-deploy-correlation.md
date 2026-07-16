@@ -12,15 +12,15 @@
 > before execution; do not stage or commit plans yourself.
 >
 > **Drift check (run second)**:
-> `git diff --stat 9aece8f..HEAD -- .github/workflows/ci-quality.yml scripts/parse-netlify-lighthouse-comment.js scripts/parse-netlify-lighthouse-comment.test.js`
+> `git diff --stat 29b43ce..HEAD -- .github/workflows/ci-quality.yml scripts/parse-netlify-lighthouse-comment.js scripts/parse-netlify-lighthouse-comment.test.js`
 > `git diff --stat HEAD -- .github/workflows/ci-quality.yml scripts/parse-netlify-lighthouse-comment.js scripts/parse-netlify-lighthouse-comment.test.js`
 > `git ls-files --others --exclude-standard -- .github/workflows/ci-quality.yml scripts/parse-netlify-lighthouse-comment.js scripts/parse-netlify-lighthouse-comment.test.js`
 > The second and third commands must print nothing; otherwise STOP and report
 > uncommitted in-scope work. If the first command reports committed drift,
 > compare the "Current state" excerpts against the live code before proceeding; on a
-> mismatch, treat it as a STOP condition. Plan 007 is expected to restructure
-> comment publication; this plan must operate in its read-only
-> `lighthouse_remote` job and preserve the isolated writer job.
+> mismatch, treat it as a STOP condition. This plan must operate in the
+> read-only `lighthouse_remote` job and preserve Plan 007's isolated writer
+> job structurally.
 
 ## Status
 
@@ -29,7 +29,7 @@
 - **Risk**: MED
 - **Depends on**: `plans/007-ci-least-privilege.md`
 - **Category**: bug
-- **Planned at**: commit `9aece8f`, 2026-07-15
+- **Planned at**: commit `29b43ce`, 2026-07-16
 
 ## Why this matters
 
@@ -50,7 +50,7 @@ equality with GitHub's current PR head SHA before scores can reach the gate.
   `context.payload.pull_request.head.sha`.
 - `parseFromBody` currently extracts four scores, an optional Deploy Preview
   URL, and an optional deploy-log URL. It does **not** parse the commit SHA.
-- The selection logic at commit `9aece8f` accepts a PR-shaped preview first but
+- The selection logic at commit `29b43ce` accepts a PR-shaped preview first but
   also stores the first parseable comment as a fallback:
 
   ```js
@@ -67,7 +67,7 @@ equality with GitHub's current PR head SHA before scores can reach the gate.
   }
   ```
 
-- Read-only GitHub API inspection on 2026-07-15 confirmed that PR #18's
+- Read-only GitHub API inspection on 2026-07-16 confirmed that PR #18's
   `netlify[bot]` comment body contains these real provider fields:
 
   ```text
@@ -91,16 +91,18 @@ equality with GitHub's current PR head SHA before scores can reach the gate.
 
 ## Commands you will need
 
-| Purpose               | Command                                                                                                                                                                                               | Expected on success                                           |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Verify provider field | `gh api repos/ludwig-pro/osteopathie-animale-bordeaux-v2/issues/18/comments --paginate > /tmp/netlify-pr18-comments.json && rg 'Latest commit \| [0-9a-fA-F]{40} \|' /tmp/netlify-pr18-comments.json` | exit 0; a live Netlify body exposes a 40-character commit SHA |
-| Install               | `yarn install --frozen-lockfile`                                                                                                                                                                      | exit 0 without changing `yarn.lock`                           |
-| Format                | `yarn prettier --write .github/workflows/ci-quality.yml scripts/parse-netlify-lighthouse-comment.js scripts/parse-netlify-lighthouse-comment.test.js`                                                 | exit 0; only in-scope code is formatted                       |
-| Parser tests          | `node --test scripts/parse-netlify-lighthouse-comment.test.js`                                                                                                                                        | all parser/matcher cases pass                                 |
-| YAML parse            | `ruby -e 'require "yaml"; YAML.safe_load(File.read(ARGV.fetch(0)), aliases: true)' .github/workflows/ci-quality.yml`                                                                                  | exit 0                                                        |
-| Lint                  | `yarn lint`                                                                                                                                                                                           | exit 0, no errors                                             |
-| Build                 | `yarn build`                                                                                                                                                                                          | exit 0; Astro check and build succeed                         |
-| Diff check            | `git diff --check`                                                                                                                                                                                    | exit 0, no whitespace errors                                  |
+| Purpose                | Command                                                                                                                                               | Expected on success                                    |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Verify provider fields | Run the exact read-only `gh api ... \| jq -e ...` check in Step 1                                                                                     | exit 0; one live Netlify body has every required field |
+| Install                | `yarn install --frozen-lockfile`                                                                                                                      | exit 0 without changing `yarn.lock`                    |
+| Format                 | `yarn prettier --write .github/workflows/ci-quality.yml scripts/parse-netlify-lighthouse-comment.js scripts/parse-netlify-lighthouse-comment.test.js` | exit 0; only in-scope code is formatted                |
+| Parser tests           | `node --test scripts/parse-netlify-lighthouse-comment.test.js`                                                                                        | all parser/matcher cases pass                          |
+| YAML parse             | `ruby -e 'require "yaml"; YAML.safe_load(File.read(ARGV.fetch(0)), aliases: true)' .github/workflows/ci-quality.yml`                                  | exit 0                                                 |
+| Preserve Plan 007 job  | Run the exact Ruby comparison in Step 6                                                                                                               | exit 0; `lighthouse_comment` is unchanged              |
+| Lint                   | `yarn lint`                                                                                                                                           | exit 0, no errors                                      |
+| Build                  | `yarn build`                                                                                                                                          | exit 0; Astro check and build succeed                  |
+| Generated drift        | `git diff --quiet HEAD -- .astro`                                                                                                                     | exit 0 after the allowed timestamp restore             |
+| Diff check             | `git diff --check`                                                                                                                                    | exit 0, no whitespace errors                           |
 
 ## Scope
 
@@ -124,7 +126,7 @@ equality with GitHub's current PR head SHA before scores can reach the gate.
 
 ## Git workflow
 
-- Branch: `codex/008-lighthouse-current-deploy-correlation`
+- Branch: `improve`
 - Make one logical commit with the short imperative message
   `ci: correlate Lighthouse with current deploy`.
 - Do NOT push or open a PR unless the operator instructed it.
@@ -133,17 +135,25 @@ equality with GitHub's current PR head SHA before scores can reach the gate.
 
 ### Step 1: Reconfirm the live provider contract
 
-Before editing, run the provider-field command from the table. Inspect only the
-Netlify bot body and confirm it still contains a `Latest commit` row with a
-full 40-character hexadecimal SHA. Also confirm the same body contains the
-four scores and a Deploy Preview URL.
+Before editing, run the provider-field command below. It combines all paginated
+comment pages, selects the latest Netlify bot comment, and returns only a
+boolean; do not save or print the full body because it also contains an
+irrelevant QR-code URL.
 
 Do not treat `updated_at`, the stable preview URL, the deploy-log ID, or a short
 SHA as equivalent evidence. If the exact full-SHA field is no longer present,
 STOP: the workflow cannot prove current-deploy correlation with the fields it
 actually has.
 
-**Verify**: `body="$(gh api repos/ludwig-pro/osteopathie-animale-bordeaux-v2/issues/18/comments --paginate --jq '[.[] | select(.user.login == "netlify[bot]")] | sort_by(.updated_at) | last | .body')" && for pattern in 'Latest commit \| [0-9a-fA-F]{40} \|' 'Deploy Preview \|' 'Performance.*[0-9]+' 'Accessibility.*[0-9]+' 'Best Practices.*[0-9]+' 'SEO.*[0-9]+'; do printf '%s\n' "$body" | rg -q "$pattern" || exit 1; done` → exit 0; every required field exists in the same live Netlify comment body.
+**Verify**:
+
+```sh
+gh api repos/ludwig-pro/osteopathie-animale-bordeaux-v2/issues/18/comments --paginate --slurp |
+  jq -e 'map(.[]) | [.[] | select((((.user.login // "") | ascii_downcase) == "netlify[bot]") or (((.user.login // "") | ascii_downcase) == "netlify"))] | sort_by(.updated_at) | last | .body as $body | [($body | test("Latest commit \\| [0-9a-fA-F]{40} \\|")), ($body | test("Deploy Preview \\|")), ($body | test("Performance.*[0-9]+")), ($body | test("Accessibility.*[0-9]+")), ($body | test("Best Practices.*[0-9]+")), ($body | test("SEO.*[0-9]+"))] | all' >/dev/null
+```
+
+The command exits 0 only when every required field exists in the same live
+Netlify comment body.
 
 ### Step 2: Extract provider parsing into a tested pure module
 
@@ -159,20 +169,24 @@ named exports:
   100; this preserves `1` as 1%, not 100%. Return
   `{ performance, accessibility, bestPractices, seo, previewUrl,
 deployLogUrl, commitSha }`, leaving `deployLogUrl` as an empty string if its
-  real row is absent. Normalize `commitSha` to lowercase. Do not extract or
-  return any QR-code URL or provider token.
+  real HTTPS row is absent. Normalize `commitSha` to lowercase. Do not extract
+  or return any QR-code URL or provider token.
 
   Extract the complete trimmed token between each score label's colon and its
   Markdown/HTML line ending, then validate it with
   `^(?:0|[1-9][0-9]?|100)$` before conversion. Do not use an unanchored
   `(\d+)` capture that can accept the prefix of `95.5` or `101`.
 
-- `matchesPullRequestHead(candidate, issueNumber, headSha)`: return `true` only
-  when `headSha` is a full 40-character SHA exactly equal to
-  `candidate.commitSha` (case-insensitive normalization is allowed) **and**
-  `new URL(candidate.previewUrl).hostname` begins exactly with
-  `deploy-preview-${issueNumber}--` and ends with `.netlify.app`. Catch invalid
-  URLs and return `false`.
+- `matchesPullRequestHead(candidate, issueNumber, headSha)`: return `false`
+  without throwing when the candidate is absent/malformed, the issue number is
+  not a positive integer, or `headSha` is not a full 40-character SHA. Return
+  `true` only when the normalized SHA exactly equals `candidate.commitSha`
+  **and** a parsed preview URL has protocol `https:`, no credentials,
+  non-default port, query, or fragment, pathname `/`, and a hostname with a
+  single non-empty site label matching exactly
+  `^deploy-preview-${issueNumber}--[a-z0-9-]+\.netlify\.app$`. This must reject
+  both an empty site name and nested subdomains that merely share the prefix
+  and suffix. Catch invalid URLs and return `false`.
 
 Keep this module free of GitHub Actions globals so it can run under Node's
 built-in test runner.
@@ -186,19 +200,25 @@ Create `scripts/parse-netlify-lighthouse-comment.test.js` using `node:test` and
 labels and Markdown structure observed in Step 1; use only public example SHAs
 and placeholder host/project names.
 
-Cover at least these seven cases:
+Cover at least these ten cases:
 
 1. All real fields parse, including the 40-character SHA.
 2. The matching PR number and exact head SHA return `true`.
 3. A stale but otherwise valid commit SHA returns `false`.
 4. A matching SHA on another PR's preview hostname returns `false`.
-5. A body with no full `Latest commit` SHA returns `null` even when scores and
-   preview URL exist.
+5. Bodies with a 39-character or 41-character `Latest commit` token return
+   `null` even when scores and preview URL exist.
 6. Integer boundary scores 0 and 100 are accepted and normalized to 0 and 1.
 7. Each of `-1`, `95.5`, `+95`, and `101` makes parsing return `null`; no
    invalid token may be truncated to a valid prefix.
+8. A null/malformed candidate or invalid head SHA returns `false` without
+   throwing.
+9. A decorated preview URL (credentials, non-default port, query, fragment, or
+   non-root path) returns `false` even with the matching SHA.
+10. An empty site label or nested hostname such as
+    `deploy-preview-18--site.netlify.app.evil.netlify.app` returns `false`.
 
-**Verify**: `node --test scripts/parse-netlify-lighthouse-comment.test.js` → at least seven tests pass, including stale-SHA, missing-SHA, score-boundary, and invalid-score rejection.
+**Verify**: `node --test scripts/parse-netlify-lighthouse-comment.test.js` → at least ten tests pass, including stale-SHA, malformed-SHA, score-boundary, invalid-score, decorated-URL, and nested-host rejection.
 
 ### Step 4: Require exact head equality in the polling workflow
 
@@ -208,19 +228,23 @@ dynamically import the local ESM parser with `pathToFileURL` from `node:url` and
 `context.payload.pull_request?.head?.sha`; fail immediately if it is not a full
 40-character SHA.
 
-For each `netlify[bot]` comment, call the pure parser and matcher. Accept a
-candidate only when `matchesPullRequestHead(candidate, issue_number,
-expectedHeadSha)` returns true. Delete the current fallback candidate behavior
-entirely. A stale comment must be logged by comment ID and ignored, then the
-existing polling loop must continue until an exact match appears or the
-15-minute limit expires.
+Preserve the current exact-login filter for `netlify` and `netlify[bot]`. For
+each matching comment, call the pure parser and matcher. Accept a candidate
+only when `matchesPullRequestHead(candidate, issue_number, expectedHeadSha)`
+returns true. Delete the current fallback candidate behavior entirely. A stale
+parseable comment must be logged by comment ID and ignored, then the existing
+polling loop must continue until an exact match appears or the 15-minute limit
+expires. Keep a small `Set` of already-logged stale IDs so the same comment is
+not logged on every polling attempt.
 
 Add `commit_sha` as an action output alongside the scores and URLs. Do not
 infer it from `updated_at`, the preview URL, or the deploy-log URL.
 
 Add a preceding workflow step that runs
-`node --test scripts/parse-netlify-lighthouse-comment.test.js`, ensuring parser
-fixtures are exercised in CI before live comments are trusted.
+`node --test scripts/parse-netlify-lighthouse-comment.test.js` with
+`if: github.event_name == 'pull_request'`, ensuring parser fixtures are
+exercised before live PR comments are trusted without adding a new dependency
+to the production-push path.
 
 **Verify**: `rg -n "pull_request\?\.head\?\.sha|parseNetlifyLighthouseComment|matchesPullRequestHead|commit_sha|node --test scripts/parse-netlify" .github/workflows/ci-quality.yml && ! rg -U "if \(!parsed\) \{\n\s+parsed = candidate;" .github/workflows/ci-quality.yml` → exit 0; exact-correlation elements exist and the old fallback-assignment block is absent, while the necessary post-poll `if (!parsed)` failure check may remain.
 
@@ -229,8 +253,9 @@ fixtures are exercised in CI before live comments are trusted.
 Pass the parser's `commit_sha` output and
 `${{ github.event.pull_request.head.sha }}` into the pull-request branch of
 `Enforce remote Lighthouse regression gate`. Before invoking
-`yarn ci:lighthouse:regression`, compare them for exact equality. If either is
-missing or they differ, write a failure report to
+`yarn ci:lighthouse:regression`, require both values to match
+`^[0-9a-f]{40}$` and compare them for exact equality. If either is malformed,
+missing, or they differ, write a failure report to
 `/tmp/lighthouse-remote-report.md` using the existing marker and exit 1 without
 evaluating scores. The report may include short SHA prefixes for diagnosis but
 must not claim the stale scores belong to the current deploy.
@@ -241,10 +266,25 @@ Preserve the production-push path and all thresholds unchanged.
 
 ### Step 6: Run deterministic gates
 
-Run the parser fixtures, YAML parse, application gates, and diff checks. Do not
-push merely to test the workflow.
+Before running generators, require `git diff --quiet HEAD -- .astro` and record
+hashes for every tracked `.astro` file. Run the parser fixtures, YAML parse,
+application gates, and diff checks. After `yarn build`, inspect `.astro`; if
+the sole difference is
+`.astro/settings.json:_variables.lastUpdateCheck`, restore only that value with
+`apply_patch`. STOP on any other tracked `.astro` drift.
 
-**Verify**: `yarn prettier --write .github/workflows/ci-quality.yml scripts/parse-netlify-lighthouse-comment.js scripts/parse-netlify-lighthouse-comment.test.js && node --test scripts/parse-netlify-lighthouse-comment.test.js && ruby -e 'require "yaml"; YAML.safe_load(File.read(ARGV.fetch(0)), aliases: true)' .github/workflows/ci-quality.yml && yarn lint && yarn build && git diff --check` → every command exits 0.
+Also prove Plan 007's write-enabled job is structurally identical to the
+version at the execution base:
+
+```sh
+ruby -e 'require "yaml"; base = YAML.safe_load(IO.popen(["git", "show", "29b43ce:.github/workflows/ci-quality.yml"], &:read), aliases: true); current = YAML.safe_load(File.read(ARGV.fetch(0)), aliases: true); raise "lighthouse_comment changed" unless base.fetch("jobs").fetch("lighthouse_comment") == current.fetch("jobs").fetch("lighthouse_comment")' .github/workflows/ci-quality.yml
+```
+
+Do not push merely to test the workflow.
+
+**Verify**: targeted Prettier, parser tests, YAML parse, the Plan 007 structural
+comparison above, `yarn lint`, `yarn build`, `git diff --check`, and
+`git diff --quiet HEAD -- .astro` all exit 0.
 
 ## Test plan
 
@@ -264,12 +304,13 @@ push merely to test the workflow.
 
 ## Done criteria
 
-Machine-checkable. ALL must hold:
+ALL must hold; the live provider check and implementation review complement
+the deterministic local gates:
 
 - [ ] Live provider inspection confirms a full `Latest commit` SHA still exists
       in the same Netlify comment body as the scores and preview URL.
 - [ ] `node --test scripts/parse-netlify-lighthouse-comment.test.js` passes at
-      least seven cases.
+      least ten cases.
 - [ ] Parsed scores are exact integer percentages from 0 through 100,
       normalized to 0 through 1; malformed or out-of-range tokens are rejected.
 - [ ] The poll accepts only exact head-SHA and current-PR-host matches.
@@ -279,7 +320,11 @@ Machine-checkable. ALL must hold:
 - [ ] Plan 007's isolated write-enabled job remains isolated.
 - [ ] Lighthouse thresholds, baselines, and production collection are
       unchanged.
+- [ ] The parser-fixture workflow step runs only for `pull_request`; the
+      production-push path gains no new parser-test dependency.
 - [ ] `.github/workflows/ci-quality.yml` parses as YAML.
+- [ ] Tracked `.astro` files match `HEAD` after restoring only the known
+      `lastUpdateCheck` artifact.
 - [ ] Targeted Prettier formatting exits 0 and touches only in-scope files.
 - [ ] `yarn lint`, `yarn build`, and `git diff --check` exit 0.
 - [ ] `git status --short --untracked-files=all` lists only in-scope files and
@@ -301,6 +346,8 @@ commit` SHA in the same body as its Lighthouse scores.
   untrusted parsing into that write-enabled job.
 - The only available approach relies solely on `updated_at`, preview URL,
   deploy-log URL, comment order, or PR number.
+- A tracked `.astro` file changes beyond
+  `.astro/settings.json:_variables.lastUpdateCheck`.
 - A verification command fails twice after one reasonable correction attempt.
 
 ## Maintenance notes
