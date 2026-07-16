@@ -31,7 +31,7 @@ single sequential executor may update its own row directly.
 | [003](./003-netlify-form-deploy-verification.md)      | Prove Netlify Forms on a Deploy Preview             |       P1 |      M | 002        | BLOCKED — preview approval pending    |
 | [004](./004-directions-geolocation-fallback.md)       | Make directions work without geolocation            |       P1 |      S | -          | DONE                                  |
 | [005](./005-mapbox-on-demand.md)                      | Load Mapbox only after explicit demand              |       P1 |      M | 004        | DONE                                  |
-| [006](./006-module-recovery-reload-guard.md)          | Prevent module-recovery reload loops                |       P1 |      S | 005        | IN PROGRESS                           |
+| [006](./006-module-recovery-reload-guard.md)          | Prevent module-recovery reload loops                |       P1 |      S | 005        | DONE                                  |
 | [007](./007-ci-least-privilege.md)                    | Isolate PR-write permission from untrusted code     |       P1 |      M | -          | TODO                                  |
 | [008](./008-lighthouse-current-deploy-correlation.md) | Correlate Lighthouse scores to the current commit   |       P2 |      M | 007        | TODO                                  |
 | [009](./009-sentry-url-sanitization.md)               | Strip sensitive URL details from Sentry diagnostics |       P1 |      S | -          | TODO                                  |
