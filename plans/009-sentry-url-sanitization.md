@@ -12,7 +12,7 @@
 > before execution; do not stage or commit plans yourself.
 >
 > **Drift check (run second)**:
-> `git diff --stat 9aece8f..HEAD -- sentry.client.config.ts src/lib/observability/sanitizeTelemetryUrl.js tests/unit/sanitizeTelemetryUrl.test.js`
+> `git diff --stat d4d5db1..HEAD -- sentry.client.config.ts src/lib/observability/sanitizeTelemetryUrl.js tests/unit/sanitizeTelemetryUrl.test.js`
 > `git diff --stat HEAD -- sentry.client.config.ts src/lib/observability/sanitizeTelemetryUrl.js tests/unit/sanitizeTelemetryUrl.test.js`
 > `git ls-files --others --exclude-standard -- sentry.client.config.ts src/lib/observability/sanitizeTelemetryUrl.js tests/unit/sanitizeTelemetryUrl.test.js`
 > The second and third commands must print nothing; otherwise STOP and report
@@ -27,7 +27,7 @@
 - **Risk**: LOW
 - **Depends on**: none
 - **Category**: security
-- **Planned at**: commit `9aece8f`, 2026-07-15
+- **Planned at**: commit `d4d5db1`, 2026-07-16
 
 ## Why this matters
 
@@ -89,24 +89,26 @@ non-HTTP(S) URLs before an event leaves the browser.
   };
   ```
 
-- The Sentry SDK may also provide `event.request.url`; sanitize that field for
-  the same targeted module-script events rather than assuming
-  `sendDefaultPii: false` strips its query and fragment.
+- The Sentry SDK may also provide `event.request.url` and a separate
+  `event.request.query_string`; sanitize the URL and omit the duplicate query
+  field for the same targeted module-script events rather than assuming
+  `sendDefaultPii: false` strips them.
 - This repository has no unit-test dependency, but Node 22.13 provides the
   built-in `node:test` runner. A small ESM JavaScript helper can be imported by
   both the TypeScript Sentry config and a dependency-free `.test.js` file.
 
 ## Commands you will need
 
-| Purpose    | Command                                                                                                                               | Expected on success                     |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| Install    | `yarn install --frozen-lockfile`                                                                                                      | exit 0 without changing `yarn.lock`     |
-| Format     | `yarn prettier --write sentry.client.config.ts src/lib/observability/sanitizeTelemetryUrl.js tests/unit/sanitizeTelemetryUrl.test.js` | exit 0; only in-scope code is formatted |
-| Unit test  | `node --test tests/unit/sanitizeTelemetryUrl.test.js`                                                                                 | all sanitizer cases pass                |
-| Lint       | `yarn lint`                                                                                                                           | exit 0, no errors                       |
-| Build      | `yarn build`                                                                                                                          | exit 0; Astro check and build succeed   |
-| Full tests | `yarn test:e2e`                                                                                                                       | all Playwright tests pass               |
-| Diff check | `git diff --check`                                                                                                                    | exit 0, no whitespace errors            |
+| Purpose         | Command                                                                                                                               | Expected on success                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Install         | `yarn install --frozen-lockfile`                                                                                                      | exit 0 without changing `yarn.lock`        |
+| Format          | `yarn prettier --write sentry.client.config.ts src/lib/observability/sanitizeTelemetryUrl.js tests/unit/sanitizeTelemetryUrl.test.js` | exit 0; only in-scope code is formatted    |
+| Unit test       | `node --test tests/unit/sanitizeTelemetryUrl.test.js`                                                                                 | all sanitizer cases pass                   |
+| Lint            | `yarn lint`                                                                                                                           | exit 0, no errors                          |
+| Build           | `PUBLIC_SENTRY_DSN= yarn build`                                                                                                       | exit 0; Astro check and build succeed      |
+| Full tests      | `CI=1 PUBLIC_SENTRY_DSN= PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e`                                                            | all Playwright tests pass                  |
+| Generated drift | `git diff --quiet HEAD -- .astro`                                                                                                     | exit 0 after the allowed timestamp restore |
+| Diff check      | `git diff --check`                                                                                                                    | exit 0, no whitespace errors               |
 
 ## Scope
 
@@ -131,7 +133,7 @@ non-HTTP(S) URLs before an event leaves the browser.
 
 ## Git workflow
 
-- Branch: `codex/009-sentry-url-sanitization`
+- Branch: `improve`
 - Make one logical commit with the short imperative message
   `fix: sanitize Sentry diagnostic URLs`.
 - Do NOT push or open a PR unless the operator instructed it.
@@ -142,9 +144,15 @@ non-HTTP(S) URLs before an event leaves the browser.
 
 Create `src/lib/observability/sanitizeTelemetryUrl.js` with one named ESM
 export `sanitizeTelemetryUrl` and one named ESM export
-`sanitizeModuleDiagnosticEvent`. Add precise JSDoc types with no `any`, so
-Astro's strict TypeScript check can infer both contracts when imported from the
-Sentry config.
+`sanitizeModuleDiagnosticEvent`. Put `// @ts-check` on the first line so the
+helper body—not only its imported signature—is checked even though the
+repository enables `allowJs` without repository-wide `checkJs`. Add precise
+JSDoc types with no `any`, so Astro's strict TypeScript check can infer both
+contracts when imported from the Sentry config. Prefer a generic
+`@template {object} T` contract that returns `T`, preserving the caller's
+Sentry event type. Any JSDoc assertions must only narrow checked plain records
+and reconstitute that same `T`; do not use `@ts-ignore`, `@ts-expect-error`, or
+an unconstrained `any`.
 
 The function must:
 
@@ -172,9 +180,13 @@ while applying `sanitizeTelemetryUrl` to exactly these final outbound fields:
 - `request.url`.
 
 If a targeted `request.url` sanitizes to `null`, omit only that property from
-the copied request object; preserve method, headers, and any other request
-fields. Preserve `null` for rejected diagnostic href/resource/script values so
-raw input is never retained. Do not mutate the input object or arrays.
+the copied request object. Always omit an existing targeted
+`request.query_string`, because it duplicates the sensitive portion removed
+from `request.url`; preserve method, headers, and every other request field.
+Preserve `null` for rejected diagnostic href/resource/script values so raw
+input is never retained. Only transform fields that already exist: a targeted
+event with no request, debug context, href, resource array, or script array must
+not gain one. Do not mutate the input object or arrays.
 
 **Verify**: `node -e "import('./src/lib/observability/sanitizeTelemetryUrl.js').then(({ sanitizeTelemetryUrl }) => { if (sanitizeTelemetryUrl('https://example.test/a.js?x=1#part') !== 'https://example.test/a.js') process.exit(1) })"` → exit 0.
 
@@ -183,6 +195,9 @@ raw input is never retained. Do not mutate the input object or arrays.
 Create `tests/unit/sanitizeTelemetryUrl.test.js` using `node:test` and
 `node:assert/strict`. Use obvious example domains and generic placeholder
 parameters—never copy a real visitor URL or credential.
+
+Create at least ten top-level tests so the scalar and complete-event contracts
+remain separately visible in Node's TAP output.
 
 Cover at least these cases:
 
@@ -197,13 +212,17 @@ Also cover the complete event transformation, not just the scalar helper:
 
 - one tagged module event contains credential/query/hash-bearing values in all
   four outbound locations; assert every output is origin plus pathname, no
-  removed token survives anywhere in the serialized output, unrelated context
-  and request fields are preserved, and the input fixture was not mutated;
+  removed token survives anywhere in the serialized output, a separate
+  `request.query_string` is absent, unrelated context and request fields are
+  preserved, and the input fixture was not mutated;
 - a malformed targeted `request.url` is absent from the result while its
   method and headers remain;
 - a non-target event is returned by identity and remains deeply unchanged;
 - a targeted event with missing optional context/request collections does not
-  throw or invent fields.
+  throw or invent fields;
+- partial existing structures also remain sparse: a request with no
+  `url`/`query_string`, a debug context with no `href`, and resource/script
+  entries with no `name`/`src` must not gain those keys.
 
 **Verify**: `node --test tests/unit/sanitizeTelemetryUrl.test.js` → all cases pass with no input URL printed.
 
@@ -219,9 +238,9 @@ transformation, and do not ignore its returned copy.
 
 The transformation—not scattered call sites in the snapshot collectors—owns
 sanitization of `entry.name`, `script.src`, `window.location.href`, and
-`event.request.url`. This makes the unit fixture match the final event shape
-sent by `beforeSend` and prevents a future collector refactor from bypassing
-one field.
+`event.request.url`, plus removal of `event.request.query_string`. This makes
+the unit fixture match the final event shape sent by `beforeSend` and prevents
+a future collector refactor from bypassing one field.
 
 Do not sanitize by regular-expression replacement, because encoded or unusual
 fragments are easy to miss. Do not add the removed query/hash data to tags,
@@ -235,7 +254,16 @@ The helper is plain JavaScript but is included under `src`, so `yarn lint` and
 Astro's strict check must accept its JSDoc contract. Run the browser suite to
 ensure Sentry setup still bundles with the page.
 
-**Verify**: `yarn prettier --write sentry.client.config.ts src/lib/observability/sanitizeTelemetryUrl.js tests/unit/sanitizeTelemetryUrl.test.js && node --test tests/unit/sanitizeTelemetryUrl.test.js && yarn lint && yarn build && yarn test:e2e && git diff --check` → every command exits 0.
+Before running generators, require `git diff --quiet HEAD -- .astro` and record
+hashes for every tracked `.astro` file. After `yarn build` and again after the
+full Playwright suite, inspect `.astro`; if the sole difference is
+`.astro/settings.json:_variables.lastUpdateCheck`, restore only that value with
+`apply_patch`. STOP on any other tracked `.astro` drift.
+
+**Verify**: targeted Prettier, the unit test, `yarn lint`,
+`PUBLIC_SENTRY_DSN= yarn build`,
+`CI=1 PUBLIC_SENTRY_DSN= PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e`,
+`git diff --check`, and `git diff --quiet HEAD -- .astro` all exit 0.
 
 ## Test plan
 
@@ -245,8 +273,8 @@ ensure Sentry setup still bundles with the page.
 - Test both pure exports rather than importing `sentry.client.config.ts`, which
   would initialize the SDK as a side effect.
 - Assert all four final outbound fields together, invalid request-URL deletion,
-  preservation of other request fields, input immutability, and unchanged
-  non-target events.
+  targeted query-string deletion, preservation of other request fields, sparse
+  partial structures, input immutability, and unchanged non-target events.
 - Rely on `yarn build` for strict import/type integration and the existing
   Playwright suite for application bundling regression coverage.
 - Verification: `node --test tests/unit/sanitizeTelemetryUrl.test.js` → all
@@ -264,12 +292,19 @@ Machine-checkable. ALL must hold:
       script tag sources, and Sentry request URL are all sanitized in the final
       tagged event object.
 - [ ] Invalid targeted request URLs are omitted without dropping other request
-      fields; non-target events are returned unchanged.
+      fields, targeted `request.query_string` is omitted, and non-target events
+      are returned unchanged.
 - [ ] `sendDefaultPii`, DSN handling, sampling, event targeting, and diagnostic
       size limits remain unchanged.
+- [ ] `// @ts-check` validates the JavaScript helper body without changing
+      repository-wide TypeScript settings.
 - [ ] `node --test tests/unit/sanitizeTelemetryUrl.test.js` exits 0.
+- [ ] At least ten top-level sanitizer tests pass.
 - [ ] Targeted Prettier formatting exits 0 and touches only in-scope files.
-- [ ] `yarn lint`, `yarn build`, and `yarn test:e2e` exit 0.
+- [ ] `yarn lint`, the Sentry-disabled build, and the analytics/Sentry-isolated
+      E2E suite exit 0.
+- [ ] Tracked `.astro` files match `HEAD` after restoring only the known
+      `lastUpdateCheck` artifact.
 - [ ] `git diff --check` exits 0.
 - [ ] `git status --short --untracked-files=all` lists only in-scope files and
       the allowed `plans/README.md` status update.
@@ -289,6 +324,8 @@ Stop and report back (do not improvise) if:
   non-HTTP(S) data; report the concrete case instead of weakening sanitation.
 - Implementation or testing would require a real DSN, credential, visitor URL,
   or outbound Sentry event.
+- A tracked `.astro` file changes beyond
+  `.astro/settings.json:_variables.lastUpdateCheck`.
 - A verification command fails twice after one reasonable correction attempt.
 
 ## Maintenance notes
