@@ -2,14 +2,12 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useEffect, useRef, useState } from 'react';
 import { API_CONFIG } from '../../../lib/constants/api';
+import { CABINET_DIRECTIONS_URL } from '../../../lib/directions';
 
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
 };
-
-const directionsUrl =
-  'https://www.google.fr/maps/dir/?api=1&destination=44.805434,-0.550281&travelmode=driving';
 
 type MapBoxProps = {
   lng: number;
@@ -70,7 +68,7 @@ const MapBox = ({ lng, lat, label }: MapBoxProps) => {
               La carte est temporairement indisponible.
             </p>
             <a
-              href={directionsUrl}
+              href={CABINET_DIRECTIONS_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4 inline-flex justify-center rounded-md border border-transparent bg-gold-500 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-gold-600 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2"

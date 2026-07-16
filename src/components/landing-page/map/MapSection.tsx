@@ -1,10 +1,9 @@
+import { BUSINESS_CONFIG } from '../../../lib/constants/site';
+import { CABINET_DIRECTIONS_URL } from '../../../lib/directions';
 import { useHasMounted } from '../../../lib/hooks/useHasMounted';
 
 import { Map } from '../../common/icons';
 import MapBox from './MapBox';
-
-const LNG = -0.550281;
-const LAT = 44.805434;
 
 type CarteCabinetProps = {
   id?: string;
@@ -60,22 +59,14 @@ export default function CarteCabinet({ id }: CarteCabinetProps) {
                 <p className="mt-2 text-lg text-gray-500">
                   Accès tram C arrêt Stade Musard.
                 </p>
-                <button
-                  onClick={() => {
-                    navigator.geolocation.getCurrentPosition((position) => {
-                      const { latitude, longitude } = position.coords;
-                      const googleMapsUrl = `https://www.google.fr/maps/dir/?api=1&origin=${latitude},${longitude}&destination=44.805434,-0.550281&travelmode=driving`;
-                      window.open(
-                        googleMapsUrl,
-                        '_blank',
-                        'noopener,noreferrer'
-                      );
-                    });
-                  }}
+                <a
+                  href={CABINET_DIRECTIONS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex mt-4 justify-center py-2 px-4 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-gold-500 hover:bg-gold-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500"
                 >
                   Obtenir l'itinéraire
-                </button>
+                </a>
               </div>
             </div>
           </div>
@@ -91,7 +82,11 @@ export default function CarteCabinet({ id }: CarteCabinetProps) {
                   </div>
                 )}
                 {hasMounted && (
-                  <MapBox lng={LNG} lat={LAT} label="Cabinet de Bègles" />
+                  <MapBox
+                    lng={BUSINESS_CONFIG.geo.longitude}
+                    lat={BUSINESS_CONFIG.geo.latitude}
+                    label="Cabinet de Bègles"
+                  />
                 )}
               </div>
             </div>
