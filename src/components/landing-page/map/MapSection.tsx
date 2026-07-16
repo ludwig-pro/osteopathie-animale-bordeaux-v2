@@ -1,16 +1,17 @@
+import { lazy, Suspense, useState } from 'react';
 import { BUSINESS_CONFIG } from '../../../lib/constants/site';
 import { CABINET_DIRECTIONS_URL } from '../../../lib/directions';
-import { useHasMounted } from '../../../lib/hooks/useHasMounted';
 
 import { Map } from '../../common/icons';
-import MapBox from './MapBox';
+
+const MapBox = lazy(() => import('./MapBox'));
 
 type CarteCabinetProps = {
   id?: string;
 };
 
 export default function CarteCabinet({ id }: CarteCabinetProps) {
-  const hasMounted = useHasMounted();
+  const [isMapRequested, setIsMapRequested] = useState(false);
 
   return (
     <div
@@ -73,20 +74,39 @@ export default function CarteCabinet({ id }: CarteCabinetProps) {
           <div className="mt-12 sm:mt-16 lg:mt-0" style={{ height: '400px' }}>
             <div className="lg:relative h-full sm:p-4">
               <div className="h-full sm:rounded-xl sm:shadow-xl ring-1 ring-black ring-opacity-5 overflow-hidden">
-                {!hasMounted && (
+                {!isMapRequested && (
                   <div className="h-full w-full flex items-center justify-center bg-gray-100">
                     <div className="text-center">
-                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold-500 mb-4"></div>
-                      <p className="text-gray-500">Chargement de la carte...</p>
+                      <button
+                        type="button"
+                        data-testid="map-load-trigger"
+                        className="inline-flex justify-center rounded-md border border-transparent bg-gold-500 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-gold-600 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2"
+                        onClick={() => setIsMapRequested(true)}
+                      >
+                        Afficher la carte interactive
+                      </button>
                     </div>
                   </div>
                 )}
-                {hasMounted && (
-                  <MapBox
-                    lng={BUSINESS_CONFIG.geo.longitude}
-                    lat={BUSINESS_CONFIG.geo.latitude}
-                    label="Cabinet de Bègles"
-                  />
+                {isMapRequested && (
+                  <Suspense
+                    fallback={
+                      <div className="h-full w-full flex items-center justify-center bg-gray-100">
+                        <div className="text-center">
+                          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold-500 mb-4"></div>
+                          <p className="text-gray-500">
+                            Chargement de la carte...
+                          </p>
+                        </div>
+                      </div>
+                    }
+                  >
+                    <MapBox
+                      lng={BUSINESS_CONFIG.geo.longitude}
+                      lat={BUSINESS_CONFIG.geo.latitude}
+                      label="Cabinet de Bègles"
+                    />
+                  </Suspense>
                 )}
               </div>
             </div>

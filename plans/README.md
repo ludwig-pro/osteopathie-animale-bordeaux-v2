@@ -30,7 +30,7 @@ single sequential executor may update its own row directly.
 | [002](./002-contact-form-validation.md)               | Reject empty and uncontactable submissions          |       P1 |      M | -          | DONE                                  |
 | [003](./003-netlify-form-deploy-verification.md)      | Prove Netlify Forms on a Deploy Preview             |       P1 |      M | 002        | BLOCKED — preview approval pending    |
 | [004](./004-directions-geolocation-fallback.md)       | Make directions work without geolocation            |       P1 |      S | -          | DONE                                  |
-| [005](./005-mapbox-on-demand.md)                      | Load Mapbox only after explicit demand              |       P1 |      M | 004        | IN PROGRESS                           |
+| [005](./005-mapbox-on-demand.md)                      | Load Mapbox only after explicit demand              |       P1 |      M | 004        | DONE                                  |
 | [006](./006-module-recovery-reload-guard.md)          | Prevent module-recovery reload loops                |       P1 |      S | 005        | TODO                                  |
 | [007](./007-ci-least-privilege.md)                    | Isolate PR-write permission from untrusted code     |       P1 |      M | -          | TODO                                  |
 | [008](./008-lighthouse-current-deploy-correlation.md) | Correlate Lighthouse scores to the current commit   |       P2 |      M | 007        | TODO                                  |

@@ -1,5 +1,5 @@
 import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import mapboxStylesheetUrl from 'mapbox-gl/dist/mapbox-gl.css?url';
 import { useEffect, useRef, useState } from 'react';
 import { API_CONFIG } from '../../../lib/constants/api';
 import { CABINET_DIRECTIONS_URL } from '../../../lib/directions';
@@ -7,6 +7,54 @@ import { CABINET_DIRECTIONS_URL } from '../../../lib/directions';
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
+};
+
+let mapboxStylesheetPromise: Promise<void> | undefined;
+
+const loadMapboxStylesheet = (): Promise<void> => {
+  if (mapboxStylesheetPromise) {
+    return mapboxStylesheetPromise;
+  }
+
+  const existingLink = document.querySelector<HTMLLinkElement>(
+    'link[data-mapbox-styles="true"]'
+  );
+
+  if (existingLink?.sheet) {
+    mapboxStylesheetPromise = Promise.resolve();
+    return mapboxStylesheetPromise;
+  }
+
+  mapboxStylesheetPromise = new Promise<void>((resolve, reject) => {
+    const link = existingLink ?? document.createElement('link');
+
+    const removeListeners = () => {
+      link.removeEventListener('load', handleLoad);
+      link.removeEventListener('error', handleError);
+    };
+    const handleLoad = () => {
+      removeListeners();
+      resolve();
+    };
+    const handleError = () => {
+      removeListeners();
+      link.remove();
+      mapboxStylesheetPromise = undefined;
+      reject(new Error('Unable to load the Mapbox stylesheet'));
+    };
+
+    link.addEventListener('load', handleLoad);
+    link.addEventListener('error', handleError);
+
+    if (!existingLink) {
+      link.rel = 'stylesheet';
+      link.href = mapboxStylesheetUrl;
+      link.setAttribute('data-mapbox-styles', 'true');
+      document.head.appendChild(link);
+    }
+  });
+
+  return mapboxStylesheetPromise;
 };
 
 type MapBoxProps = {
@@ -21,42 +69,75 @@ const MapBox = ({ lng, lat, label }: MapBoxProps) => {
   const [mapError, setMapError] = useState(false);
 
   useEffect(() => {
-    const mapboxToken = API_CONFIG.mapbox.token;
+    let isCancelled = false;
+    let map: mapboxgl.Map | undefined;
+    let mapErrorHandler: (() => void) | undefined;
 
-    if (!mapboxToken) {
-      setMapError(true);
-      return;
-    }
+    const initializeMap = async () => {
+      try {
+        await loadMapboxStylesheet();
 
-    // Set the access token globally (recommended by Mapbox)
-    mapboxgl.accessToken = mapboxToken;
+        if (isCancelled || !mapContainerRef.current) {
+          return;
+        }
 
-    if (!mapboxgl.supported()) {
-      setMapError(true);
-      return;
-    }
+        const mapboxToken = API_CONFIG.mapbox.token;
 
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current!,
-      style: 'mapbox://styles/mapbox/standard',
-      center: [lng, lat],
-      zoom: 10,
-      scrollZoom: false,
-    });
-    map.addControl(new mapboxgl.NavigationControl(), 'top-left');
-    map.on('error', () => {
-      setMapError(true);
-    });
+        if (!mapboxToken) {
+          if (!isCancelled) {
+            setMapError(true);
+          }
+          return;
+        }
 
-    const popup = new mapboxgl.Popup({
-      offset: 25,
-      closeOnClick: true,
-    }).setText(label);
+        // Set the access token globally (recommended by Mapbox)
+        mapboxgl.accessToken = mapboxToken;
 
-    new mapboxgl.Marker().setLngLat([lng, lat]).setPopup(popup).addTo(map);
+        if (!mapboxgl.supported()) {
+          if (!isCancelled) {
+            setMapError(true);
+          }
+          return;
+        }
 
-    return () => map.remove();
-  }, []);
+        map = new mapboxgl.Map({
+          container: mapContainerRef.current,
+          style: 'mapbox://styles/mapbox/standard',
+          center: [lng, lat],
+          zoom: 10,
+          scrollZoom: false,
+        });
+        map.addControl(new mapboxgl.NavigationControl(), 'top-left');
+        mapErrorHandler = () => {
+          if (!isCancelled) {
+            setMapError(true);
+          }
+        };
+        map.on('error', mapErrorHandler);
+
+        const popup = new mapboxgl.Popup({
+          offset: 25,
+          closeOnClick: true,
+        }).setText(label);
+
+        new mapboxgl.Marker().setLngLat([lng, lat]).setPopup(popup).addTo(map);
+      } catch {
+        if (!isCancelled) {
+          setMapError(true);
+        }
+      }
+    };
+
+    void initializeMap();
+
+    return () => {
+      isCancelled = true;
+      if (map && mapErrorHandler) {
+        map.off('error', mapErrorHandler);
+      }
+      map?.remove();
+    };
+  }, [lat, lng, label]);
 
   return (
     <div className="relative h-full w-full">
