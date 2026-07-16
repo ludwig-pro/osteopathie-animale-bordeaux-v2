@@ -34,7 +34,7 @@ single sequential executor may update its own row directly.
 | [006](./006-module-recovery-reload-guard.md)          | Prevent module-recovery reload loops                |       P1 |      S | 005        | DONE                                  |
 | [007](./007-ci-least-privilege.md)                    | Isolate PR-write permission from untrusted code     |       P1 |      M | -          | DONE                                  |
 | [008](./008-lighthouse-current-deploy-correlation.md) | Correlate Lighthouse scores to the current commit   |       P2 |      M | 007        | DONE                                  |
-| [009](./009-sentry-url-sanitization.md)               | Strip sensitive URL details from Sentry diagnostics |       P1 |      S | -          | IN PROGRESS                           |
+| [009](./009-sentry-url-sanitization.md)               | Strip sensitive URL details from Sentry diagnostics |       P1 |      S | -          | DONE                                  |
 | [010](./010-responsive-content-images.md)             | Generate real responsive content images             |       P2 |      L | -          | TODO                                  |
 | [011](./011-remove-static-react-hydration.md)         | Stop hydrating static React sections                |       P3 |      S | 010        | TODO                                  |
 | [012](./012-repository-wide-static-checks.md)         | Enforce repository-wide static checks               |       P2 |      M | 001-011    | TODO                                  |

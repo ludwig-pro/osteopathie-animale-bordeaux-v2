@@ -1,5 +1,7 @@
 import * as Sentry from '@sentry/astro';
 
+import { sanitizeModuleDiagnosticEvent } from './src/lib/observability/sanitizeTelemetryUrl.js';
+
 const MODULE_SCRIPT_ERROR_MESSAGE = 'Importing a module script failed.';
 
 function getScriptResourceSnapshot() {
@@ -49,28 +51,26 @@ Sentry.init({
   beforeSend(event) {
     const message = event.message ?? event.exception?.values?.[0]?.value;
 
-    if (!message?.includes(MODULE_SCRIPT_ERROR_MESSAGE)) {
-      return event;
+    if (message?.includes(MODULE_SCRIPT_ERROR_MESSAGE)) {
+      event.tags = {
+        ...event.tags,
+        module_script_failure: 'true',
+      };
+
+      event.contexts = {
+        ...event.contexts,
+        module_script_debug: {
+          href: typeof window !== 'undefined' ? window.location.href : null,
+          userAgent:
+            typeof navigator !== 'undefined' ? navigator.userAgent : null,
+          online:
+            typeof navigator !== 'undefined' ? navigator.onLine : undefined,
+          scriptResources: getScriptResourceSnapshot(),
+          scriptTags: getScriptTagSnapshot(),
+        },
+      };
     }
 
-    event.tags = {
-      ...event.tags,
-      module_script_failure: 'true',
-    };
-
-    event.contexts = {
-      ...event.contexts,
-      module_script_debug: {
-        href: typeof window !== 'undefined' ? window.location.href : null,
-        userAgent:
-          typeof navigator !== 'undefined' ? navigator.userAgent : null,
-        online:
-          typeof navigator !== 'undefined' ? navigator.onLine : undefined,
-        scriptResources: getScriptResourceSnapshot(),
-        scriptTags: getScriptTagSnapshot(),
-      },
-    };
-
-    return event;
+    return sanitizeModuleDiagnosticEvent(event);
   },
 });
