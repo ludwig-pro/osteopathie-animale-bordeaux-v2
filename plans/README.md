@@ -24,21 +24,21 @@ single sequential executor may update its own row directly.
 
 ## Execution order & status
 
-| Plan                                                  | Title                                               | Priority | Effort | Depends on | Status                                |
-| ----------------------------------------------------- | --------------------------------------------------- | -------: | -----: | ---------- | ------------------------------------- |
-| [001](./001-consent-gated-analytics.md)               | Gate Google and PostHog on Axeptio choices          |       P1 |      L | -          | REJECTED — owner chose not to execute |
-| [002](./002-contact-form-validation.md)               | Reject empty and uncontactable submissions          |       P1 |      M | -          | DONE                                  |
-| [003](./003-netlify-form-deploy-verification.md)      | Prove Netlify Forms on a Deploy Preview             |       P1 |      M | 002        | BLOCKED — preview approval pending    |
-| [004](./004-directions-geolocation-fallback.md)       | Make directions work without geolocation            |       P1 |      S | -          | DONE                                  |
-| [005](./005-mapbox-on-demand.md)                      | Load Mapbox only after explicit demand              |       P1 |      M | 004        | DONE                                  |
-| [006](./006-module-recovery-reload-guard.md)          | Prevent module-recovery reload loops                |       P1 |      S | 005        | DONE                                  |
-| [007](./007-ci-least-privilege.md)                    | Isolate PR-write permission from untrusted code     |       P1 |      M | -          | DONE                                  |
-| [008](./008-lighthouse-current-deploy-correlation.md) | Correlate Lighthouse scores to the current commit   |       P2 |      M | 007        | DONE                                  |
-| [009](./009-sentry-url-sanitization.md)               | Strip sensitive URL details from Sentry diagnostics |       P1 |      S | -          | DONE                                  |
-| [010](./010-responsive-content-images.md)             | Generate real responsive content images             |       P2 |      L | -          | DONE                                  |
-| [011](./011-remove-static-react-hydration.md)         | Stop hydrating static React sections                |       P3 |      S | 010        | DONE                                  |
-| [012](./012-repository-wide-static-checks.md)         | Enforce repository-wide static checks               |       P2 |      M | 002-011    | DONE                                  |
-| [013](./013-horse-cattle-offer-spike.md)              | Decide the horse and cattle service position        |       P2 |      S | -          | BLOCKED — owner answers pending       |
+| Plan                                                  | Title                                               | Priority | Effort | Depends on | Status                                     |
+| ----------------------------------------------------- | --------------------------------------------------- | -------: | -----: | ---------- | ------------------------------------------ |
+| [001](./001-consent-gated-analytics.md)               | Gate Google and PostHog on Axeptio choices          |       P1 |      L | -          | REJECTED — owner chose not to execute      |
+| [002](./002-contact-form-validation.md)               | Reject empty and uncontactable submissions          |       P1 |      M | -          | DONE                                       |
+| [003](./003-netlify-form-deploy-verification.md)      | Prove Netlify Forms on a Deploy Preview             |       P1 |      M | 002        | BLOCKED — exact-commit preview unavailable |
+| [004](./004-directions-geolocation-fallback.md)       | Make directions work without geolocation            |       P1 |      S | -          | DONE                                       |
+| [005](./005-mapbox-on-demand.md)                      | Load Mapbox only after explicit demand              |       P1 |      M | 004        | DONE                                       |
+| [006](./006-module-recovery-reload-guard.md)          | Prevent module-recovery reload loops                |       P1 |      S | 005        | DONE                                       |
+| [007](./007-ci-least-privilege.md)                    | Isolate PR-write permission from untrusted code     |       P1 |      M | -          | DONE                                       |
+| [008](./008-lighthouse-current-deploy-correlation.md) | Correlate Lighthouse scores to the current commit   |       P2 |      M | 007        | DONE                                       |
+| [009](./009-sentry-url-sanitization.md)               | Strip sensitive URL details from Sentry diagnostics |       P1 |      S | -          | DONE                                       |
+| [010](./010-responsive-content-images.md)             | Generate real responsive content images             |       P2 |      L | -          | DONE                                       |
+| [011](./011-remove-static-react-hydration.md)         | Stop hydrating static React sections                |       P3 |      S | 010        | DONE                                       |
+| [012](./012-repository-wide-static-checks.md)         | Enforce repository-wide static checks               |       P2 |      M | 002-011    | DONE                                       |
+| [013](./013-horse-cattle-offer-spike.md)              | Decide the horse and cattle service position        |       P2 |      S | -          | BLOCKED — owner answers pending            |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (with a
 one-line reason) | `REJECTED` (with a one-line rationale).
