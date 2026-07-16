@@ -1,47 +1,29 @@
 ---
-import { getImage } from 'astro:assets';
 import AnimalSection from '../../components/landing-page/animals/AnimalSection';
+import { buildResponsiveImage } from '../../lib/responsiveImage';
 import sectionChien from '../../images/sectionChien.jpg';
 import sectionChat from '../../images/sectionChat.jpg';
 import sectionCheval from '../../images/sectionCheval.jpg';
 import sectionLapin from '../../images/sectionLapin.jpg';
 import sectionVache from '../../images/sectionVache.jpg';
 
-// Optimiser toutes les images de la section animaux
-const sectionChienImg = await getImage({
-  src: sectionChien,
-  width: 1280, // Plus grande car affichée en grand format
-  format: 'webp',
-  quality: 80,
-});
+const widths = [480, 768, 1280] as const;
+const sizes =
+  '(min-width: 1280px) 592px, (min-width: 1024px) calc(50vw - 3rem), (min-width: 768px) 452px, (min-width: 640px) calc(50vw + 8.25rem), calc(100vw + 10rem)';
 
-const sectionChatImg = await getImage({
-  src: sectionChat,
-  width: 1280,
-  format: 'webp',
-  quality: 80,
-});
-
-const sectionChevalImg = await getImage({
-  src: sectionCheval,
-  width: 1280,
-  format: 'webp',
-  quality: 80,
-});
-
-const sectionLapinImg = await getImage({
-  src: sectionLapin,
-  width: 1280,
-  format: 'webp',
-  quality: 80,
-});
-
-const sectionVacheImg = await getImage({
-  src: sectionVache,
-  width: 1280,
-  format: 'webp',
-  quality: 80,
-});
+const [
+  sectionChienImg,
+  sectionChatImg,
+  sectionChevalImg,
+  sectionLapinImg,
+  sectionVacheImg,
+] = await Promise.all([
+  buildResponsiveImage(sectionChien, widths, sizes),
+  buildResponsiveImage(sectionChat, widths, sizes),
+  buildResponsiveImage(sectionCheval, widths, sizes),
+  buildResponsiveImage(sectionLapin, widths, sizes),
+  buildResponsiveImage(sectionVache, widths, sizes),
+]);
 
 const optimizedImages = {
   sectionChien: sectionChienImg,

@@ -1,31 +1,19 @@
 ---
-import { getImage } from 'astro:assets';
 import Pricing from '../../components/landing-page/pricing/Pricing';
+import { buildResponsiveImage } from '../../lib/responsiveImage';
 import chienetchat from '../../images/chienetchat.jpeg';
 import furet from '../../images/furet.jpeg';
 import forfait from '../../images/forfaitmensuel.jpeg';
 
-// Pré-optimiser les images avec getImage()
-const chienetchatImg = await getImage({
-  src: chienetchat,
-  width: 800,
-  format: 'webp',
-  quality: 80,
-});
+const widths = [320, 640, 800] as const;
+const sizes =
+  '(min-width: 1280px) 390px, (min-width: 1024px) 436px, (min-width: 640px) calc(50vw - 2.25rem), calc(100vw - 2rem)';
 
-const furetImg = await getImage({
-  src: furet,
-  width: 800,
-  format: 'webp',
-  quality: 80,
-});
-
-const forfaitImg = await getImage({
-  src: forfait,
-  width: 800,
-  format: 'webp',
-  quality: 80,
-});
+const [chienetchatImg, furetImg, forfaitImg] = await Promise.all([
+  buildResponsiveImage(chienetchat, widths, sizes),
+  buildResponsiveImage(furet, widths, sizes),
+  buildResponsiveImage(forfait, widths, sizes),
+]);
 ---
 
 <Pricing

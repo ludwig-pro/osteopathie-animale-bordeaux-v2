@@ -1,14 +1,8 @@
-type ImageData = {
-  src: string;
-  srcSet: {
-    attribute: string;
-  };
-  attributes?: Record<string, unknown>;
-};
+import type { ResponsiveImageData } from '../../../lib/responsiveImage';
 
 type OsteopathieAnimaleProps = {
   id?: string;
-  bulldogImg: ImageData;
+  bulldogImg: ResponsiveImageData;
 };
 
 export default function OsteopathieAnimale({
@@ -54,12 +48,14 @@ export default function OsteopathieAnimale({
             <div className="pl-4 -mr-48 sm:pl-6 md:-mr-16 lg:px-0 lg:m-0 lg:relative lg:h-full">
               <img
                 src={bulldogImg.src}
-                srcSet={bulldogImg.srcSet.attribute}
+                srcSet={bulldogImg.srcSet}
+                sizes={bulldogImg.sizes}
                 alt="Bulldog anglais recevant un soin ostéopathique"
-                width={1200}
-                height={800}
+                width={bulldogImg.width}
+                height={bulldogImg.height}
                 loading="lazy"
                 decoding="async"
+                data-testid="responsive-content-image"
                 className="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:left-0 lg:h-full lg:w-auto lg:max-w-none object-cover"
               />
             </div>
