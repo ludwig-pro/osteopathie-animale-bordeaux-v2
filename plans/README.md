@@ -30,7 +30,7 @@ single sequential executor may update its own row directly.
 | [002](./002-contact-form-validation.md)               | Reject empty and uncontactable submissions          |       P1 |      M | -          | DONE                                  |
 | [003](./003-netlify-form-deploy-verification.md)      | Prove Netlify Forms on a Deploy Preview             |       P1 |      M | 002        | BLOCKED — preview approval pending    |
 | [004](./004-directions-geolocation-fallback.md)       | Make directions work without geolocation            |       P1 |      S | -          | DONE                                  |
-| [005](./005-mapbox-on-demand.md)                      | Load Mapbox only after explicit demand              |       P1 |      M | 001, 004   | TODO                                  |
+| [005](./005-mapbox-on-demand.md)                      | Load Mapbox only after explicit demand              |       P1 |      M | 004        | IN PROGRESS                           |
 | [006](./006-module-recovery-reload-guard.md)          | Prevent module-recovery reload loops                |       P1 |      S | 005        | TODO                                  |
 | [007](./007-ci-least-privilege.md)                    | Isolate PR-write permission from untrusted code     |       P1 |      M | -          | TODO                                  |
 | [008](./008-lighthouse-current-deploy-correlation.md) | Correlate Lighthouse scores to the current commit   |       P2 |      M | 007        | TODO                                  |
@@ -71,11 +71,11 @@ one-line reason) | `REJECTED` (with a one-line rationale).
 - Plan 003 follows 002 so its preview submission validates the final field
   contract. Plan 001 was rejected; the remote acceptance isolates analytics
   providers without claiming to test consent.
-- Plan 005 follows 001 and 004 because it overlaps `BaseLayout.astro` and
-  `MapSection.tsx`; demand-loading must preserve both consent-controlled
-  preconnect state and the already-corrected destination fallback.
-- Plan 006 follows 005 because both edit `BaseLayout.astro`; Plan 001 is already
-  a transitive prerequisite through Plan 005.
+- Plan 005 follows 004 because it overlaps `MapSection.tsx`; demand-loading
+  must preserve the already-corrected destination fallback. Plan 001 was
+  rejected, so tests isolate the current analytics loader instead of depending
+  on consent work.
+- Plan 006 follows 005 because both edit `BaseLayout.astro`.
 - Plan 008 follows 007 because both restructure `.github/workflows/ci-quality.yml`.
 - Plan 011 follows 010 because both edit the image wrappers and their React
   consumers.

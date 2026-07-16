@@ -18,18 +18,18 @@
 > The second and third commands must print nothing; otherwise STOP and report
 > uncommitted in-scope work. If the first command reports committed drift,
 > compare the "Current state" excerpts against the live code before proceeding; on a
-> mismatch, treat it as a STOP condition. Changes made by completed Plan 001
-> in `BaseLayout.astro` and Plan 004 in `MapSection.tsx` are expected; preserve
-> their consent and itinerary behavior and stop only if they make the loading
-> design below incompatible. `MapBox.tsx` is included as a read-only drift
-> dependency because the asset test relies on its literals; do not edit it.
+> mismatch, treat it as a STOP condition. Changes made by completed Plan 004 in
+> `MapSection.tsx` are expected; preserve its itinerary behavior and stop only
+> if it makes the loading design below incompatible. Plan 001 was rejected and
+> is not a dependency. `MapBox.tsx` is included as a read-only drift dependency
+> because the asset test relies on its literals; do not edit it.
 
 ## Status
 
 - **Priority**: P1
 - **Effort**: M
 - **Risk**: MED
-- **Depends on**: `plans/001-consent-gated-analytics.md`, `plans/004-directions-geolocation-fallback.md`
+- **Depends on**: `plans/004-directions-geolocation-fallback.md`
 - **Category**: perf
 - **Planned at**: commit `9aece8f`, 2026-07-15
 
@@ -49,23 +49,27 @@ asks to display the interactive map.
   change that directive in this plan because the new explicit map-load button
   needs client-side behavior after Plan 004 makes directions a native link.
 - `src/components/landing-page/map/MapSection.tsx` renders the address,
-  itinerary action, and map. At commit `9aece8f` it statically imports the map:
+  itinerary action, and map. At the current post-Plan-004 HEAD it statically
+  imports the map:
 
   ```tsx
-  // src/components/landing-page/map/MapSection.tsx:1-4
-  import { useHasMounted } from "../../../lib/hooks/useHasMounted";
-  import { Map } from "../../common/icons";
-  import MapBox from "./MapBox";
+  // src/components/landing-page/map/MapSection.tsx:1-6
+  import { BUSINESS_CONFIG } from '../../../lib/constants/site';
+  import { CABINET_DIRECTIONS_URL } from '../../../lib/directions';
+  import { useHasMounted } from '../../../lib/hooks/useHasMounted';
+  import { Map } from '../../common/icons';
+  import MapBox from './MapBox';
   ```
 
-  After Plan 004, the itinerary handler will differ from this snapshot. That
-  handler and its no-geolocation fallback are not part of this plan and must be
-  preserved.
+  Plan 004 replaced the permission-dependent itinerary button with the native
+  `CABINET_DIRECTIONS_URL` link and canonical `BUSINESS_CONFIG.geo`
+  coordinates. That link and coordinate behavior are not part of this plan and
+  must be preserved.
 
 - The current map branch appears immediately after hydration:
 
   ```tsx
-  // src/components/landing-page/map/MapSection.tsx:83-96
+  // src/components/landing-page/map/MapSection.tsx:74-94
   {
     !hasMounted && (
       <div className="h-full w-full flex items-center justify-center bg-gray-100">
@@ -74,7 +78,13 @@ asks to display the interactive map.
     );
   }
   {
-    hasMounted && <MapBox lng={LNG} lat={LAT} label="Cabinet de Bègles" />;
+    hasMounted && (
+      <MapBox
+        lng={BUSINESS_CONFIG.geo.longitude}
+        lat={BUSINESS_CONFIG.geo.latitude}
+        label="Cabinet de Bègles"
+      />
+    );
   }
   ```
 
@@ -93,9 +103,8 @@ asks to display the interactive map.
   <link rel="preconnect" href="https://www.google.com" />
   ```
 
-  Remove only the Mapbox preconnect. Plan 001 may already have removed the
-  Google preconnect for consent reasons; preserve whichever post-Plan-001
-  Google state exists and do not re-add or remove it here.
+  Remove only the Mapbox preconnect. Preserve the current Google preconnect and
+  all analytics code exactly as they exist; Plan 001 was rejected.
 
 - Playwright tests live in `tests/e2e`; use the locator and polling style in
   `tests/e2e/module-script-recovery.spec.ts`. The Playwright web server runs a
@@ -104,20 +113,23 @@ asks to display the interactive map.
 - The local environment may provide a public Mapbox token. The regression test
   must intercept and abort every `https://*.mapbox.com/**` request so it stays
   deterministic and never contacts the third party.
+- The local `.env` enables analytics. Focused and full Playwright runs must set
+  `CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY=` so Playwright starts a fresh server
+  with both public keys empty, then keep defensive provider routes in the test.
 - Public Mapbox configuration remains in `src/lib/constants/api`; this plan
   must not add, copy, log, or hard-code a token.
 
 ## Commands you will need
 
-| Purpose      | Command                                                                                                                             | Expected on success                          |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| Install      | `yarn install --frozen-lockfile`                                                                                                    | exit 0 without changing `yarn.lock`          |
-| Format       | `yarn prettier --write src/layouts/BaseLayout.astro src/components/landing-page/map/MapSection.tsx tests/e2e/map-on-demand.spec.ts` | exit 0; only in-scope files are formatted    |
-| Lint         | `yarn lint`                                                                                                                         | exit 0, no errors                            |
-| Build        | `yarn build`                                                                                                                        | exit 0; Astro check and static build succeed |
-| Focused test | `yarn test:e2e tests/e2e/map-on-demand.spec.ts`                                                                                     | the new Mapbox deferral test passes          |
-| Full tests   | `yarn test:e2e`                                                                                                                     | all Playwright tests pass                    |
-| Diff check   | `git diff --check`                                                                                                                  | exit 0, no whitespace errors                 |
+| Purpose      | Command                                                                                                                             | Expected on success                                                  |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Install      | `yarn install --frozen-lockfile`                                                                                                    | exit 0 without changing `yarn.lock`                                  |
+| Format       | `yarn prettier --write src/layouts/BaseLayout.astro src/components/landing-page/map/MapSection.tsx tests/e2e/map-on-demand.spec.ts` | exit 0; only in-scope files are formatted                            |
+| Lint         | `yarn lint`                                                                                                                         | exit 0, no errors                                                    |
+| Build        | `yarn build`                                                                                                                        | exit 0; Astro check and static build succeed                         |
+| Focused test | `CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e tests/e2e/map-on-demand.spec.ts`                                             | a fresh isolated server runs and the new Mapbox deferral test passes |
+| Full tests   | `CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e`                                                                             | a fresh isolated server runs and all Playwright tests pass           |
+| Diff check   | `git diff --check`                                                                                                                  | exit 0, no whitespace errors                                         |
 
 ## Scope
 
@@ -138,11 +150,11 @@ asks to display the interactive map.
 - `src/pages/index.astro` hydration directives.
 - Mapbox package versions or any dependency/lockfile change.
 - Replacing Mapbox with another map provider.
-- Analytics consent or ReCAPTCHA behavior.
+- Analytics loading behavior or ReCAPTCHA behavior.
 
 ## Git workflow
 
-- Branch: `codex/005-mapbox-on-demand`
+- Branch: `improve`
 - Make one logical commit with the short imperative message
   `perf: defer Mapbox until requested`.
 - Do NOT push or open a PR unless the operator instructed it.
@@ -155,7 +167,7 @@ In `MapSection.tsx`, import `lazy`, `Suspense`, and `useState` from React and
 replace the static `MapBox` import with this dynamic boundary:
 
 ```tsx
-const MapBox = lazy(() => import("./MapBox"));
+const MapBox = lazy(() => import('./MapBox'));
 ```
 
 Add a boolean state whose initial value is `false`. Before the user requests
@@ -184,17 +196,23 @@ delete `src/lib/hooks/useHasMounted.ts`; do not leave a now-unused hook. If an
 unexpected caller exists, treat that as drift and STOP rather than deleting a
 shared utility.
 
-**Verify**: `rg -n "lazy\(\(\) => import\('./MapBox'\)\)|map-load-trigger|Afficher la carte interactive|<Suspense" src/components/landing-page/map/MapSection.tsx && ! rg -n "useHasMounted|^import MapBox from './MapBox'" src && test ! -e src/lib/hooks/useHasMounted.ts` → exit 0; all four target patterns exist, the old import/hook is absent, and the orphan file is deleted.
+**Verify**: `for pattern in "lazy(() => import('./MapBox'))" 'map-load-trigger' 'Afficher la carte interactive' '<Suspense'; do rg -Fq "$pattern" src/components/landing-page/map/MapSection.tsx || exit 1; done && ! rg -n "useHasMounted|^import MapBox from './MapBox'" src && test ! -e src/lib/hooks/useHasMounted.ts` → exit 0; each of the four target patterns exists independently, the old import/hook is absent, and the orphan file is deleted.
 
 ### Step 2: Remove the unconditional Mapbox preconnect
 
 Delete only `<link rel="preconnect" href="https://api.mapbox.com" />` from
-`BaseLayout.astro`. Leave all Google and analytics/consent code exactly as it
-exists after earlier plans.
+`BaseLayout.astro`. Leave the Google preconnect and all analytics code exactly
+as they exist.
 
 **Verify**: `! rg -n 'rel="preconnect" href="https://api\.mapbox\.com"' src/layouts/BaseLayout.astro` → exit 0; Mapbox has no unconditional preconnect. Compare the surrounding diff to confirm no Google/analytics line changed in this plan.
 
 ### Step 3: Add a network-level regression test
+
+Before the first focused Playwright command, require
+`git diff --quiet HEAD -- .astro` and record the hashes of every tracked
+`.astro` file against `HEAD`. The Playwright web server runs `yarn build`, so
+this baseline must exist before Step 3, not only before the later repository
+gates.
 
 Create `tests/e2e/map-on-demand.spec.ts`. Before navigation, inspect
 `dist/_astro/*.js` with `node:fs/promises` and find the generated JavaScript
@@ -207,35 +225,64 @@ on content hashes.
 
 In the test:
 
-1. Route every URL matching
+1. Install `page.addInitScript` before navigation with `dataLayer: []`,
+   `__gtm_loaded__: true`, and `__posthog_initialized__: true`. This isolates
+   the current analytics loader because Plan 001 was rejected; it is not a
+   consent assertion.
+2. Route known GTM, Google Analytics/Ads, and PostHog hosts to `route.abort()`
+   without logging their URLs. Count these interceptions and require zero, so
+   the empty build-time keys remain the primary isolation mechanism.
+3. Route every URL matching
    `/^https:\/\/(?:[^/]+\.)?mapbox\.com\//` to `route.abort()`. Count
    interceptions, but never print a token-bearing URL.
-2. Record same-origin requested URL pathnames with `page.on('request', ...)`.
-3. Navigate to `/` and scroll `page.getByTestId('map-load-trigger')` into view.
-4. Wait for that button to be visible, locate its ancestor `astro-island`, and
+4. Record same-origin requested URL pathnames with `page.on('request', ...)`.
+5. Navigate to `/` and scroll `page.getByTestId('map-load-trigger')` into view.
+6. Wait for that button to be visible, locate its ancestor `astro-island`, and
    wait until the island no longer has the `ssr` attribute. Astro removes this
    attribute when `client:visible` hydration completes; visibility alone is
    insufficient because the request button is now server-rendered.
-5. Assert neither the generated Mapbox JavaScript nor CSS asset has been
-   requested and the Mapbox-host interception count is still zero.
-6. Click the button.
-7. Use `expect.poll` to assert that both identified asset pathnames are
+7. Assert neither the generated Mapbox JavaScript nor CSS asset has been
+   requested, the Mapbox-host interception count is still zero, and the
+   analytics interception count is zero.
+8. Click the button.
+9. Use `expect.poll` to assert that both identified asset pathnames are
    requested.
-8. Assert the button is no longer present and that either `.mapboxgl-map` or
-   the existing "La carte est temporairement indisponible." fallback becomes
-   visible. Aborted Mapbox API calls may intentionally select the fallback.
+10. Assert the button is no longer present and that either `.mapboxgl-map` or
+    the existing "La carte est temporairement indisponible." fallback becomes
+    visible. Aborted Mapbox API calls may intentionally select the fallback.
+    Reassert that the analytics interception count is still zero.
 
 The test must not inspect or print the token, and all Mapbox-host requests must
 be intercepted before they can reach the network.
 
-**Verify**: `yarn test:e2e tests/e2e/map-on-demand.spec.ts` → one test passes and proves both Mapbox JS and CSS are absent before the click and requested after it, with all provider-host requests aborted.
+After the focused run, inspect tracked `.astro` differences immediately. If
+only `.astro/settings.json:lastUpdateCheck` changed, restore that value with
+`apply_patch`; STOP on any other difference.
+
+**Verify**: run
+`CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e tests/e2e/map-on-demand.spec.ts`,
+inspect and restore the allowed timestamp if needed, then run
+`git diff --quiet HEAD -- .astro` → one test passes on a fresh server and proves
+both Mapbox JS and CSS are absent before the click and requested after it, with
+all Mapbox provider requests aborted, no analytics request, and no remaining
+tracked `.astro` drift.
 
 ### Step 4: Run repository gates and inspect the diff
 
 Run the standard checks after the focused test. Confirm the completed Plan 004
 itinerary test still passes as part of the full Playwright run.
 
-**Verify**: `yarn prettier --write src/layouts/BaseLayout.astro src/components/landing-page/map/MapSection.tsx tests/e2e/map-on-demand.spec.ts && yarn lint && yarn build && yarn test:e2e && git diff --check` → every command exits 0.
+Reuse the clean `.astro` baseline captured before Step 3. After each generating
+command, inspect the diff. `yarn build` may change only
+`.astro/settings.json`'s `lastUpdateCheck`; restore that one value with
+`apply_patch`. STOP if another key or any other tracked `.astro` file changes.
+
+**Verify**: run formatting, lint, and `yarn build`; inspect and restore the
+allowed timestamp. Then run
+`CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e`; inspect and restore
+again. Finish with `git diff --check && git diff --quiet HEAD -- .astro` →
+every command exits 0 on a fresh analytics-isolated Playwright server, and
+tracked `.astro` files match `HEAD` after restoring only the allowed timestamp.
 
 ## Test plan
 
@@ -248,8 +295,11 @@ itinerary test still passes as part of the full Playwright run.
 - The test must accept the existing no-token/no-WebGL fallback after the
   dynamic assets are requested; it must abort provider-host requests rather
   than turn Mapbox availability into a test dependency.
-- Verification: `yarn test:e2e tests/e2e/map-on-demand.spec.ts` → one new test
-  passes; `yarn test:e2e` → the entire suite passes.
+- Verification:
+  `CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e tests/e2e/map-on-demand.spec.ts`
+  → one new test passes;
+  `CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e` → the entire suite
+  passes.
 
 ## Done criteria
 
@@ -267,8 +317,12 @@ Machine-checkable. ALL must hold:
       `data-testid="map-load-trigger"` is clicked and are both requested after it.
 - [ ] The focused test aborts every Mapbox-host request and never prints a
       token-bearing URL.
+- [ ] Focused and full E2E runs use a fresh server with empty GTM/PostHog keys;
+      defensive analytics routes observe zero requests.
 - [ ] The unconditional `api.mapbox.com` preconnect is absent.
 - [ ] Plan 004's itinerary fallback behavior and tests still pass.
+- [ ] Tracked `.astro` artifacts match their pre-build state after restoring
+      only `.astro/settings.json`'s known `lastUpdateCheck` update.
 - [ ] `git diff --check` exits 0.
 - [ ] `git status --short --untracked-files=all` lists only in-scope files and
       the allowed `plans/README.md` status update.
@@ -278,8 +332,8 @@ Machine-checkable. ALL must hold:
 
 Stop and report back (do not improvise) if:
 
-- Plan 001 or Plan 004 is not complete, or their consent/itinerary behavior
-  cannot be preserved without redesigning this plan.
+- Plan 004 is not complete, or its itinerary behavior cannot be preserved
+  without redesigning this plan.
 - `MapSection.tsx`, `MapBox.tsx`, or the Mapbox preconnect no longer match the
   relevant current-state behavior after accounting for completed prior plans.
 - Vite emits the MapBox marker into an eagerly requested asset even though the
@@ -293,6 +347,8 @@ Stop and report back (do not improvise) if:
 - The implementation requires exposing, changing, logging, or hard-coding a
   Mapbox token.
 - A Mapbox-host request escapes the Playwright route interception.
+- A tracked `.astro` file changes beyond the known
+  `.astro/settings.json:lastUpdateCheck` build artifact.
 - The fix appears to require changing the island hydration directive, provider,
   coordinates, or itinerary behavior.
 - A verification command fails twice after one reasonable correction attempt.
