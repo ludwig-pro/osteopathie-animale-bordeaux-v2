@@ -28,7 +28,7 @@ single sequential executor may update its own row directly.
 | ----------------------------------------------------- | --------------------------------------------------- | -------: | -----: | ---------- | ------------------------------------- |
 | [001](./001-consent-gated-analytics.md)               | Gate Google and PostHog on Axeptio choices          |       P1 |      L | -          | REJECTED — owner chose not to execute |
 | [002](./002-contact-form-validation.md)               | Reject empty and uncontactable submissions          |       P1 |      M | -          | DONE                                  |
-| [003](./003-netlify-form-deploy-verification.md)      | Prove Netlify Forms on a Deploy Preview             |       P1 |      M | 002        | IN PROGRESS — repository harness next |
+| [003](./003-netlify-form-deploy-verification.md)      | Prove Netlify Forms on a Deploy Preview             |       P1 |      M | 002        | BLOCKED — preview approval pending    |
 | [004](./004-directions-geolocation-fallback.md)       | Make directions work without geolocation            |       P1 |      S | -          | TODO                                  |
 | [005](./005-mapbox-on-demand.md)                      | Load Mapbox only after explicit demand              |       P1 |      M | 001, 004   | TODO                                  |
 | [006](./006-module-recovery-reload-guard.md)          | Prevent module-recovery reload loops                |       P1 |      S | 005        | TODO                                  |
