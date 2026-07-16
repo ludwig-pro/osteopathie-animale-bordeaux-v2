@@ -70,14 +70,15 @@ Use this validation contract:
 
 ## Commands you will need
 
-| Purpose         | Command                                                                                                                                                                 | Expected on success                                               |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Install         | `yarn install --frozen-lockfile`                                                                                                                                        | exit 0 and no `yarn.lock` change                                  |
-| Format check    | `yarn prettier --check src/components/landing-page/contact/ContactForm.tsx src/components/landing-page/contact/FormField.tsx tests/e2e/contact-form-validation.spec.ts` | exit 0, all files formatted                                       |
-| Lint            | `yarn lint`                                                                                                                                                             | exit 0, no errors                                                 |
-| Build/typecheck | `yarn build`                                                                                                                                                            | exit 0; `astro check` reports no errors and Astro build completes |
-| Focused E2E     | `yarn test:e2e tests/e2e/contact-form-validation.spec.ts`                                                                                                               | exit 0, all validation cases pass                                 |
-| Full tests      | `yarn test:e2e`                                                                                                                                                         | exit 0, all existing and new E2E tests pass                       |
+| Purpose         | Command                                                                                                                                                                             | Expected on success                                                   |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Install         | `yarn install --frozen-lockfile`                                                                                                                                                    | exit 0 and no `yarn.lock` change                                      |
+| Format check    | `yarn prettier --check src/components/landing-page/contact/ContactForm.tsx src/components/landing-page/contact/FormField.tsx tests/e2e/contact-form-validation.spec.ts`             | exit 0, all files formatted                                           |
+| Lint            | `yarn lint`                                                                                                                                                                         | exit 0, no errors                                                     |
+| Build/typecheck | `yarn build`                                                                                                                                                                        | exit 0; `astro check` reports no errors and Astro build completes     |
+| E2E port check  | `node -e "const net = require('node:net'); const server = net.createServer(); server.once('error', () => process.exit(1)); server.listen(4321, '127.0.0.1', () => server.close())"` | exit 0 proves port 4321 is free                                       |
+| Focused E2E     | `CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e tests/e2e/contact-form-validation.spec.ts --retries=0 --workers=1`                                                           | exit 0, all validation cases pass on a fresh analytics-disabled build |
+| Full tests      | `CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e --retries=0 --workers=1`                                                                                                     | exit 0, all existing and new E2E tests pass without live analytics    |
 
 ## Scope
 
@@ -101,7 +102,7 @@ Use this validation contract:
 
 ## Git workflow
 
-- Branch: `codex/002-contact-form-validation`
+- Branch: `improve`
 - Make one logical commit after all gates pass: `Validate contact submissions`.
 - Keep the title imperative and under 72 characters, matching this repo's
   short commit style.
@@ -197,21 +198,29 @@ Cover these cases:
 
 Fulfill valid POSTs with status 200. Decode the request body with
 `URLSearchParams`; assert `getAll('form-name')` equals exactly `['contact']` and
-do not depend on parameter ordering. After hydration (so Plan 001's boot code
-has finished), use `Object.assign(window, { dataLayer: [],
-__googleAnalyticsConsentGranted: true, __googleAdsConsentGranted: false,
-__posthogConsentGranted: false, __gtmLifecycleState: 'ready',
-__googleConsentApplied: true, __posthogLifecycleState: 'not-requested',
-__posthogInitialized: false })` to install the complete deterministic dispatcher
-state. Do not load or fake a third-party script. Assert an invalid attempt adds no
-`contact_form_submit_started`, then use a valid attempt as a positive control
-and assert exactly one started event. Before Plan 001, the current helper
-ignores the extra state and uses the empty `dataLayer`; after Plan 001, the test
-meets its complete ready-plus-acknowledged dispatch contract. Setting only a
-consent boolean is insufficient and forbidden because it would allow the
-positive control to be silently dropped in the combined state.
+do not depend on parameter ordering.
 
-**Verify**: `yarn test:e2e tests/e2e/contact-form-validation.spec.ts` → all seven cases pass with zero live Netlify requests.
+Plan 001 was explicitly rejected. Test the current analytics contract instead:
+before navigation in every JavaScript-enabled test, install an init script that
+sets `window.__gtm_loaded__ = true`, `window.__posthog_initialized__ = true`,
+and `window.dataLayer = []`. This prevents the current deferred/interaction
+loaders from requesting providers while retaining the public
+`pushDataLayerEvent()` behavior. Also abort requests whose URL contains
+`googletagmanager`, `google-analytics`, or `posthog` in every context, including
+the JavaScript-disabled context; any such request is a test failure, not a
+response to fulfill. The mandatory E2E commands additionally build with empty
+`PUBLIC_GTM_ID` and `PUBLIC_POSTHOG_KEY`, which also removes the
+JavaScript-disabled GTM `<noscript>` path.
+
+Assert an invalid attempt adds no `contact_form_submit_started`, then use a
+valid attempt as a positive control and assert exactly one started event in the
+clean `dataLayer`.
+
+Before each E2E invocation, run the port check from Commands you will need. If
+port 4321 is occupied, STOP rather than reusing or killing the listener.
+
+**Verify**: the exact focused E2E command exits 0; all seven cases pass with
+zero live Netlify or analytics-provider requests.
 
 ### Step 4: Run repository gates and inspect scope
 
@@ -219,7 +228,7 @@ Format only the three in-scope files, then run lint, build, the focused suite,
 and the full E2E suite. Confirm the build still contains a static form named
 `contact` for Netlify detection and that the lockfile did not change.
 
-**Verify**: `yarn prettier --write src/components/landing-page/contact/ContactForm.tsx src/components/landing-page/contact/FormField.tsx tests/e2e/contact-form-validation.spec.ts && yarn lint && yarn build && rg -q 'name="contact"' dist/index.html && rg -q 'data-netlify="true"' dist/index.html && rg -q 'name="bot-field"' dist/index.html && rg -q 'name="form-name"' dist/index.html && yarn test:e2e tests/e2e/contact-form-validation.spec.ts && yarn test:e2e` → every command exits 0 and the built HTML contains all four form markers; `git status --short --untracked-files=all` lists only the scoped implementation files plus the plan index status row.
+**Verify**: `yarn prettier --write src/components/landing-page/contact/ContactForm.tsx src/components/landing-page/contact/FormField.tsx tests/e2e/contact-form-validation.spec.ts && yarn lint && yarn build && rg -q 'name="contact"' dist/index.html && rg -q 'data-netlify="true"' dist/index.html && rg -q 'name="bot-field"' dist/index.html && rg -q 'name="form-name"' dist/index.html && node -e "const net = require('node:net'); const server = net.createServer(); server.once('error', () => process.exit(1)); server.listen(4321, '127.0.0.1', () => server.close())" && CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e tests/e2e/contact-form-validation.spec.ts --retries=0 --workers=1 && node -e "const net = require('node:net'); const server = net.createServer(); server.once('error', () => process.exit(1)); server.listen(4321, '127.0.0.1', () => server.close())" && CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e --retries=0 --workers=1` → every command exits 0 and the built HTML contains all four form markers; `git status --short --untracked-files=all` lists only the scoped implementation files plus the plan index status row.
 
 ## Test plan
 
@@ -229,8 +238,8 @@ and the full E2E suite. Confirm the build still contains a static form named
 - Assert no-request behavior for all invalid paths, decoded Netlify-compatible
   bodies for both valid contact channels, accessible errors/focus, and the
   honeypot shape.
-- Verification: `yarn test:e2e tests/e2e/contact-form-validation.spec.ts` and
-  `yarn test:e2e` both exit 0.
+- Verification: the focused and full fresh-server commands both exit 0 with
+  analytics disabled and all third-party analytics routes blocked.
 
 ## Done criteria
 
