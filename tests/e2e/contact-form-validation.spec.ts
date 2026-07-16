@@ -248,6 +248,10 @@ test.describe('Contact form validation', () => {
     baseURL,
   }) => {
     expect(baseURL).toBeTruthy();
+    if (!baseURL) {
+      throw new Error('Playwright baseURL must be configured');
+    }
+
     const context = await browser.newContext({
       baseURL,
       javaScriptEnabled: false,

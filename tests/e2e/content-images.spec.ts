@@ -141,6 +141,9 @@ test.describe('Responsive content images', () => {
   }) => {
     test.setTimeout(180_000);
     expect(baseURL).toBeTruthy();
+    if (!baseURL) {
+      throw new Error('Playwright baseURL must be configured');
+    }
 
     const aggregateKeys = new Set<string>();
 

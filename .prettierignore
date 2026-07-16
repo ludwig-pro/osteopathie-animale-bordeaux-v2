@@ -2,8 +2,16 @@
 .agents
 .astro
 .claude
+.lighthouseci
+.netlify
 dist
-package.json
+node_modules
 package-lock.json
+playwright-report
 public
 skills-lock.json
+test-results
+/AGENTS.md
+/CLAUDE.md
+/RFC.md
+/plans/

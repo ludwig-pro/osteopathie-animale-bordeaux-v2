@@ -1,16 +1,17 @@
 import { expect, test, type Page, type Request } from '@playwright/test';
 
-const marker = process.env['NETLIFY_FORM_TEST_MARKER']?.trim();
-const configuredUrl = process.env['NETLIFY_FORM_TEST_URL']?.trim();
+function requireEnvironmentVariable(name: string) {
+  const value = process.env[name]?.trim();
 
-if (!marker) {
-  throw new Error('NETLIFY_FORM_TEST_MARKER must be set');
+  if (!value) {
+    throw new Error(`${name} must be set`);
+  }
+
+  return value;
 }
 
-if (!configuredUrl) {
-  throw new Error('NETLIFY_FORM_TEST_URL must be set');
-}
-
+const marker = requireEnvironmentVariable('NETLIFY_FORM_TEST_MARKER');
+const configuredUrl = requireEnvironmentVariable('NETLIFY_FORM_TEST_URL');
 const atomicUrl = new URL(configuredUrl);
 const atomicOrigin = atomicUrl.origin;
 

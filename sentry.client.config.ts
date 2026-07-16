@@ -39,7 +39,7 @@ function getScriptTagSnapshot() {
       type: script.type || null,
       async: script.async,
       defer: script.defer,
-      crossOrigin: script.crossOrigin || null,
+      crossOrigin: script.crossOrigin === '' ? null : script.crossOrigin,
     }));
 }
 
