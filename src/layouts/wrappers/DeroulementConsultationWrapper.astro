@@ -14,8 +14,4 @@ const [youngcatImg, correctionImg] = await Promise.all([
 ]);
 ---
 
-<ConsultationProcess
-  client:visible
-  youngcatImg={youngcatImg}
-  correctionImg={correctionImg}
-/>
+<ConsultationProcess youngcatImg={youngcatImg} correctionImg={correctionImg} />

@@ -36,7 +36,7 @@ single sequential executor may update its own row directly.
 | [008](./008-lighthouse-current-deploy-correlation.md) | Correlate Lighthouse scores to the current commit   |       P2 |      M | 007        | DONE                                  |
 | [009](./009-sentry-url-sanitization.md)               | Strip sensitive URL details from Sentry diagnostics |       P1 |      S | -          | DONE                                  |
 | [010](./010-responsive-content-images.md)             | Generate real responsive content images             |       P2 |      L | -          | DONE                                  |
-| [011](./011-remove-static-react-hydration.md)         | Stop hydrating static React sections                |       P3 |      S | 010        | IN PROGRESS                           |
+| [011](./011-remove-static-react-hydration.md)         | Stop hydrating static React sections                |       P3 |      S | 010        | DONE                                  |
 | [012](./012-repository-wide-static-checks.md)         | Enforce repository-wide static checks               |       P2 |      M | 001-011    | TODO                                  |
 | [013](./013-horse-cattle-offer-spike.md)              | Decide the horse and cattle service position        |       P2 |      S | -          | TODO                                  |
 
