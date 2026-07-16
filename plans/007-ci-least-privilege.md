@@ -12,7 +12,7 @@
 > before execution; do not stage or commit plans yourself.
 >
 > **Drift check (run second)**:
-> `git diff --stat 9aece8f..HEAD -- .github/workflows/ci-quality.yml`
+> `git diff --stat 65219b9..HEAD -- .github/workflows/ci-quality.yml`
 > `git diff --stat HEAD -- .github/workflows/ci-quality.yml`
 > `git ls-files --others --exclude-standard -- .github/workflows/ci-quality.yml`
 > The second and third commands must print nothing; otherwise STOP and report
@@ -27,7 +27,7 @@
 - **Risk**: MED
 - **Depends on**: none
 - **Category**: security
-- **Planned at**: commit `9aece8f`, 2026-07-15
+- **Planned at**: commit `65219b9`, 2026-07-16
 
 ## Why this matters
 
@@ -69,15 +69,16 @@ other jobs read-only.
 
 ## Commands you will need
 
-| Purpose          | Command                                                                                                              | Expected on success                     |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| Install          | `yarn install --frozen-lockfile`                                                                                     | exit 0 without changing `yarn.lock`     |
-| Format           | `yarn prettier --write .github/workflows/ci-quality.yml`                                                             | exit 0; workflow is formatted           |
-| YAML parse       | `ruby -e 'require "yaml"; YAML.safe_load(File.read(ARGV.fetch(0)), aliases: true)' .github/workflows/ci-quality.yml` | exit 0, no YAML parse error             |
-| Permission count | `test "$(rg -c 'pull-requests: write' .github/workflows/ci-quality.yml)" -eq 1`                                      | exit 0; exactly one write grant remains |
-| Lint             | `yarn lint`                                                                                                          | exit 0, no errors                       |
-| Build            | `yarn build`                                                                                                         | exit 0; Astro check and build succeed   |
-| Diff check       | `git diff --check`                                                                                                   | exit 0, no whitespace errors            |
+| Purpose          | Command                                                                                                              | Expected on success                        |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Install          | `yarn install --frozen-lockfile`                                                                                     | exit 0 without changing `yarn.lock`        |
+| Format           | `yarn prettier --write .github/workflows/ci-quality.yml`                                                             | exit 0; workflow is formatted              |
+| YAML parse       | `ruby -e 'require "yaml"; YAML.safe_load(File.read(ARGV.fetch(0)), aliases: true)' .github/workflows/ci-quality.yml` | exit 0, no YAML parse error                |
+| Job structure    | Run the exact Ruby structural check in Step 4                                                                        | exit 0; permission and writer shapes match |
+| Permission count | `test "$(rg -c 'pull-requests: write' .github/workflows/ci-quality.yml)" -eq 1`                                      | exit 0; exactly one write grant remains    |
+| Lint             | `yarn lint`                                                                                                          | exit 0, no errors                          |
+| Build            | `yarn build`                                                                                                         | exit 0; Astro check and build succeed      |
+| Diff check       | `git diff --check`                                                                                                   | exit 0, no whitespace errors               |
 
 ## Scope
 
@@ -97,7 +98,7 @@ other jobs read-only.
 
 ## Git workflow
 
-- Branch: `codex/007-ci-least-privilege`
+- Branch: `improve`
 - Make one logical commit with the short imperative message
   `ci: isolate pull request write permission`.
 - Do NOT push or open a PR unless the operator instructed it.
@@ -119,18 +120,20 @@ may write. The build and smoke jobs should continue to inherit only
 ### Step 2: Stage a stable report artifact in the read-only job
 
 In `lighthouse_remote`, after the regression-gate step and before the explicit
-failure step, add an `if: always() && github.event_name == 'pull_request'` step
-that copies `/tmp/lighthouse-remote-report.md` to the workspace-relative file
+failure step, add a step with
+`if: ${{ !cancelled() && github.event_name == 'pull_request' }}` that copies
+`/tmp/lighthouse-remote-report.md` to the workspace-relative file
 `lighthouse-comment.md`. If the source report is absent, create the same
 existing failure fallback with the marker
 `<!-- lighthouse-remote-report -->`; do not silently create an empty file.
 
 Immediately upload that single file with a dedicated
 `actions/upload-artifact@v4` step named `lighthouse-comment-body`, using
-`if: always() && github.event_name == 'pull_request'` and
+`if: ${{ !cancelled() && github.event_name == 'pull_request' }}` and
 `if-no-files-found: error`. Do not add it to the existing mixed-path debug
 artifact; leave `lighthouse-remote-artifacts` unchanged. Do not grant this job
-any write permission.
+any write permission. `!cancelled()` deliberately runs after ordinary failures
+while avoiding artifact work during workflow cancellation.
 
 **Verify**: `rg -n -C 4 "Stage Lighthouse PR report|name: lighthouse-comment-body|path: lighthouse-comment\.md|name: lighthouse-remote-artifacts" .github/workflows/ci-quality.yml` → the dedicated one-file artifact is uploaded before the explicit gate failure and the existing debug artifact remains separate.
 
@@ -141,7 +144,7 @@ Add a new top-level job named `lighthouse_comment` with all of these
 properties:
 
 - `needs: lighthouse_remote`;
-- job-level condition that requires `always()`, a `pull_request` event, and
+- job-level condition that requires `!cancelled()`, a `pull_request` event, and
   `(needs.lighthouse_remote.result == 'success' ||
 needs.lighthouse_remote.result == 'failure')`. This
   reports a failed Lighthouse gate but skips the commenter when the analysis
@@ -157,8 +160,10 @@ needs.lighthouse_remote.result == 'failure')`. This
 
 Before any API call, require the artifact body to begin with the exact report
 marker and reject a body larger than 60,000 UTF-8 bytes. Fail the comment job
-without posting if either check fails. This bounds the only untrusted input
-crossing from the read-only analysis job into the write-enabled job.
+without posting if either check fails. Measure bytes with
+`Buffer.byteLength(body, 'utf8')`, not JavaScript character count. This bounds
+the only untrusted input crossing from the read-only analysis job into the
+write-enabled job.
 
 Do not add checkout, dependency installation, or execution of repository code
 to the write-enabled job. Its only inputs must be the same-run artifact and
@@ -170,9 +175,16 @@ failed gate green.
 
 ### Step 4: Validate permission placement and workflow syntax
 
-Parse the YAML and use structural text checks to catch accidental permission
-spread. Inspect the job manually after those machine checks; Ruby's YAML parser
-checks syntax but does not validate the GitHub Actions schema.
+Parse the YAML and use both structural and text checks to catch accidental
+permission spread. Run this exact structural check:
+
+```sh
+ruby -e 'require "yaml"; workflow = YAML.safe_load(File.read(ARGV.fetch(0)), aliases: true); jobs = workflow.fetch("jobs"); raise "top-level permissions" unless workflow.fetch("permissions") == {"contents" => "read"}; raise "lighthouse_remote permissions" unless jobs.fetch("lighthouse_remote").fetch("permissions") == {"contents" => "read", "pull-requests" => "read"}; writer = jobs.fetch("lighthouse_comment"); raise "writer permissions" unless writer.fetch("permissions") == {"actions" => "read", "pull-requests" => "write"}; uses = writer.fetch("steps").map { |step| step["uses"] }; raise "writer steps" unless uses == ["actions/download-artifact@v4", "actions/github-script@v7"]; raise "writer executes shell or checkout" if writer.fetch("steps").any? { |step| step.key?("run") || step["uses"] == "actions/checkout@v4" }' .github/workflows/ci-quality.yml
+```
+
+Inspect the job manually after those machine checks; Ruby's YAML parser checks
+syntax and the intended security shape but does not validate the complete
+GitHub Actions schema.
 
 **Verify**: `ruby -e 'require "yaml"; YAML.safe_load(File.read(ARGV.fetch(0)), aliases: true)' .github/workflows/ci-quality.yml && test "$(rg -c 'pull-requests: write' .github/workflows/ci-quality.yml)" -eq 1 && ! sed -n '1,20p' .github/workflows/ci-quality.yml | rg 'pull-requests: write' && git diff --check` → exit 0.
 
@@ -202,7 +214,9 @@ locked dependencies if they are absent.
 
 ## Done criteria
 
-Machine-checkable. ALL must hold:
+ALL must hold. The structural checks cover the permission and step boundaries;
+the implementation reviewer must also verify conditions, artifact paths, and
+validation order against the workflow diff.
 
 - [ ] `.github/workflows/ci-quality.yml` parses as YAML.
 - [ ] The top-level permission is only `contents: read`; `lighthouse_remote`
@@ -213,9 +227,9 @@ Machine-checkable. ALL must hold:
       update/create behavior; it does not checkout or execute repository code.
 - [ ] The writer rejects an absent marker or report body larger than 60,000
       bytes before calling the GitHub API.
-- [ ] The writer job runs for `lighthouse_remote` success/failure and is skipped
-      when that dependency is skipped/cancelled, avoiding a guaranteed missing
-      artifact download.
+- [ ] The writer job uses `!cancelled()`, runs for `lighthouse_remote`
+      success/failure, and is skipped when that dependency is skipped/cancelled,
+      avoiding a guaranteed missing artifact download.
 - [ ] `lighthouse-comment-body` contains only workspace-relative
       `lighthouse-comment.md`; the existing mixed-path debug artifact is not used
       as the job-to-job contract.
@@ -238,7 +252,7 @@ Stop and report back (do not improvise) if:
   secret, adding a third-party action, or executing untrusted repository code
   inside the write-enabled job.
 - `actions/download-artifact@v4` cannot retrieve the artifact from a failed
-  `needs` job under an `always()` dependent job.
+  `needs` job under the `!cancelled()` dependent job.
 - GitHub requires a broader write permission than `pull-requests: write` for
   the existing PR comment API calls; report the exact API error instead of
   adding broad permissions.
@@ -251,8 +265,8 @@ Stop and report back (do not improvise) if:
 - Keep untrusted build, browser, and parsing work out of the write-enabled job.
   If future comment content must be generated, generate it in a read-only job
   and pass a bounded artifact.
-- A reviewer should verify the job-level `if: always()` behavior and the exact
-  dedicated one-file artifact path, because mixed upload roots and skipped
-  failure reports are the two common ways this handoff breaks.
+- A reviewer should verify the job-level `if: !cancelled()` behavior and the
+  exact dedicated one-file artifact path, because mixed upload roots and
+  skipped failure reports are the two common ways this handoff breaks.
 - Plan 008 intentionally follows this plan and may edit the read-only
   `lighthouse_remote` job; it must not move parsing into `lighthouse_comment`.
