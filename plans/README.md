@@ -33,7 +33,7 @@ single sequential executor may update its own row directly.
 | [005](./005-mapbox-on-demand.md)                      | Load Mapbox only after explicit demand              |       P1 |      M | 004        | DONE                                  |
 | [006](./006-module-recovery-reload-guard.md)          | Prevent module-recovery reload loops                |       P1 |      S | 005        | DONE                                  |
 | [007](./007-ci-least-privilege.md)                    | Isolate PR-write permission from untrusted code     |       P1 |      M | -          | DONE                                  |
-| [008](./008-lighthouse-current-deploy-correlation.md) | Correlate Lighthouse scores to the current commit   |       P2 |      M | 007        | IN PROGRESS                           |
+| [008](./008-lighthouse-current-deploy-correlation.md) | Correlate Lighthouse scores to the current commit   |       P2 |      M | 007        | DONE                                  |
 | [009](./009-sentry-url-sanitization.md)               | Strip sensitive URL details from Sentry diagnostics |       P1 |      S | -          | TODO                                  |
 | [010](./010-responsive-content-images.md)             | Generate real responsive content images             |       P2 |      L | -          | TODO                                  |
 | [011](./011-remove-static-react-hydration.md)         | Stop hydrating static React sections                |       P3 |      S | 010        | TODO                                  |

@@ -92,6 +92,10 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Test Netlify Lighthouse comment parser
+        if: github.event_name == 'pull_request'
+        run: node --test scripts/parse-netlify-lighthouse-comment.test.js
+
       - name: Resolve audit URL
         id: target
         if: github.event_name != 'pull_request'
@@ -123,34 +127,36 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const path = require('node:path');
+            const { pathToFileURL } = require('node:url');
             const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const issue_number = context.issue.number;
+            const expectedHeadSha = context.payload.pull_request?.head?.sha;
 
-            const parseFromBody = (body) => {
-              const perf = body.match(/(?:\*\*)?Performance(?:\*\*)?:\s*(\d+)/i);
-              const acc = body.match(/(?:\*\*)?Accessibility(?:\*\*)?:\s*(\d+)/i);
-              const bp = body.match(/(?:\*\*)?Best Practices(?:\*\*)?:\s*(\d+)/i);
-              const seo = body.match(/(?:\*\*)?SEO(?:\*\*)?:\s*(\d+)/i);
-              const preview = body.match(
-                /Deploy Preview \|\s*\[(https?:\/\/[^\]]+)\]/i
-              );
-              const deployLog = body.match(/Latest deploy log \|\s*(https?:\/\/\S+)/i);
-              if (!perf || !acc || !bp || !seo) {
-                return null;
-              }
-              return {
-                performance: perf[1],
-                accessibility: acc[1],
-                bestPractices: bp[1],
-                seo: seo[1],
-                previewUrl: preview ? preview[1] : '',
-                deployLogUrl: deployLog ? deployLog[1] : '',
-              };
-            };
+            if (
+              typeof expectedHeadSha !== 'string' ||
+              !/^[0-9a-f]{40}$/i.test(expectedHeadSha)
+            ) {
+              core.setFailed('Pull request head SHA is missing or malformed.');
+              return;
+            }
+
+            const parserUrl = pathToFileURL(
+              path.join(
+                process.env.GITHUB_WORKSPACE,
+                'scripts',
+                'parse-netlify-lighthouse-comment.js'
+              )
+            );
+            const {
+              matchesPullRequestHead,
+              parseNetlifyLighthouseComment,
+            } = await import(parserUrl.href);
 
             let parsed = null;
+            const loggedStaleCommentIds = new Set();
             for (let attempt = 1; attempt <= 90; attempt += 1) {
               const comments = await github.paginate(
                 github.rest.issues.listComments,
@@ -168,24 +174,32 @@ jobs:
                 if (!comment.body) {
                   continue;
                 }
-                const candidate = parseFromBody(comment.body);
+                const candidate = parseNetlifyLighthouseComment(comment.body);
                 if (!candidate) {
                   continue;
                 }
-                const hasPreviewForCurrentPr =
-                  candidate.previewUrl &&
-                  candidate.previewUrl.includes(`deploy-preview-${issue_number}--`);
-                if (hasPreviewForCurrentPr) {
+                if (
+                  matchesPullRequestHead(
+                    candidate,
+                    issue_number,
+                    expectedHeadSha
+                  )
+                ) {
                   parsed = candidate;
                   break;
                 }
-                if (!parsed) {
-                  parsed = candidate;
+                if (!loggedStaleCommentIds.has(comment.id)) {
+                  core.info(
+                    `Ignoring stale or mismatched Netlify Lighthouse comment ID ${comment.id}.`
+                  );
+                  loggedStaleCommentIds.add(comment.id);
                 }
               }
 
               if (parsed) {
-                core.info(`Found Netlify Lighthouse scores on attempt ${attempt}.`);
+                core.info(
+                  `Found Netlify Lighthouse scores for commit ${parsed.commitSha} on attempt ${attempt}.`
+                );
                 break;
               }
 
@@ -204,6 +218,7 @@ jobs:
             core.setOutput('seo', parsed.seo);
             core.setOutput('preview_url', parsed.previewUrl);
             core.setOutput('deploy_log_url', parsed.deployLogUrl);
+            core.setOutput('commit_sha', parsed.commitSha);
             core.info(
               `Parsed Netlify Lighthouse scores: perf=${parsed.performance}, access=${parsed.accessibility}, bp=${parsed.bestPractices}, seo=${parsed.seo}`
             );
@@ -229,8 +244,25 @@ jobs:
           LH_BP: ${{ steps.netlify_scores.outputs.best_practices }}
           LH_SEO: ${{ steps.netlify_scores.outputs.seo }}
           LH_PREVIEW_URL: ${{ steps.netlify_scores.outputs.preview_url }}
+          LH_COMMIT_SHA: ${{ steps.netlify_scores.outputs.commit_sha }}
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           if [ "$EVENT_NAME" = "pull_request" ]; then
+            if [[ ! "$LH_COMMIT_SHA" =~ ^[0-9a-f]{40}$ ]] ||
+              [[ ! "$EXPECTED_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] ||
+              [ "$LH_COMMIT_SHA" != "$EXPECTED_HEAD_SHA" ]; then
+              printf '%s\n' \
+                '<!-- lighthouse-remote-report -->' \
+                '## ❌ Lighthouse Remote Report' \
+                '' \
+                'Netlify Lighthouse scores were not evaluated for this run.' \
+                '' \
+                '- Source: netlify-pr-comment' \
+                '- Detail: comment commit is missing, malformed, or does not match the current head' \
+                > /tmp/lighthouse-remote-report.md
+              exit 1
+            fi
+
             if [ -z "$LH_PERF" ] || [ -z "$LH_ACC" ] || [ -z "$LH_BP" ] || [ -z "$LH_SEO" ]; then
               printf '%s\n' \
                 '<!-- lighthouse-remote-report -->' \
