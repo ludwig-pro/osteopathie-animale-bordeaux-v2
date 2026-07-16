@@ -12,9 +12,9 @@
 > before execution; do not stage or commit plans yourself.
 >
 > **Drift check (run second)**:
-> `git diff --stat 9aece8f..HEAD -- src/components/landing-page/contact/ContactForm.tsx src/components/landing-page/contact/FormField.tsx tests/e2e/contact-form-validation.spec.ts`
-> `git diff --stat HEAD -- src/components/landing-page/contact/ContactForm.tsx src/components/landing-page/contact/FormField.tsx tests/e2e/contact-form-validation.spec.ts`
-> `git ls-files --others --exclude-standard -- src/components/landing-page/contact/ContactForm.tsx src/components/landing-page/contact/FormField.tsx tests/e2e/contact-form-validation.spec.ts`
+> `git diff --stat 9aece8f..HEAD -- src/components/landing-page/contact/ContactForm.tsx src/components/landing-page/contact/FormField.tsx tests/e2e/contact-form-validation.spec.ts playwright.config.ts`
+> `git diff --stat HEAD -- src/components/landing-page/contact/ContactForm.tsx src/components/landing-page/contact/FormField.tsx tests/e2e/contact-form-validation.spec.ts playwright.config.ts`
+> `git ls-files --others --exclude-standard -- src/components/landing-page/contact/ContactForm.tsx src/components/landing-page/contact/FormField.tsx tests/e2e/contact-form-validation.spec.ts playwright.config.ts`
 > The second and third commands must print nothing; otherwise STOP and report
 > uncommitted in-scope work. If the first command reports committed drift,
 > compare the "Current state" excerpts against the live code before proceeding;
@@ -87,6 +87,7 @@ Use this validation contract:
 - `src/components/landing-page/contact/ContactForm.tsx`
 - `src/components/landing-page/contact/FormField.tsx`
 - `tests/e2e/contact-form-validation.spec.ts` (create)
+- `playwright.config.ts` (server-timeout adjustment only)
 - `plans/README.md` (status row only, or coordinator-owned during parallel execution)
 
 **Out of scope** (do NOT touch, even though they look related):
@@ -228,7 +229,13 @@ Format only the three in-scope files, then run lint, build, the focused suite,
 and the full E2E suite. Confirm the build still contains a static form named
 `contact` for Netlify detection and that the lockfile did not change.
 
-**Verify**: `yarn prettier --write src/components/landing-page/contact/ContactForm.tsx src/components/landing-page/contact/FormField.tsx tests/e2e/contact-form-validation.spec.ts && yarn lint && yarn build && rg -q 'name="contact"' dist/index.html && rg -q 'data-netlify="true"' dist/index.html && rg -q 'name="bot-field"' dist/index.html && rg -q 'name="form-name"' dist/index.html && node -e "const net = require('node:net'); const server = net.createServer(); server.once('error', () => process.exit(1)); server.listen(4321, '127.0.0.1', () => server.close())" && CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e tests/e2e/contact-form-validation.spec.ts --retries=0 --workers=1 && node -e "const net = require('node:net'); const server = net.createServer(); server.once('error', () => process.exit(1)); server.listen(4321, '127.0.0.1', () => server.close())" && CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e --retries=0 --workers=1` → every command exits 0 and the built HTML contains all four form markers; `git status --short --untracked-files=all` lists only the scoped implementation files plus the plan index status row.
+Two fresh-server attempts on 2026-07-16 timed out while the current
+`webServer.timeout` was `180000`, while the identical direct build completed
+successfully in approximately 251 seconds. Change only
+`playwright.config.ts`'s web-server timeout to `360000`; do not change retries,
+workers, server commands, reuse behavior, projects, or test timeouts.
+
+**Verify**: `yarn prettier --write src/components/landing-page/contact/ContactForm.tsx src/components/landing-page/contact/FormField.tsx tests/e2e/contact-form-validation.spec.ts playwright.config.ts && rg -q 'timeout: 360000' playwright.config.ts && yarn lint && yarn build && rg -q 'name="contact"' dist/index.html && rg -q 'data-netlify="true"' dist/index.html && rg -q 'name="bot-field"' dist/index.html && rg -q 'name="form-name"' dist/index.html && node -e "const net = require('node:net'); const server = net.createServer(); server.once('error', () => process.exit(1)); server.listen(4321, '127.0.0.1', () => server.close())" && CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e tests/e2e/contact-form-validation.spec.ts --retries=0 --workers=1 && node -e "const net = require('node:net'); const server = net.createServer(); server.once('error', () => process.exit(1)); server.listen(4321, '127.0.0.1', () => server.close())" && CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e --retries=0 --workers=1` → every command exits 0 and the built HTML contains all four form markers; `git status --short --untracked-files=all` lists only the scoped implementation files plus the plan index status row.
 
 ## Test plan
 
@@ -259,6 +266,8 @@ Machine-checkable. ALL must hold:
 - [ ] `bot-field` is not `type="hidden"`, is out of the tab order, and remains
       present in built static HTML.
 - [ ] `yarn lint`, `yarn build`, the focused suite, and `yarn test:e2e` exit 0.
+- [ ] `playwright.config.ts` changes only `webServer.timeout` from `180000` to
+      `360000`.
 - [ ] `yarn.lock` is unchanged.
 - [ ] `git status --short --untracked-files=all` lists only in-scope files and
       the allowed `plans/README.md` status update.
