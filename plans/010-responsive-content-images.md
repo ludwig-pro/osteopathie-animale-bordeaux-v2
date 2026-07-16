@@ -12,7 +12,7 @@
 > before execution; do not stage or commit plans yourself.
 >
 > **Drift check (run second)**:
-> `git diff --stat 9aece8f..HEAD -- src/lib/responsiveImage.ts src/layouts/wrappers/AnimalSectionWrapper.astro src/layouts/wrappers/PrixWrapper.astro src/layouts/wrappers/DeroulementConsultationWrapper.astro src/layouts/wrappers/OsteopathieAnimaleWrapper.astro src/layouts/wrappers/QuiSuisJeWrapper.astro src/components/landing-page/animals/AnimalSection.tsx src/components/landing-page/animals/Section.tsx src/components/landing-page/pricing/Pricing.tsx src/components/landing-page/consultation/ConsultationProcess.tsx src/components/landing-page/osteopathy/Osteopathy.tsx src/components/landing-page/about/About.tsx tests/e2e/content-images.spec.ts`
+> `git diff --stat d4e1c70..HEAD -- src/lib/responsiveImage.ts src/layouts/wrappers/AnimalSectionWrapper.astro src/layouts/wrappers/PrixWrapper.astro src/layouts/wrappers/DeroulementConsultationWrapper.astro src/layouts/wrappers/OsteopathieAnimaleWrapper.astro src/layouts/wrappers/QuiSuisJeWrapper.astro src/components/landing-page/animals/AnimalSection.tsx src/components/landing-page/animals/Section.tsx src/components/landing-page/pricing/Pricing.tsx src/components/landing-page/consultation/ConsultationProcess.tsx src/components/landing-page/osteopathy/Osteopathy.tsx src/components/landing-page/about/About.tsx tests/e2e/content-images.spec.ts`
 > `git diff --stat HEAD -- src/lib/responsiveImage.ts src/layouts/wrappers/AnimalSectionWrapper.astro src/layouts/wrappers/PrixWrapper.astro src/layouts/wrappers/DeroulementConsultationWrapper.astro src/layouts/wrappers/OsteopathieAnimaleWrapper.astro src/layouts/wrappers/QuiSuisJeWrapper.astro src/components/landing-page/animals/AnimalSection.tsx src/components/landing-page/animals/Section.tsx src/components/landing-page/pricing/Pricing.tsx src/components/landing-page/consultation/ConsultationProcess.tsx src/components/landing-page/osteopathy/Osteopathy.tsx src/components/landing-page/about/About.tsx tests/e2e/content-images.spec.ts`
 > `git ls-files --others --exclude-standard -- src/lib/responsiveImage.ts src/layouts/wrappers/AnimalSectionWrapper.astro src/layouts/wrappers/PrixWrapper.astro src/layouts/wrappers/DeroulementConsultationWrapper.astro src/layouts/wrappers/OsteopathieAnimaleWrapper.astro src/layouts/wrappers/QuiSuisJeWrapper.astro src/components/landing-page/animals/AnimalSection.tsx src/components/landing-page/animals/Section.tsx src/components/landing-page/pricing/Pricing.tsx src/components/landing-page/consultation/ConsultationProcess.tsx src/components/landing-page/osteopathy/Osteopathy.tsx src/components/landing-page/about/About.tsx tests/e2e/content-images.spec.ts`
 > The second and third commands must print nothing; otherwise STOP and report
@@ -27,7 +27,7 @@
 - **Risk**: MED
 - **Depends on**: none
 - **Category**: perf
-- **Planned at**: commit `9aece8f`, 2026-07-15
+- **Planned at**: commit `d4e1c70`, 2026-07-16
 
 ## Why this matters
 
@@ -78,9 +78,10 @@ preserves the real intrinsic ratio to avoid layout shifts.
 | Install     | `yarn install --frozen-lockfile`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | exit 0; `yarn.lock` unchanged                   |
 | Format      | `yarn prettier --check src/lib/responsiveImage.ts src/layouts/wrappers/AnimalSectionWrapper.astro src/layouts/wrappers/PrixWrapper.astro src/layouts/wrappers/DeroulementConsultationWrapper.astro src/layouts/wrappers/OsteopathieAnimaleWrapper.astro src/layouts/wrappers/QuiSuisJeWrapper.astro src/components/landing-page/animals/AnimalSection.tsx src/components/landing-page/animals/Section.tsx src/components/landing-page/pricing/Pricing.tsx src/components/landing-page/consultation/ConsultationProcess.tsx src/components/landing-page/osteopathy/Osteopathy.tsx src/components/landing-page/about/About.tsx tests/e2e/content-images.spec.ts` | exit 0; all named files use Prettier formatting |
 | Lint        | `yarn lint`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | exit 0, no errors                               |
-| Build       | `yarn build`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | exit 0; Astro check and static build complete   |
-| Focused E2E | `yarn test:e2e tests/e2e/content-images.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | one Chromium test file passes                   |
-| Full E2E    | `yarn test:e2e`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | all tests pass                                  |
+| Build       | `PUBLIC_SENTRY_DSN= PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn build`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | exit 0; Astro check and static build complete   |
+| Focused E2E | `CI=1 PUBLIC_SENTRY_DSN= PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e tests/e2e/content-images.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | one Chromium test file passes                   |
+| Full E2E    | `CI=1 PUBLIC_SENTRY_DSN= PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | all tests pass                                  |
+| Drift       | `git diff --quiet HEAD -- .astro && git diff --check`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | no generated or whitespace drift                |
 
 ## Suggested executor toolkit
 
@@ -125,8 +126,9 @@ preserves the real intrinsic ratio to avoid layout shifts.
 
 ## Git workflow
 
-- Branch: `codex/010-responsive-content-images`
-- Make one logical commit after all gates pass: `Optimize responsive content images`.
+- Branch: `improve`
+- Make one logical commit after all gates pass:
+  `perf: optimize responsive content images`.
 - Keep the title imperative and under 72 characters, matching `AGENTS.md`.
 - Do NOT push or open a PR unless the operator instructed it.
 
@@ -134,27 +136,54 @@ preserves the real intrinsic ratio to avoid layout shifts.
 
 ### Step 1: Capture the loaded-layout baseline before editing
 
-After installing locked dependencies, run the current site locally and use a
-DPR-1 Chromium session at `375x812`, `768x1024`, `1024x768`, `1280x900`, and
-`1440x900`. At **every** viewport, scroll every lazy image into view, wait for
-`complete` plus nonzero natural dimensions, and activate all five animal menu
-items (`chien`, `chat`, `cheval`, `vache`, `nac`) one by one.
+After installing locked dependencies, require
+`git diff --quiet HEAD -- .astro` and record hashes for every tracked `.astro`
+file. This baseline applies to every generator in this plan: after each build
+or Playwright run, restore only
+`.astro/settings.json:_variables.lastUpdateCheck` with `apply_patch` if it is
+the sole difference and STOP on any other drift.
 
-Store, outside the repository, screenshots and a JSON inventory under
-`/tmp/plan-010-content-images-before/`. Produce exactly 60 uniquely keyed image
-records: each of the 12 logical source-backed images (five animal choices, three
+Require port `4321` to be free. With the three public observability variables
+empty, run a production build, restore the allowed `.astro` timestamp artifact,
+then start `yarn preview --host 127.0.0.1 --port 4321` only for this capture.
+Use a DPR-1 Chromium session at `375x812`, `768x1024`, `1024x768`,
+`1280x900`, and `1440x900`. At **every** viewport, scroll every lazy image into
+view, wait for `complete` plus nonzero natural dimensions, and wait for the
+`AnimalSection` island to hydrate (its `astro-island[ssr]` marker must
+disappear) before using its controls. Exercise the animals in the order `chat`,
+`cheval`, `vache`, `nac`, `chien` so every selection changes the default dog
+image. At `375px`, open the Headless UI listbox through the current selected
+label—the button sequence is `Le chien`, `Le chat`, `Le cheval`, `La vache`,
+then `Les nouveaux animaux de compagnie`—before choosing the next option
+labelled `Le chat`, `Le cheval`, `La vache`, `Les nouveaux animaux de
+compagnie`, then `Le chien`. At widths of `640px` or more, use the React Aria
+`menuitem` labels `Le chat`, `Le cheval`, `La vache`, `N.A.C.`, and `Le chien`.
+After every selection, wait for both the animal image's `src` and alt text to
+change before recording it.
+
+Run the baseline with `PUBLIC_SENTRY_DSN`, `PUBLIC_GTM_ID`, and
+`PUBLIC_POSTHOG_KEY` empty. Require
+`/tmp/plan-010-content-images-before/` to be absent or empty, then recreate
+exactly that path so a retry cannot inherit stale JSON or PNG files. Store one
+element screenshot and one JSON record for every pair there. Produce exactly
+60 uniquely keyed image records and exactly 60 correspondingly named PNG
+files: each of the 12 logical source-backed images (five animal choices, three
 price cards, two consultation images, bulldog, portrait) at each of the five
 viewports. For every record, store the logical-image key, viewport, alt text,
 rendered bounding-box width and height after load, and current source URL
 without query data. Never commit these artifacts. This is the visual/crop
-baseline and the evidence used to calibrate the `sizes` hints below.
+baseline and the evidence used to calibrate the `sizes` hints below. Stop the
+manual preview in a `finally` path after capture, wait until port `4321` is
+free, and only then continue; the CI-mode Playwright gates must own their
+configured server lifecycle.
 
 **Verify**: the temporary inventory has five distinct viewport keys, exactly 12
-distinct logical-image keys under every viewport, and exactly 60 unique
-viewport/image pairs; every record is complete with nonzero dimensions, and
-`git status --short --untracked-files=all` remains unchanged. STOP if the current
-page already has a broken image, any pair is missing/duplicated, or a variant
-cannot be selected deterministically.
+distinct logical-image keys under every viewport, exactly 60 unique
+viewport/image pairs, and exactly 60 matching PNG names; every record is
+complete with nonzero dimensions, and
+`git status --short --untracked-files=all` remains unchanged. STOP if the
+current page already has a broken image, any pair is missing/duplicated, or a
+variant cannot be selected deterministically.
 
 ### Step 2: Add one server-side responsive image builder
 
@@ -162,12 +191,12 @@ Create `src/lib/responsiveImage.ts`. Import the runtime helper and metadata type
 from their actual Astro 6 modules:
 
 ```ts
-import type { ImageMetadata } from "astro";
-import { getImage } from "astro:assets";
+import type { ImageMetadata } from 'astro';
+import { getImage } from 'astro:assets';
 ```
 
-Accept an `ImageMetadata` source plus an ordered, non-empty array of widths and
-a non-empty `sizes` string, and return this
+Accept an `ImageMetadata` source plus an ordered, non-empty
+`readonly number[]` of widths and a non-empty `sizes` string, and return this
 minimal serializable shape:
 
 ```ts
@@ -180,50 +209,87 @@ export type ResponsiveImageData = {
 };
 ```
 
-Validate that the widths are finite positive integers in strictly increasing
-order, then treat the last value as `largestWidth`. Call Astro once with
-`getImage({ src, width: largestWidth, widths, sizes, format: 'webp', quality:
-80 })`. Supplying the explicit base `width` keeps `result.src` and its intrinsic
-dimensions bounded to the largest planned candidate instead of silently
-generating an original-width fallback in addition to the `srcset`. Copy only
-`result.src`, `result.srcSet.attribute`, the input `sizes`, and the result's
-numeric `attributes.width`/`attributes.height` into the DTO. Reject an empty or
-unordered width list, invalid width, empty `sizes`, or missing numeric result
-dimensions with a clear error. Keep the helper server-only: no browser APIs and
-no React import. Do not reproduce the manual multi-call implementation in
-`HeroWrapper`.
+Validate that `sizes.trim()` is non-empty and that widths are finite positive
+integers in strictly increasing order, with every value at or below
+`src.width`. Clone the array before passing it to Astro because the installed
+local image service sorts `widths` in place. Treat the last value as
+`largestWidth`. Call Astro once with
+`getImage({ src, width: largestWidth, widths: [...widths], sizes, format:
+'webp', quality: 80 })`. Supplying the explicit base `width` keeps `result.src`
+and its intrinsic dimensions bounded to the largest planned candidate instead
+of silently generating an original-width fallback in addition to the
+`srcset`.
 
-**Verify**: `yarn build` → exit 0; no Astro or TypeScript errors.
+Require `result.srcSet.values` to contain exactly the requested descriptors in
+order (`480w`, etc.), require a non-empty `srcSet.attribute`, and require
+positive finite numeric `attributes.width`/`attributes.height` with the width
+equal to `largestWidth`. Copy only `result.src`, `result.srcSet.attribute`, the
+trimmed input `sizes`, and those numeric dimensions into the DTO. Reject any
+contract mismatch with a clear error. Keep the helper server-only: no browser
+APIs and no React import. Do not reproduce the manual multi-call
+implementation in `HeroWrapper`.
+
+**Verify**:
+`PUBLIC_SENTRY_DSN= PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn build` → exit 0;
+no Astro or TypeScript errors, then `.astro` is restored to the Step 1 hashes.
 
 ### Step 3: Generate bounded variants with CSS-aligned selection hints
 
 Replace the one-off `getImage` calls with the helper. Use these width sets and
 `sizes` hints; do not upscale beyond the listed maximum:
 
-| Wrapper                                | Images                       | Widths           | `sizes`                                                                                   |
-| -------------------------------------- | ---------------------------- | ---------------- | ----------------------------------------------------------------------------------------- |
-| `AnimalSectionWrapper.astro`           | dog, cat, horse, rabbit, cow | `480, 768, 1280` | `(min-width: 1280px) 608px, (min-width: 640px) calc(50vw - 2rem), calc(100vw - 2rem)`     |
-| `PrixWrapper.astro`                    | dog/cat, ferret, package     | `320, 640, 800`  | `(min-width: 1280px) 400px, (min-width: 640px) calc(50vw - 3rem), calc(100vw - 2rem)`     |
-| `DeroulementConsultationWrapper.astro` | kitten, correction           | `480, 768, 1200` | `(min-width: 1280px) 600px, (min-width: 1024px) calc(50vw - 2rem), calc(100vw - 2rem)`    |
-| `OsteopathieAnimaleWrapper.astro`      | bulldog                      | `480, 768, 1200` | `(min-width: 1280px) 600px, (min-width: 1024px) calc(50vw - 2rem), calc(100vw - 2rem)`    |
-| `QuiSuisJeWrapper.astro`               | Agathe portrait              | `320, 640, 960`  | `(min-width: 1280px) 400px, (min-width: 640px) calc(33.333vw - 2rem), calc(100vw - 2rem)` |
+| Wrapper                                | Images                       | Widths           | `sizes`                                                                                                                                                        |
+| -------------------------------------- | ---------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AnimalSectionWrapper.astro`           | dog, cat, horse, rabbit, cow | `480, 768, 1280` | `(min-width: 1280px) 592px, (min-width: 1024px) calc(50vw - 3rem), (min-width: 768px) 452px, (min-width: 640px) calc(50vw + 8.25rem), calc(100vw + 10rem)`     |
+| `PrixWrapper.astro`                    | dog/cat, ferret, package     | `320, 640, 800`  | `(min-width: 1280px) 390px, (min-width: 1024px) 436px, (min-width: 640px) calc(50vw - 2.25rem), calc(100vw - 2rem)`                                            |
+| `DeroulementConsultationWrapper.astro` | kitten, correction           | `480, 768, 1200` | `(min-width: 1280px) 624px, (min-width: 1024px) calc(50vw - 1rem), (min-width: 640px) 560px, (min-width: 576px) 576px, 100vw`                                  |
+| `OsteopathieAnimaleWrapper.astro`      | bulldog                      | `480, 640, 1200` | `(min-width: 1280px) 478px, (min-width: 1024px) 571px, (min-width: 768px) calc(100vw + 2.5rem), (min-width: 640px) calc(100vw + 10.5rem), calc(100vw + 11rem)` |
+| `QuiSuisJeWrapper.astro`               | Agathe portrait              | `320, 640, 960`  | `(min-width: 1280px) 390px, (min-width: 1024px) calc(33.333vw - 2.334rem), (min-width: 640px) calc(33.333vw - 2rem), calc(100vw - 2rem)`                       |
 
-These starting hints mirror the real Tailwind transitions: pricing changes to
-two columns at `sm` and three at `xl`; consultation and osteopathy split only at
-`lg`; the portrait becomes one-third width at `sm`. Compare them with the Step
-1 widths. A numeric/calc term may be adjusted only to the smallest conservative
-value supported by those measurements, without editing CSS: at every measured
-viewport it must not cause a DPR-1 browser to choose a candidate smaller than
-the rendered width or to skip past the smallest adequate candidate. Record any
-measured adjustment in review evidence. STOP if no single CSS-aligned hint can
-satisfy that rule.
+These hints are calibrated against a read-only DPR-1 run of the current
+`d4e1c70` page. The rendered widths in CSS pixels were:
+
+| Viewport | Animals | Pricing  | Consultation | Bulldog  | Portrait |
+| -------- | ------- | -------- | ------------ | -------- | -------- |
+| `375`    | `535`   | `343`    | `375`        | `551`    | `343`    |
+| `768`    | `388`   | `348`    | `560`        | `808`    | `224`    |
+| `1024`   | `464`   | `436`    | `496`        | `570.66` | `304`    |
+| `1280`   | `592`   | `389.33` | `624`        | `477.33` | `389.33` |
+| `1440`   | `592`   | `389.33` | `624`        | `477.33` | `389.33` |
+
+Pricing changes to two columns at `sm`, receives a fixed `lg:max-w-4xl`
+two-column width, and changes to three columns at `xl`; consultation splits at
+`lg`; the portrait becomes one-third width at `sm`. The animals and bulldog
+intentionally extend beyond their grid cells before their desktop layouts. The
+extra clauses model the real `sm`, `md`, `lg`, max-width, padding, gap, and
+negative-margin transitions; using only the five acceptance viewports hides
+under-sized selections immediately before several breakpoints.
+
+For the bulldog, `lg:h-full lg:w-auto` makes its width depend on the text
+column's resulting height, so the measured integer ceilings at `lg` and `xl`
+are more accurate than a synthetic `50vw` term. Its middle candidate is `640`
+rather than `768`: that still covers the measured `551px` and `570.66px`
+slots, while the `1200px` candidate remains available for the `808px` tablet
+slot and higher-DPR displays. Conservatively keep the `571px` hint until the
+stable `1280px` max-width layout even though Chromium's current text wrapping
+makes the visual width fall below `480px` around `1246px`; a small temporary
+over-selection is safer than a font-dependent under-sized selection.
+
+At every measured viewport, and throughout a read-only breakpoint sweep, the
+hints above select the smallest listed candidate that is not narrower than the
+rendered image, except for that documented conservative bulldog band. Re-confirm
+the five exact acceptance outcomes with the Step 5 fresh-context test. STOP
+rather than adjusting CSS or accepting any under-sized candidate or any other
+skipped adequate candidate.
 
 Preserve each existing prop name and image-to-content mapping. Remove direct
 `getImage` imports only after each wrapper uses the helper. Do not change its
 hydration directive in this plan.
 
-**Verify**: `yarn build && rg -o 'srcset="[^"]+"' dist/index.html | head` →
-the build exits 0 and the output shows comma-separated width candidates.
+**Verify**:
+`PUBLIC_SENTRY_DSN= PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn build && rg -o 'srcset="[^"]+"' dist/index.html | head`
+→ the build exits 0, the output shows comma-separated width candidates, and
+`.astro` is restored to the Step 1 hashes.
 
 ### Step 4: Pass browser selection hints and real dimensions
 
@@ -238,16 +304,19 @@ Add `data-testid="responsive-content-image"` to these content `<img>` elements
 so one stable regression test can cover them. Preserve existing `loading`,
 `decoding`, alt text, classes, and component behavior.
 
-For `yougncat.jpeg` and `bulldog.jpeg`, the intrinsic attributes intentionally
-change from the incorrect landscape placeholder to the source's portrait ratio.
-That pre-load correction is in scope. Do not add an aspect-ratio class or alter
-`object-cover`; after each image has loaded, its bounding box and crop must still
-match the Step 1 baseline.
+Every content image must receive the largest generated variant's real intrinsic
+ratio; several current hard-coded ratios are inaccurate. The correction is
+most visible for portrait `yougncat.jpeg` and `bulldog.jpeg`, but animal,
+pricing, correction, and portrait attributes may also change. These are
+pre-load placeholder corrections only. Do not add an aspect-ratio class or
+alter `object-cover`; after each image has loaded, its bounding box and crop
+must still match the Step 1 baseline.
 
-**Verify**: `yarn build && rg -o 'data-testid="responsive-content-image"' dist/index.html | wc -l` →
-exit 0 and exactly `8` server-rendered content images are present (one selected
+**Verify**:
+`PUBLIC_SENTRY_DSN= PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn build && rg -o 'data-testid="responsive-content-image"' dist/index.html | wc -l`
+→ exit 0, exactly `8` server-rendered content images are present (one selected
 animal, three pricing cards, two consultation images, one osteopathy image, and
-one portrait).
+one portrait), and `.astro` is restored to the Step 1 hashes.
 
 ### Step 5: Lock variants, candidate choice, and geometry with Playwright
 
@@ -255,7 +324,7 @@ Create `tests/e2e/content-images.spec.ts`, following the imports and structure
 of `tests/e2e/booking.smoke.spec.ts`. Use one aggregate test—not five parallel
 tests—that loops sequentially over the same five viewport widths captured in
 Step 1 and keeps its 60-pair key set inside that test. Set an explicit
-`120_000ms` timeout for this aggregate test.
+`180_000ms` timeout for this aggregate test.
 
 Receive Playwright's configured `browser` and `baseURL` fixtures and fail if
 `baseURL` is absent. For each loop entry, create a fresh context with
@@ -281,12 +350,21 @@ elements and assert:
    renders wider than every candidate. This detects both under-sized and
    over-stated `sizes` hints.
 
-At every one of the five widths, activate each animal item by its accessible
-label and wait for the image `src`/alt text to change. Re-run the same `srcset`,
-`sizes`, candidate, completion, and dimension assertions for all five variants.
-Track a local logical-image key set and assert exactly 12 unique keys before
-closing each context. Add those keys to the aggregate test's single in-memory
-set and assert exactly 60 unique viewport/image pairs after the loop. Do not use
+At every one of the five widths, first wait for the `AnimalSection` island to
+hydrate by requiring its `astro-island[ssr]` marker to disappear. Exercise the
+animals in the order `chat`, `cheval`, `vache`, `nac`, `chien`, which guarantees
+that each selection changes the default dog image. At `375px`, open the
+Headless UI listbox through the current selected label—the button sequence is
+`Le chien`, `Le chat`, `Le cheval`, `La vache`, then `Les nouveaux animaux de
+compagnie`—before choosing the next option labelled `Le chat`, `Le cheval`, `La
+vache`, `Les nouveaux animaux de compagnie`, then `Le chien`. At widths of
+`640px` or more, use the React Aria `menuitem` labels `Le chat`, `Le cheval`,
+`La vache`, `N.A.C.`, and `Le chien`. After each activation, wait for both the
+animal image's `src` and alt text to change. Re-run the same `srcset`, `sizes`,
+candidate, completion, and dimension assertions for all five variants. Track a
+local logical-image key set and assert exactly 12 unique keys before closing
+each context. Add those keys to the aggregate test's single in-memory set and
+assert exactly 60 unique viewport/image pairs after the loop. Do not use
 module-level state: `fullyParallel` workers do not share it. The initial eight
 DOM nodes alone are not coverage of the four non-default animal images.
 
@@ -294,22 +372,46 @@ Assert `window.devicePixelRatio === 1` before the candidate checks. Do not
 hard-code a generated asset hash or URL; resolve the runtime `currentSrc`
 against the parsed candidates because their names are build-dependent.
 
-**Verify**: `yarn test:e2e tests/e2e/content-images.spec.ts` → all focused tests
-pass in Chromium.
+**Verify**:
+`CI=1 PUBLIC_SENTRY_DSN= PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e tests/e2e/content-images.spec.ts`
+→ the focused test passes in Chromium and `.astro` is restored to the Step 1
+hashes.
 
 ### Step 6: Compare the visual baseline and run complete quality gates
 
-Format only the in-scope files, then run lint, build, and the full E2E suite.
-Repeat the exact 60-record Step 1 matrix into
-`/tmp/plan-010-content-images-after/`. Assert the before/after key sets are
-identical. For every viewport/image pair, compare the rendered bounding box with
-the baseline (maximum one CSS pixel difference per dimension) and inspect paired
-screenshots for crop or layout changes. Only the pre-load intrinsic placeholder
-ratio may differ.
+Format only the in-scope files, then run lint and build. Repeat the exact
+60-record Step 1 matrix into
+`/tmp/plan-010-content-images-after/`, including exactly 60 correspondingly
+named element screenshots. Assert the before/after JSON and PNG key sets are
+identical. For every viewport/image pair, compare the rendered bounding box
+with the baseline (maximum one CSS pixel difference per dimension) and inspect
+paired screenshots for crop or layout changes. Only the pre-load intrinsic
+placeholder ratio may differ.
 Inspect the diff to ensure image mappings, copy, CSS, and hydration are
 unchanged.
 
-**Verify**: `yarn prettier --write src/lib/responsiveImage.ts src/layouts/wrappers/AnimalSectionWrapper.astro src/layouts/wrappers/PrixWrapper.astro src/layouts/wrappers/DeroulementConsultationWrapper.astro src/layouts/wrappers/OsteopathieAnimaleWrapper.astro src/layouts/wrappers/QuiSuisJeWrapper.astro src/components/landing-page/animals/AnimalSection.tsx src/components/landing-page/animals/Section.tsx src/components/landing-page/pricing/Pricing.tsx src/components/landing-page/consultation/ConsultationProcess.tsx src/components/landing-page/osteopathy/Osteopathy.tsx src/components/landing-page/about/About.tsx tests/e2e/content-images.spec.ts && yarn lint && yarn build && yarn test:e2e && git diff --check` → every command exits 0.
+For the after capture, require
+`/tmp/plan-010-content-images-after/` to be absent or empty, recreate only that
+exact path, run a production build with the three public observability
+variables empty, and restore the allowed `.astro` timestamp artifact. Require
+port `4321` to be free, start
+`yarn preview --host 127.0.0.1 --port 4321` only for the capture, and stop it in
+a `finally` path. Wait until the port is free before launching the
+configuration-managed full E2E suite. Do not capture from `yarn dev`: its
+`/_image?...` URLs make the query-stripped source identity ambiguous, and do
+not let a manual preview satisfy Playwright's `webServer` readiness check.
+After the visual and geometry comparisons pass, run the full E2E suite.
+
+Before running generators, require `git diff --quiet HEAD -- .astro` and record
+hashes for every tracked `.astro` file. After each build or Playwright run,
+restore only `.astro/settings.json:_variables.lastUpdateCheck` with
+`apply_patch` if it is the sole generated difference; STOP on any other
+tracked `.astro` drift.
+
+**Verify**: targeted Prettier, `yarn lint`,
+`PUBLIC_SENTRY_DSN= PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn build`,
+`CI=1 PUBLIC_SENTRY_DSN= PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e`,
+`git diff --check`, and `git diff --quiet HEAD -- .astro` all exit 0.
 
 ## Test plan
 
@@ -347,6 +449,8 @@ unchanged.
 - [ ] `rg -o 'data-testid="responsive-content-image"' dist/index.html | wc -l` prints `8`.
 - [ ] No image source, copy, CSS class, `client:*` directive, dependency, or
       generated output is committed.
+- [ ] Tracked `.astro` files match `HEAD` after restoring only the known
+      `lastUpdateCheck` artifact.
 - [ ] `git diff --check` exits 0 and `git status --short --untracked-files=all`
       lists only files in Scope plus the allowed plan-index status update.
 - [ ] `plans/README.md` status row updated.
@@ -370,6 +474,8 @@ Stop and report back (do not improvise) if:
   smallest adequate candidate at a measured DPR-1 viewport.
 - Loaded bounding-box geometry moves by more than one CSS pixel, or screenshot
   review finds a crop/layout change relative to the pre-edit baseline.
+- A tracked `.astro` file changes beyond
+  `.astro/settings.json:_variables.lastUpdateCheck`.
 - A verification fails twice after one reasonable fix attempt.
 
 ## Maintenance notes
