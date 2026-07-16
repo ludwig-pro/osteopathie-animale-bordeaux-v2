@@ -12,15 +12,13 @@
 > before execution; do not stage or commit plans yourself.
 >
 > **Drift check (run second)**:
-> `git diff --stat 9aece8f..HEAD -- package.json .prettierignore eslint.config.js tsconfig.tests.json sentry.client.config.ts scripts/check-lighthouse-regression.mjs .github/workflows/ci-quality.yml`
-> `git diff --stat HEAD -- package.json .prettierignore eslint.config.js tsconfig.tests.json sentry.client.config.ts scripts/check-lighthouse-regression.mjs .github/workflows/ci-quality.yml`
-> `git ls-files --others --exclude-standard -- package.json .prettierignore eslint.config.js tsconfig.tests.json sentry.client.config.ts scripts/check-lighthouse-regression.mjs .github/workflows/ci-quality.yml`
+> `git diff --stat 7d708ec..HEAD -- package.json .prettierignore eslint.config.js tsconfig.tests.json playwright.config.ts tests/e2e/contact-form-validation.spec.ts tests/e2e/content-images.spec.ts tests/netlify/contact-form.spec.ts sentry.client.config.ts scripts/check-lighthouse-regression.mjs ci/lighthouse-baselines/remote.json .github/workflows/ci-quality.yml`
+> `git diff --stat HEAD -- package.json .prettierignore eslint.config.js tsconfig.tests.json playwright.config.ts tests/e2e/contact-form-validation.spec.ts tests/e2e/content-images.spec.ts tests/netlify/contact-form.spec.ts sentry.client.config.ts scripts/check-lighthouse-regression.mjs ci/lighthouse-baselines/remote.json .github/workflows/ci-quality.yml`
+> `git ls-files --others --exclude-standard -- package.json .prettierignore eslint.config.js tsconfig.tests.json playwright.config.ts tests/e2e/contact-form-validation.spec.ts tests/e2e/content-images.spec.ts tests/netlify/contact-form.spec.ts sentry.client.config.ts scripts/check-lighthouse-regression.mjs ci/lighthouse-baselines/remote.json .github/workflows/ci-quality.yml`
 > The second and third commands must print nothing; otherwise STOP and report
 > uncommitted in-scope work.
-> Completed dependency plans may legitimately have changed
-> `sentry.client.config.ts`, `scripts/check-lighthouse-regression.mjs`, or the CI
-> workflow. Compare those diffs with the dependency plans' done criteria; for
-> any unexplained change or other current-state mismatch, treat it as a STOP
+> The first command must print nothing because the plan has been rebased after
+> all committed dependency-plan changes. Any current-state mismatch is a STOP
 > condition.
 
 ## Status
@@ -28,9 +26,9 @@
 - **Priority**: P2
 - **Effort**: M
 - **Risk**: MED
-- **Depends on**: `plans/001-consent-gated-analytics.md`, `plans/002-contact-form-validation.md`, Plan 003's committed remote-test-harness checkpoint from `plans/003-netlify-form-deploy-verification.md`, `plans/004-directions-geolocation-fallback.md`, `plans/005-mapbox-on-demand.md`, `plans/006-module-recovery-reload-guard.md`, `plans/007-ci-least-privilege.md`, `plans/008-lighthouse-current-deploy-correlation.md`, `plans/009-sentry-url-sanitization.md`, `plans/010-responsive-content-images.md`, `plans/011-remove-static-react-hydration.md`
+- **Depends on**: `plans/002-contact-form-validation.md`, Plan 003's committed remote-test-harness checkpoint from `plans/003-netlify-form-deploy-verification.md`, `plans/004-directions-geolocation-fallback.md`, `plans/005-mapbox-on-demand.md`, `plans/006-module-recovery-reload-guard.md`, `plans/007-ci-least-privilege.md`, `plans/008-lighthouse-current-deploy-correlation.md`, `plans/009-sentry-url-sanitization.md`, `plans/010-responsive-content-images.md`, `plans/011-remove-static-react-hydration.md`. Plan 001 was explicitly rejected by the owner and is not a dependency.
 - **Category**: dx
-- **Planned at**: commit `9aece8f`, 2026-07-15
+- **Planned at**: commit `7d708ec`, 2026-07-16
 
 ## Why this matters
 
@@ -62,12 +60,15 @@ technical change.
   must remain byte-stable. Temporarily add the three known-drift legacy Markdown
   files and the root plan directory so the repository's required `yarn format`
   command cannot rewrite either corpus incidentally.
-- A read-only Prettier audit on commit `9aece8f` reported existing drift in
-  `AGENTS.md`, `CLAUDE.md`, `RFC.md`, `sentry.client.config.ts`, and
-  `scripts/check-lighthouse-regression.mjs`. This plan fixes only the two
-  executable-code files. The three historical Markdown files are explicitly
-  outside the CI check and outside Scope to avoid an unrelated large prose
-  rewrite.
+- A read-only Prettier audit on commit `7d708ec` reports existing drift only in
+  `AGENTS.md`, `CLAUDE.md`, `RFC.md`, and
+  `scripts/check-lighthouse-regression.mjs` when using the old narrow audit.
+  The future write-mode glob also reaches `ci/lighthouse-baselines/remote.json`,
+  whose `1.00` literals need a format-only normalization to `1.0`. Plan 009
+  already formatted `sentry.client.config.ts`. This plan fixes only those two
+  executable/config baselines. The three historical Markdown files are
+  explicitly outside the CI check and outside Scope to avoid an unrelated
+  large prose rewrite.
 - `playwright.config.ts`, the `playwright.netlify.config.ts` created by Plan
   003, and `tests/{e2e,netlify}/*.spec.ts` are TypeScript and import types from
   `@playwright/test`. `scripts/*.mjs`, `astro.config.mjs`, `eslint.config.js`,
@@ -78,20 +79,35 @@ technical change.
   `tests/unit/sanitizeTelemetryUrl.test.js`. The final repository gate must
   discover, format, lint, and run both files; treating only Playwright as
   "tests" would leave those regressions outside CI.
+- Plans 010 and 011 add `tests/e2e/content-images.spec.ts` and
+  `tests/e2e/static-sections.spec.ts`; both must be included in the separate
+  Playwright typecheck and lint groups.
+- A prototype of the widened lint is error-free but retains one intentional
+  pre-existing warning at `sentry.client.config.ts:42`:
+  `@typescript-eslint/prefer-nullish-coalescing` on
+  `script.crossOrigin || null`. Replacing it with `??` would preserve an empty
+  string instead of normalizing it to `null`. The behavior-preserving form
+  `script.crossOrigin === '' ? null : script.crossOrigin` keeps `null`, empty,
+  and non-empty outcomes identical while satisfying the rule; this exact lint
+  correction is in scope.
+- The owner's local `netlify link` creates `.netlify/state.json`. This local
+  site link is not repository configuration and must stay ignored by formatting
+  and linting.
 - The repository uses Yarn 1.22.22 and Node 22 or newer (`package.json:8-9,73`).
 
 ## Commands you will need
 
-| Purpose          | Command                          | Expected on success                                                   |
-| ---------------- | -------------------------------- | --------------------------------------------------------------------- |
-| Install          | `yarn install --frozen-lockfile` | exit 0; `yarn.lock` unchanged                                         |
-| Format check     | `yarn format:check`              | exit 0; tracked code/config files are formatted                       |
-| Lint             | `yarn lint`                      | exit 0 across source, tests, scripts, and root config                 |
-| Typecheck        | `yarn typecheck`                 | exit 0 from Astro application checks and Playwright TypeScript checks |
-| Static aggregate | `yarn check:static`              | exit 0 after format, lint, and typecheck                              |
-| Unit tests       | `yarn test:unit`                 | exit 0; the parser and telemetry sanitizer Node tests pass            |
-| Build            | `yarn build`                     | exit 0                                                                |
-| Tests            | `yarn test:e2e`                  | all tests pass                                                        |
+| Purpose          | Command                                                                    | Expected on success                                                   |
+| ---------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Install          | `yarn install --frozen-lockfile`                                           | exit 0; `yarn.lock` unchanged                                         |
+| Format check     | `yarn format:check`                                                        | exit 0; tracked code/config files are formatted                       |
+| Lint             | `yarn lint`                                                                | exit 0 across source, tests, scripts, and root config                 |
+| Typecheck        | `yarn typecheck`                                                           | exit 0 from Astro application checks and Playwright TypeScript checks |
+| Static aggregate | `yarn check:static`                                                        | exit 0 after format, lint, and typecheck                              |
+| Unit tests       | `yarn test:unit`                                                           | exit 0; the parser and telemetry sanitizer Node tests pass            |
+| Build            | `PUBLIC_SENTRY_DSN= PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn build`         | exit 0                                                                |
+| Tests            | `CI=1 PUBLIC_SENTRY_DSN= PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e` | all tests pass                                                        |
+| Drift            | `git diff --quiet HEAD -- .astro && git diff --check`                      | no generated or whitespace drift                                      |
 
 ## Suggested executor toolkit
 
@@ -108,8 +124,13 @@ technical change.
 - `.prettierignore`
 - `eslint.config.js`
 - `tsconfig.tests.json` (create)
-- `sentry.client.config.ts` (format-only; no semantic changes)
+- `playwright.config.ts` (type-only `workers` conditional)
+- `tests/e2e/contact-form-validation.spec.ts` (type-only `baseURL` guard)
+- `tests/e2e/content-images.spec.ts` (type-only `baseURL` guard)
+- `tests/netlify/contact-form.spec.ts` (type-only environment narrowing)
+- `sentry.client.config.ts` (one behavior-preserving lint correction)
 - `scripts/check-lighthouse-regression.mjs` (format-only; no semantic changes)
+- `ci/lighthouse-baselines/remote.json` (format-only numeric spelling)
 - `.github/workflows/ci-quality.yml`
 - `plans/README.md` (status row only, or coordinator-owned during parallel execution)
 
@@ -118,24 +139,27 @@ technical change.
 - `AGENTS.md`, `CLAUDE.md`, and `RFC.md`; their known Markdown drift is not part
   of this technical gate. Only their exact ignore entries may be added to
   `.prettierignore`; their contents must remain byte-for-byte unchanged.
-- Existing test logic, application behavior, production copy, dependencies, or
-  `yarn.lock`.
+- Existing test assertions and behavior, application behavior, production copy,
+  dependencies, or `yarn.lock`. The four explicitly listed type-only fixes may
+  narrow values or omit an `undefined` config property, and the exact Sentry
+  ternary may preserve its current normalization, but none may change a
+  successful test path, request, selector, retry, assertion, or diagnostic
+  value.
 - `scripts/log-image-data.mjs`; its obsolete image path/deletion is a separate
   dead-code decision, not required to establish lint/format coverage.
 - Generated or local directories: `dist`, `.astro`, `.cache`, `.agents`,
-  `.claude`, `.lighthouseci`, `playwright-report`, `test-results`, and
-  `node_modules`.
+  `.claude`, `.lighthouseci`, `.netlify`, `playwright-report`, `test-results`,
+  and `node_modules`.
 - A repository-wide `prettier --write .` or automatic formatting of Markdown.
 
 ## Git workflow
 
-- Branch: `codex/012-repository-wide-static-checks`
+- Branch: `improve`
 - Use up to two short imperative commits so mechanical baseline formatting is
   easy to review:
-  1. `Format executable quality files`
-  2. `Enforce repository static checks`
-- If completed dependency plans already formatted both executable files, omit
-  the empty first commit.
+  1. `style: format quality baselines`
+  2. `ci: enforce repository static checks`
+- If the two baselines are already formatted, omit the empty first commit.
 - Keep each title under 72 characters.
 - Do NOT push or open a PR unless the operator instructed it.
 
@@ -143,75 +167,106 @@ technical change.
 
 ### Step 1: Confirm and bound the existing formatting baseline
 
-Install dependencies, then run read-only checks before editing. First check the
-five known drift files together. At the planned commit, the failure set was the
-three Markdown files and two executable-code files listed in Current state.
-After dependency plans, the two executable files may already pass; the three
-historical Markdown files are still expected to fail. Then run the intended
-code/config glob from Step 2 and record its failure list in the PR notes.
+Install dependencies, require `git diff --quiet HEAD -- .astro`, and record
+hashes for every tracked `.astro` file. After each `astro check`, build, or
+Playwright run in this plan, restore only
+`.astro/settings.json:_variables.lastUpdateCheck` with `apply_patch` if it is
+the sole change; STOP on any other tracked `.astro` drift.
 
-Do **not** run `yarn format` or a repository-wide write command. If additional
-files fail because Plans 001-011 legitimately changed them, format those files
-within their owning plan before executing this consolidation plan.
+Then run read-only formatting checks before editing. First check the five known
+drift files together. At the planned commit, the failure set is the three
+Markdown files plus the Lighthouse executable and Lighthouse baseline JSON
+listed in Current state. Then run the intended code/config glob from Step 2 and
+record its failure list in review evidence.
 
-**Verify**: `yarn prettier --ignore-path /dev/null --check AGENTS.md CLAUDE.md RFC.md sentry.client.config.ts scripts/check-lighthouse-regression.mjs` →
-nonzero exit reporting the three Markdown files; it may also report either
-executable file if its owning dependency did not format it. No other file is
-reported, and `git status --short` is unchanged by the command.
+Do **not** run `yarn format` or a repository-wide write command. If any
+additional file fails, STOP: the dependency-plan formatting baseline has
+drifted and must be reconciled before this consolidation plan.
+
+**Verify**:
+`yarn prettier --ignore-path /dev/null --check AGENTS.md CLAUDE.md RFC.md scripts/check-lighthouse-regression.mjs ci/lighthouse-baselines/remote.json`
+→ nonzero exit reporting exactly those five files, and
+`git status --short` is unchanged by the command.
 
 ### Step 2: Add a read-only, code-focused Prettier gate
 
 In `.prettierignore`, remove only the `package.json` entry and add root-anchored
-entries `/AGENTS.md`, `/CLAUDE.md`, `/RFC.md`, and `/plans/`. Preserve all
-generated, dependency, public, local-agent, and artifact exclusions. The three
-legacy files are an explicit temporary baseline, while `/plans/` protects the
-committed execution corpus from the repository's required write-mode
-`yarn format` command. `format:check` remains deliberately code/config-only.
+entries `/AGENTS.md`, `/CLAUDE.md`, `/RFC.md`, and `/plans/`. Add
+`node_modules`, `.lighthouseci`, `.netlify`, `playwright-report`, and
+`test-results` beside the other generated/local directories. Preserve all
+existing generated, dependency, public, local-agent, and artifact exclusions.
+The three legacy files are an explicit temporary baseline, while `/plans/`
+protects the committed execution corpus from the repository's required
+write-mode `yarn format` command. `format:check` remains deliberately
+code/config-only.
 
 In `package.json`:
 
 - set `format` to
-  `prettier --write "**/*.{js,jsx,ts,tsx,json,md,mjs,astro,yml,yaml}"`;
+  `prettier --write "**/*.{js,jsx,ts,tsx,json,md,mjs,astro,yml,yaml}" ".prettierrc" ".lighthouserc*.json" ".github/**/*.{yml,yaml}"`;
 - set `format:check` to
-  `prettier --check "src/**/*.{js,jsx,ts,tsx,astro}" "tests/**/*.{js,ts,tsx}" "scripts/**/*.{js,mjs}" "*.{js,mjs,ts,json}" ".github/workflows/*.{yml,yaml}"`;
+  `prettier --check "src/**/*.{js,jsx,ts,tsx,astro}" "tests/**/*.{js,ts,tsx}" "scripts/**/*.{js,mjs}" "ci/**/*.json" "*.{js,mjs,ts,json}" ".prettierrc" ".lighthouserc*.json" ".github/**/*.{yml,yaml}"`;
 - deliberately exclude Markdown from `format:check` until its drift is handled
   in a dedicated docs-only change.
 
 The `format:check` command must not scan generated or dependency directories and
-must not rely on shell `find` output. Format only these existing executable drift
-files plus `package.json` and `.github/workflows/ci-quality.yml` as needed:
+must not rely on shell `find` output. Before editing gate configuration, format
+only the two known baselines:
 
 ```sh
-yarn prettier --write package.json sentry.client.config.ts \
-  scripts/check-lighthouse-regression.mjs .github/workflows/ci-quality.yml
+yarn prettier --write scripts/check-lighthouse-regression.mjs \
+  ci/lighthouse-baselines/remote.json
 ```
 
-Do not format a historical Markdown file. If either executable file still has a
-format-only diff, commit those baseline changes separately with
-`Format executable quality files` before changing gate configuration. Do not
-create that commit when there is no diff.
+Do not format a historical Markdown file. Inspect the two diffs to confirm they
+are mechanical only, then commit them separately with
+`style: format quality baselines`. Only after that commit, edit
+`.prettierignore`, `package.json`, and the later gate files. Format
+`package.json` and `.github/workflows/ci-quality.yml` only after their
+configuration edits. Do not create the baseline commit if a fresh audit reports
+no diff.
 
-**Verify**: `yarn format:check && git diff --numstat -- AGENTS.md CLAUDE.md RFC.md plans/README.md 'plans/[0-9][0-9][0-9]-*.md'` →
-the check exits 0 and the diff command prints nothing; only the coordinator may
-later change the index status row.
+**Verify**: `yarn format:check`,
+`yarn prettier --check "**/*.{js,jsx,ts,tsx,json,md,mjs,astro,yml,yaml}" ".prettierrc" ".lighthouserc*.json" ".github/**/*.{yml,yaml}"`,
+and
+`git diff --numstat -- AGENTS.md CLAUDE.md RFC.md plans/README.md 'plans/[0-9][0-9][0-9]-*.md'`
+→ both read-only checks exit 0 and the diff command prints nothing; only the
+coordinator may later change the index status row.
 
 ### Step 3: Typecheck Playwright separately without weakening application strictness
 
 Create `tsconfig.tests.json` extending `./tsconfig.json`. It must:
 
 - set `noEmit: true`;
+- set `skipLibCheck: false` explicitly so the strict test project does not
+  inherit Astro's application-oriented library skip;
 - include only `playwright*.config.ts` and `tests/**/*.ts`;
 - exclude `node_modules`, `dist`, `.astro`, `playwright-report`, and
   `test-results`;
-- retain the inherited strict flags; do not use `skipLibCheck`, relax
-  `noUncheckedIndexedAccess`, or add `any` escapes.
+- retain the inherited strict flags; do not relax `noUncheckedIndexedAccess` or
+  add `any` escapes.
 
 Add `typecheck` to `package.json` as
 `astro check && tsc --noEmit -p tsconfig.tests.json`.
 
-If TypeScript reports an existing error in Playwright code, stop rather than
-editing tests under this plan; report the exact diagnostic for a narrowly scoped
-follow-up.
+The strict preflight at `7d708ec` exposes five known diagnostics. Fix them
+without weakening TypeScript:
+
+- in `playwright.config.ts`, replace `workers: isCI ? 1 : undefined` with a
+  conditional spread that emits `{ workers: 1 }` only in CI;
+- in `tests/e2e/contact-form-validation.spec.ts` and
+  `tests/e2e/content-images.spec.ts`, preserve the existing
+  `expect(baseURL).toBeTruthy()` assertion and add an explicit throwing guard
+  immediately afterward so TypeScript narrows it to `string` before
+  `browser.newContext`;
+- in `tests/netlify/contact-form.spec.ts`, use a small
+  `requireEnvironmentVariable(name): string` helper for the marker and URL so
+  closures receive stable strings.
+
+Preserve the same normal runtime behavior and existing assertions. If
+TypeScript reports any diagnostic beyond these five known sites, or one of
+these fixes would alter a successful test path, STOP and report it rather than
+editing more tests or weakening strictness.
 
 **Verify**: `yarn typecheck` → exit 0 with no errors or warnings promoted to
 errors.
@@ -221,7 +276,7 @@ errors.
 Update `eslint.config.js` with explicit flat-config groups:
 
 1. a leading `ignores` object for `node_modules/**`, `dist/**`, `.astro/**`,
-   `.cache/**`, `.agents/**`, `.claude/**`, `.lighthouseci/**`,
+   `.cache/**`, `.agents/**`, `.claude/**`, `.lighthouseci/**`, `.netlify/**`,
    `playwright-report/**`, and `test-results/**`;
 2. the existing type-aware rules for `src/**/*.{js,jsx,ts,tsx}` and
    `sentry.client.config.ts` using `tsconfig.json`; include the existing browser
@@ -231,32 +286,41 @@ Update `eslint.config.js` with explicit flat-config groups:
 4. a Playwright group for `playwright*.config.ts` and `tests/**/*.ts` using
    `tsconfig.tests.json`. Because these files contain both Node-side test/config
    code and browser callbacks, declare the finalized corpus's exact standard
-   globals read-only: `process`, `console`, `window`, `document`, `navigator`,
-   `caches`, `sessionStorage`, `history`, `location`, `URL`,
-   `URLSearchParams`, `FormData`, `Event`, `CustomEvent`, `performance`,
-   `setTimeout`, and `clearTimeout`. Do not import a wholesale browser-global
-   preset or extend this list speculatively; any additional `no-undef`
-   diagnostic must be traced to an actual dependency-plan use and added by name;
+   globals read-only: `caches`, `document`, `DOMException`, `History`,
+   `HTMLImageElement`, `HTMLLinkElement`, `navigator`, `process`, `Storage`,
+   `URL`, `URLSearchParams`, `window`, and `Window`. Do not import a wholesale
+   browser-global preset or extend this list speculatively; any additional
+   `no-undef` diagnostic must be traced to an actual dependency-plan use and
+   added by name;
 5. a Node ESM unit-test group for `tests/unit/**/*.js`, with the Node globals
-   used by `node:test` and no browser globals;
+   used by the current files—`structuredClone`—and no browser globals; set
+   `ecmaVersion: 'latest'` and `sourceType: 'module'`;
 6. a Node ESM group for `scripts/**/*.{js,mjs}`, `astro.config.mjs`,
    `eslint.config.js`, and `tailwind.config.js`, with `process`, `console`, and
-   `URL` declared read-only. The URL global is required by Plan 008's pure
-   preview-host matcher; do not silence `no-undef` around it.
+   `URL` declared read-only. Set `ecmaVersion: 'latest'` and
+   `sourceType: 'module'` explicitly so Node ESM and the top-level await in
+   `scripts/log-image-data.mjs` parse correctly. The URL global is required by
+   Plan 008's pure preview-host matcher; do not silence `no-undef` around it.
 
 Do not apply browser globals to Node files. Keep the current typed source rules,
 including `no-floating-promises`; do not disable rules merely to make legacy
-violations disappear. Set the package scripts exactly as follows:
+violations disappear. In `sentry.client.config.ts`, replace only
+`script.crossOrigin || null` with
+`script.crossOrigin === '' ? null : script.crossOrigin`; inspect the one-line
+diff and preserve the diagnostic payload for null, empty, and non-empty values.
+Set the package scripts exactly as follows:
 
 ```json
-"lint": "eslint \"src/**/*.{js,jsx,ts,tsx,astro}\" \"tests/**/*.{js,ts,tsx}\" \"scripts/**/*.{js,mjs}\" \"*.{js,mjs,ts}\"",
-"lint:fix": "eslint \"src/**/*.{js,jsx,ts,tsx,astro}\" \"tests/**/*.{js,ts,tsx}\" \"scripts/**/*.{js,mjs}\" \"*.{js,mjs,ts}\" --fix",
+"lint": "eslint \"src/**/*.{js,jsx,ts,tsx,astro}\" \"tests/**/*.{js,ts,tsx}\" \"scripts/**/*.{js,mjs}\" \"*.{js,mjs,ts}\" --max-warnings 0",
+"lint:fix": "eslint \"src/**/*.{js,jsx,ts,tsx,astro}\" \"tests/**/*.{js,ts,tsx}\" \"scripts/**/*.{js,mjs}\" \"*.{js,mjs,ts}\" --fix --max-warnings 0",
 "test:unit": "node --test scripts/*.test.js tests/unit/*.test.js",
 "check:static": "yarn format:check && yarn lint && yarn typecheck"
 ```
 
 **Verify**: `yarn lint && yarn check:static` → both exit 0 with all file groups
-included. Then run
+included and zero warnings. Then run
+`yarn eslint --print-config src/components/landing-page/hero/Hero.tsx` and
+`yarn eslint --print-config src/pages/index.astro` and
 `yarn eslint --print-config tests/e2e/booking.smoke.spec.ts` and
 `yarn eslint --print-config tests/unit/sanitizeTelemetryUrl.test.js` and
 `yarn eslint --print-config scripts/check-lighthouse-regression.mjs`; each
@@ -283,13 +347,21 @@ one ordered match for each command in `lint_build`.
 
 ### Step 6: Run all gates and audit the final diff
 
-Run the exact local equivalents of CI. Inspect the diff to ensure the only
-production-file changes are Prettier-only changes in
-`sentry.client.config.ts` and the Lighthouse script. Confirm the lockfile and
-historical Markdown are untouched.
+Now that the anchored ignores and both format baselines are in place, run the
+repository-required `yarn format` command once. Immediately inspect
+`git diff --name-only` and STOP if it touched anything outside Scope or changed
+any plan, legacy Markdown, generated artifact, dependency, lockfile, or local
+Netlify state. Then run the exact read-only local equivalents of CI.
 
-**Verify**: `yarn check:static && yarn test:unit && yarn build && yarn test:e2e && git diff --check && git diff --exit-code -- yarn.lock AGENTS.md CLAUDE.md RFC.md 'plans/[0-9][0-9][0-9]-*.md'` → every
-command exits 0.
+Inspect the diff to ensure the only baseline changes are Prettier-only in the
+Lighthouse script and baseline JSON, and the only test/config source changes
+are the four documented type-narrowing fixes, the one equivalent Sentry
+expression, and static-gate configuration. Confirm the lockfile, Sentry
+diagnostic values, and historical Markdown are untouched.
+
+**Verify**:
+`yarn format && yarn check:static && yarn test:unit && PUBLIC_SENTRY_DSN= PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn build && CI=1 PUBLIC_SENTRY_DSN= PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e && git diff --check && git diff --quiet HEAD -- .astro && git diff --exit-code -- yarn.lock AGENTS.md CLAUDE.md RFC.md 'plans/[0-9][0-9][0-9]-*.md'`
+→ every command exits 0.
 
 ## Test plan
 
@@ -306,7 +378,8 @@ command exits 0.
   test and the telemetry-URL sanitizer test.
 - `yarn test:e2e` remains the behavioral regression gate after configuration
   changes.
-- Verification: `yarn check:static && yarn test:unit && yarn build && yarn test:e2e` → all pass.
+- Verification: `yarn check:static && yarn test:unit` plus the isolated build
+  and CI-mode E2E commands → all pass.
 
 ## Done criteria
 
@@ -323,9 +396,16 @@ command exits 0.
       using read-only commands.
 - [ ] `git diff --exit-code -- yarn.lock AGENTS.md CLAUDE.md RFC.md 'plans/[0-9][0-9][0-9]-*.md'` exits 0.
 - [ ] `.prettierignore` contains the four root-anchored entries `/AGENTS.md`,
-      `/CLAUDE.md`, `/RFC.md`, and `/plans/`, so `yarn format` cannot rewrite
-      deferred legacy Markdown or the committed plan corpus; `package.json` is
-      no longer ignored.
+      `/CLAUDE.md`, `/RFC.md`, and `/plans/`, plus `.netlify`, so `yarn format`
+      cannot rewrite deferred legacy Markdown, the committed plan corpus, or
+      local Netlify link state; `package.json` is no longer ignored.
+- [ ] The four known strict-TypeScript fixes preserve successful runtime
+      behavior and no other test or production file is changed.
+- [ ] The Sentry `crossOrigin` lint correction preserves null, empty, and
+      non-empty diagnostic values, and repository lint completes with zero
+      warnings.
+- [ ] Tracked `.astro` files match `HEAD` after restoring only the known
+      `lastUpdateCheck` artifact.
 - [ ] There is no broad Markdown, generated-output, dependency, or production
       behavior change.
 - [ ] `git diff --check` exits 0 and `git status --short --untracked-files=all`
@@ -336,19 +416,22 @@ command exits 0.
 
 Stop and report back (do not improvise) if:
 
-- Any technical repository change in Plans 001-011 is not complete. Plan 003's
-  committed remote test/config checkpoint is sufficient here; its later
-  production-read, RFC evidence, and legacy-provider cancellation may remain
-  externally `BLOCKED` because they do not change files covered by this gate.
+- Any required repository checkpoint from Plans 002-011 is not complete. Plan
+  001's owner rejection is expected and is not a blocker. Plan 003's committed
+  remote test/config checkpoint is sufficient here; its later production-read,
+  RFC evidence, and legacy-provider cancellation may remain externally
+  `BLOCKED` because they do not change files covered by this gate.
 - The live Prettier result reports a file other than the three known Markdown
-  files and the two known executable files, after accounting for completed
-  dependency plans, or formatting either executable file changes semantics.
+  files and the two known Lighthouse baselines, or formatting either baseline
+  changes semantics.
 - A formatter would touch a file outside Scope, more than the two known
-  executable drift files plus configuration, any lockfile, or a generated file.
+  baseline drift files plus configuration, any lockfile, or a generated file.
 - `yarn format` changes any tracked plan file despite the anchored `/plans/`
   ignore; stop before committing and report the ignore-boundary failure.
-- Widened lint/typecheck reveals more than ten pre-existing diagnostics, or any
-  diagnostic requires changing test behavior or production logic.
+- Typecheck reveals a diagnostic outside the five documented strict-TypeScript
+  sites; the pre-fix lint reports anything beyond the one documented Sentry
+  warning; the post-fix lint reports any warning or error; or a diagnostic
+  requires changing a successful test path, assertion, or production logic.
 - Either dependency-plan Node test is missing, is not discovered by
   `yarn test:unit`, needs a network service, or cannot pass without changing its
   intended parser/sanitizer contract.

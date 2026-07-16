@@ -37,7 +37,7 @@ single sequential executor may update its own row directly.
 | [009](./009-sentry-url-sanitization.md)               | Strip sensitive URL details from Sentry diagnostics |       P1 |      S | -          | DONE                                  |
 | [010](./010-responsive-content-images.md)             | Generate real responsive content images             |       P2 |      L | -          | DONE                                  |
 | [011](./011-remove-static-react-hydration.md)         | Stop hydrating static React sections                |       P3 |      S | 010        | DONE                                  |
-| [012](./012-repository-wide-static-checks.md)         | Enforce repository-wide static checks               |       P2 |      M | 001-011    | TODO                                  |
+| [012](./012-repository-wide-static-checks.md)         | Enforce repository-wide static checks               |       P2 |      M | 002-011    | IN PROGRESS                           |
 | [013](./013-horse-cattle-offer-spike.md)              | Decide the horse and cattle service position        |       P2 |      S | -          | TODO                                  |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (with a
@@ -79,11 +79,13 @@ one-line reason) | `REJECTED` (with a one-line rationale).
 - Plan 008 follows 007 because both restructure `.github/workflows/ci-quality.yml`.
 - Plan 011 follows 010 because both edit the image wrappers and their React
   consumers.
-- Plan 012 is the final consolidation gate. It deliberately follows all
-  technical plans 001-011 so stricter formatting, lint, and type checks validate
-  the final combined state instead of creating avoidable drift in every plan.
-  For Plan 003, this means its first, repository-test-harness checkpoint; the
-  later production/RFC/cancellation checkpoint may remain externally `BLOCKED`
+- Plan 012 is the final consolidation gate. It deliberately follows the
+  accepted repository checkpoints from plans 002-011 so stricter formatting,
+  lint, and type checks validate the final combined state instead of creating
+  avoidable drift in every plan. Plan 001's owner rejection is an accepted
+  decision, not a missing technical prerequisite. For Plan 003, this means its
+  first, repository-test-harness checkpoint; the later
+  production/RFC/cancellation checkpoint may remain externally `BLOCKED`
   without holding back static-check coverage of the already-committed harness.
 - Plan 013 is a decision spike. It must finish with an owner-approved decision,
   not speculative production copy or pricing changes. It remains independent of
