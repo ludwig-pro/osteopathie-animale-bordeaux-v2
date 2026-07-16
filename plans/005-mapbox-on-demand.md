@@ -12,7 +12,7 @@
 > before execution; do not stage or commit plans yourself.
 >
 > **Drift check (run second)**:
-> `git diff --stat 9aece8f..HEAD -- src/layouts/BaseLayout.astro src/components/landing-page/map/MapSection.tsx src/components/landing-page/map/MapBox.tsx src/lib/hooks/useHasMounted.ts tests/e2e/map-on-demand.spec.ts`
+> `git diff --stat 46038cb..HEAD -- src/layouts/BaseLayout.astro src/components/landing-page/map/MapSection.tsx src/components/landing-page/map/MapBox.tsx src/lib/hooks/useHasMounted.ts tests/e2e/map-on-demand.spec.ts`
 > `git diff --stat HEAD -- src/layouts/BaseLayout.astro src/components/landing-page/map/MapSection.tsx src/components/landing-page/map/MapBox.tsx src/lib/hooks/useHasMounted.ts tests/e2e/map-on-demand.spec.ts`
 > `git ls-files --others --exclude-standard -- src/layouts/BaseLayout.astro src/components/landing-page/map/MapSection.tsx src/components/landing-page/map/MapBox.tsx src/lib/hooks/useHasMounted.ts tests/e2e/map-on-demand.spec.ts`
 > The second and third commands must print nothing; otherwise STOP and report
@@ -21,8 +21,9 @@
 > mismatch, treat it as a STOP condition. Changes made by completed Plan 004 in
 > `MapSection.tsx` are expected; preserve its itinerary behavior and stop only
 > if it makes the loading design below incompatible. Plan 001 was rejected and
-> is not a dependency. `MapBox.tsx` is included as a read-only drift dependency
-> because the asset test relies on its literals; do not edit it.
+> is not a dependency. `MapBox.tsx` is now an implementation file because the
+> first execution proved that its side-effect CSS import is hoisted into the
+> initial Astro HTML even behind `React.lazy`.
 
 ## Status
 
@@ -31,7 +32,7 @@
 - **Risk**: MED
 - **Depends on**: `plans/004-directions-geolocation-fallback.md`
 - **Category**: perf
-- **Planned at**: commit `9aece8f`, 2026-07-15
+- **Planned at**: commit `46038cb`, 2026-07-16
 
 ## Why this matters
 
@@ -89,8 +90,13 @@ asks to display the interactive map.
   ```
 
 - `src/components/landing-page/map/MapBox.tsx:1-2` statically imports both the
-  `mapbox-gl` runtime and its CSS. Keep those imports in this file; making this
-  component a dynamic boundary is what defers both resources.
+  `mapbox-gl` runtime and its CSS. The first Plan 005 execution proved that
+  `React.lazy` defers the JavaScript but Astro still injects the generated
+  `MapBox.*.css` stylesheet into `dist/index.html`.
+- A follow-up experiment verified the supported Vite `?url` import:
+  `mapbox-gl/dist/mapbox-gl.css?url` emits one real hashed CSS asset without
+  linking it from the initial HTML. A runtime `<link>` can load it after the
+  explicit click and before `new mapboxgl.Map(...)`.
 - `src/lib/hooks/useHasMounted.ts` is referenced only by `MapSection.tsx` at
   this commit (`rg -n "useHasMounted" src`). Once the map is click-gated it has
   no caller and should be deleted instead of retained as dead code.
@@ -121,15 +127,15 @@ asks to display the interactive map.
 
 ## Commands you will need
 
-| Purpose      | Command                                                                                                                             | Expected on success                                                  |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Install      | `yarn install --frozen-lockfile`                                                                                                    | exit 0 without changing `yarn.lock`                                  |
-| Format       | `yarn prettier --write src/layouts/BaseLayout.astro src/components/landing-page/map/MapSection.tsx tests/e2e/map-on-demand.spec.ts` | exit 0; only in-scope files are formatted                            |
-| Lint         | `yarn lint`                                                                                                                         | exit 0, no errors                                                    |
-| Build        | `yarn build`                                                                                                                        | exit 0; Astro check and static build succeed                         |
-| Focused test | `CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e tests/e2e/map-on-demand.spec.ts`                                             | a fresh isolated server runs and the new Mapbox deferral test passes |
-| Full tests   | `CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e`                                                                             | a fresh isolated server runs and all Playwright tests pass           |
-| Diff check   | `git diff --check`                                                                                                                  | exit 0, no whitespace errors                                         |
+| Purpose      | Command                                                                                                                                                                        | Expected on success                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| Install      | `yarn install --frozen-lockfile`                                                                                                                                               | exit 0 without changing `yarn.lock`                                  |
+| Format       | `yarn prettier --write src/layouts/BaseLayout.astro src/components/landing-page/map/MapSection.tsx src/components/landing-page/map/MapBox.tsx tests/e2e/map-on-demand.spec.ts` | exit 0; only in-scope files are formatted                            |
+| Lint         | `yarn lint`                                                                                                                                                                    | exit 0, no errors                                                    |
+| Build        | `yarn build`                                                                                                                                                                   | exit 0; Astro check and static build succeed                         |
+| Focused test | `CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e tests/e2e/map-on-demand.spec.ts`                                                                                        | a fresh isolated server runs and the new Mapbox deferral test passes |
+| Full tests   | `CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e`                                                                                                                        | a fresh isolated server runs and all Playwright tests pass           |
+| Diff check   | `git diff --check`                                                                                                                                                             | exit 0, no whitespace errors                                         |
 
 ## Scope
 
@@ -137,6 +143,7 @@ asks to display the interactive map.
 
 - `src/layouts/BaseLayout.astro`
 - `src/components/landing-page/map/MapSection.tsx`
+- `src/components/landing-page/map/MapBox.tsx`
 - `src/lib/hooks/useHasMounted.ts` (delete after removing its only import)
 - `tests/e2e/map-on-demand.spec.ts` (create)
 - `plans/README.md` (status row only)
@@ -145,8 +152,6 @@ asks to display the interactive map.
 
 - The itinerary/geolocation behavior delivered by Plan 004.
 - Map coordinates, address copy, zoom, style, marker, popup, or error fallback.
-- `src/components/landing-page/map/MapBox.tsx`; its existing style literal is
-  only a read-only marker for the generated-asset test.
 - `src/pages/index.astro` hydration directives.
 - Mapbox package versions or any dependency/lockfile change.
 - Replacing Mapbox with another map provider.
@@ -198,7 +203,52 @@ shared utility.
 
 **Verify**: `for pattern in "lazy(() => import('./MapBox'))" 'map-load-trigger' 'Afficher la carte interactive' '<Suspense'; do rg -Fq "$pattern" src/components/landing-page/map/MapSection.tsx || exit 1; done && ! rg -n "useHasMounted|^import MapBox from './MapBox'" src && test ! -e src/lib/hooks/useHasMounted.ts` → exit 0; each of the four target patterns exists independently, the old import/hook is absent, and the orphan file is deleted.
 
-### Step 2: Remove the unconditional Mapbox preconnect
+### Step 2: Load the Mapbox stylesheet explicitly after demand
+
+In `MapBox.tsx`, keep the static `mapbox-gl` JavaScript import because the whole
+component is already behind the dynamic boundary. Replace the side-effect CSS
+import with:
+
+```tsx
+import mapboxStylesheetUrl from 'mapbox-gl/dist/mapbox-gl.css?url';
+```
+
+Add a module-level `Promise<void> | undefined` and a
+`loadMapboxStylesheet()` helper. It must:
+
+- reuse an existing `link[data-mapbox-styles="true"]` or create exactly one;
+- set `rel="stylesheet"`, `href={mapboxStylesheetUrl}`, and the data marker
+  before appending it to `<head>`;
+- resolve immediately when an existing link already has a `sheet`;
+- otherwise resolve on `load`, reject on `error`, and remove both event
+  listeners when either event settles;
+- on `error`, remove the failed link, reset the singleton promise, and reject so
+  a later mount can retry;
+- keep a successfully loaded link for the rest of the page rather than removing
+  and re-downloading it on every mount.
+
+Refactor the existing map effect into an async initializer that awaits
+`loadMapboxStylesheet()` before reading the token or constructing
+`new mapboxgl.Map(...)`. Preserve the current token, support, map, marker,
+popup, and error-fallback behavior.
+
+Make the lifecycle race-safe:
+
+- keep an `isCancelled` flag and a `map` variable in the effect;
+- after awaiting CSS, return if cancelled or `mapContainerRef.current` is null;
+- guard every asynchronous `setMapError(true)` and the map `error` handler with
+  `!isCancelled`;
+- retain the map error handler reference, remove it during cleanup, then call
+  `map.remove()`;
+- use `[lat, lng, label]` as the effect dependencies so props cannot become
+  stale.
+
+Do not construct the map before the stylesheet's `load` event. Do not use an
+inline `<style>` fallback or change global Astro/Vite configuration.
+
+**Verify**: `for pattern in "mapbox-gl/dist/mapbox-gl.css?url" 'data-mapbox-styles="true"' 'loadMapboxStylesheet' 'await loadMapboxStylesheet()' '[lat, lng, label]'; do rg -Fq "$pattern" src/components/landing-page/map/MapBox.tsx || exit 1; done && ! rg -n "^import ['\"]mapbox-gl/dist/mapbox-gl\\.css['\"]" src/components/landing-page/map/MapBox.tsx` → the explicit CSS URL loader, singleton marker, load-before-map ordering, lifecycle dependencies, and removal of the eager side-effect import are all present.
+
+### Step 3: Remove the unconditional Mapbox preconnect
 
 Delete only `<link rel="preconnect" href="https://api.mapbox.com" />` from
 `BaseLayout.astro`. Leave the Google preconnect and all analytics code exactly
@@ -206,12 +256,12 @@ as they exist.
 
 **Verify**: `! rg -n 'rel="preconnect" href="https://api\.mapbox\.com"' src/layouts/BaseLayout.astro` → exit 0; Mapbox has no unconditional preconnect. Compare the surrounding diff to confirm no Google/analytics line changed in this plan.
 
-### Step 3: Add a network-level regression test
+### Step 4: Add a network-level regression test
 
 Before the first focused Playwright command, require
 `git diff --quiet HEAD -- .astro` and record the hashes of every tracked
 `.astro` file against `HEAD`. The Playwright web server runs `yarn build`, so
-this baseline must exist before Step 3, not only before the later repository
+this baseline must exist before Step 4, not only before the later repository
 gates.
 
 Create `tests/e2e/map-on-demand.spec.ts`. Before navigation, inspect
@@ -221,7 +271,9 @@ inspect `dist/_astro/*.css` and find the stylesheet containing the stable
 `.mapboxgl-map` selector. Require exactly one JavaScript match and one CSS
 match; fail with a clear message if either set has zero or multiple matches.
 This identifies both dynamically generated Mapbox resources without depending
-on content hashes.
+on content hashes. Read `dist/index.html` too and fail if it already references
+the discovered CSS pathname; a generated asset is not deferred if Astro links
+it in the initial document.
 
 In the test:
 
@@ -242,15 +294,25 @@ In the test:
    attribute when `client:visible` hydration completes; visibility alone is
    insufficient because the request button is now server-rendered.
 7. Assert neither the generated Mapbox JavaScript nor CSS asset has been
-   requested, the Mapbox-host interception count is still zero, and the
-   analytics interception count is zero.
+   requested, no `link[data-mapbox-styles="true"]` exists, the Mapbox-host
+   interception count is still zero, and the analytics interception count is
+   zero.
 8. Click the button.
 9. Use `expect.poll` to assert that both identified asset pathnames are
    requested.
-10. Assert the button is no longer present and that either `.mapboxgl-map` or
-    the existing "La carte est temporairement indisponible." fallback becomes
-    visible. Aborted Mapbox API calls may intentionally select the fallback.
-    Reassert that the analytics interception count is still zero.
+10. Use `expect.poll` to require exactly one
+    `link[rel="stylesheet"][data-mapbox-styles="true"]`, with an `href` pathname
+    equal to the discovered CSS asset and a non-null `sheet`. This proves the
+    stylesheet loaded before the next assertion.
+11. Assert the button is no longer present and that
+    `.mapboxgl-map` or the existing "La carte est temporairement
+    indisponible." fallback becomes visible. Use `.or(...).first()` or an
+    explicit branch so two matching elements cannot create a strict-locator
+    failure. If the map is visible, assert computed `position: relative` and
+    `overflow: hidden` to prove the loaded stylesheet applies.
+12. After a short stabilization window, require one dynamic stylesheet link,
+    reassert that the analytics interception count is zero, and confirm every
+    observed Mapbox-host request was intercepted.
 
 The test must not inspect or print the token, and all Mapbox-host requests must
 be intercepted before they can reach the network.
@@ -263,22 +325,27 @@ only `.astro/settings.json:lastUpdateCheck` changed, restore that value with
 `CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e tests/e2e/map-on-demand.spec.ts`,
 inspect and restore the allowed timestamp if needed, then run
 `git diff --quiet HEAD -- .astro` → one test passes on a fresh server and proves
-both Mapbox JS and CSS are absent before the click and requested after it, with
-all Mapbox provider requests aborted, no analytics request, and no remaining
-tracked `.astro` drift.
+both Mapbox JS and CSS are absent from the initial HTML/network before the click
+and requested after it, the runtime stylesheet is loaded exactly once, all
+Mapbox provider requests are aborted, no analytics request occurs, and no
+tracked `.astro` drift remains.
 
-### Step 4: Run repository gates and inspect the diff
+### Step 5: Run repository gates and inspect the diff
 
 Run the standard checks after the focused test. Confirm the completed Plan 004
 itinerary test still passes as part of the full Playwright run.
 
-Reuse the clean `.astro` baseline captured before Step 3. After each generating
+Reuse the clean `.astro` baseline captured before Step 4. After each generating
 command, inspect the diff. `yarn build` may change only
 `.astro/settings.json`'s `lastUpdateCheck`; restore that one value with
 `apply_patch`. STOP if another key or any other tracked `.astro` file changes.
 
-**Verify**: run formatting, lint, and `yarn build`; inspect and restore the
-allowed timestamp. Then run
+**Verify**: run targeted Prettier on `BaseLayout.astro`, `MapSection.tsx`,
+`MapBox.tsx`, and the new test, then `yarn lint` and `yarn build`; inspect and
+restore the allowed timestamp. Run
+`npx react-doctor@latest --verbose --scope changed` and fix only regressions
+introduced by the Plan 005 React files; report unrelated/pre-existing
+diagnostics without expanding scope. Then run
 `CI=1 PUBLIC_GTM_ID= PUBLIC_POSTHOG_KEY= yarn test:e2e`; inspect and restore
 again. Finish with `git diff --check && git diff --quiet HEAD -- .astro` →
 every command exits 0 on a fresh analytics-isolated Playwright server, and
@@ -289,6 +356,9 @@ tracked `.astro` files match `HEAD` after restoring only the allowed timestamp.
 - Create `tests/e2e/map-on-demand.spec.ts` with one deterministic network-level
   test covering both states: viewport hydration without Mapbox JS/CSS, then
   explicit request for both resources.
+- Prove the discovered CSS pathname is absent from `dist/index.html`, then
+  require exactly one runtime-created stylesheet link with that pathname after
+  the click.
 - Model request recording and `expect.poll` on
   `tests/e2e/module-script-recovery.spec.ts`; model user-facing locators on
   `tests/e2e/booking.smoke.spec.ts`.
@@ -311,10 +381,15 @@ Machine-checkable. ALL must hold:
 - [ ] `yarn test:e2e` exits 0, including the new on-demand request test.
 - [ ] `MapSection.tsx` contains `lazy(() => import('./MapBox'))`, no static
       `MapBox` import, and no `useHasMounted` dependency.
+- [ ] `MapBox.tsx` imports Mapbox CSS with `?url`, creates at most one marked
+      stylesheet link, waits for it to load before constructing the map, and
+      handles load failure/unmount without stale state or map creation.
 - [ ] `src/lib/hooks/useHasMounted.ts` is deleted after confirming it has no
       remaining caller.
 - [ ] The Mapbox JavaScript and CSS build assets are not requested before
       `data-testid="map-load-trigger"` is clicked and are both requested after it.
+- [ ] The initial HTML does not reference the Mapbox CSS asset; after the click,
+      exactly one loaded `link[data-mapbox-styles="true"]` references it.
 - [ ] The focused test aborts every Mapbox-host request and never prints a
       token-bearing URL.
 - [ ] Focused and full E2E runs use a fresh server with empty GTM/PostHog keys;
@@ -323,6 +398,8 @@ Machine-checkable. ALL must hold:
 - [ ] Plan 004's itinerary fallback behavior and tests still pass.
 - [ ] Tracked `.astro` artifacts match their pre-build state after restoring
       only `.astro/settings.json`'s known `lastUpdateCheck` update.
+- [ ] React Doctor reports no regression introduced by the Plan 005 React
+      changes.
 - [ ] `git diff --check` exits 0.
 - [ ] `git status --short --untracked-files=all` lists only in-scope files and
       the allowed `plans/README.md` status update.
@@ -342,21 +419,30 @@ Stop and report back (do not improvise) if:
 - Vite merges the Mapbox CSS marker into an eagerly requested global
   stylesheet; report the generated asset graph rather than claiming CSS is
   demand-loaded.
+- The `?url` stylesheet is still referenced by `dist/index.html`, or a
+  stylesheet request occurs before the explicit click.
 - More than one generated JavaScript asset contains the stable Mapbox style
   marker and there is no deterministic way to identify the dynamic entry.
+- Zero or multiple generated CSS assets contain `.mapboxgl-map`.
+- The map can be constructed before the stylesheet load event, more than one
+  marked stylesheet link can be created, or an unmounted effect can still
+  construct a map or call `setMapError`.
 - The implementation requires exposing, changing, logging, or hard-coding a
   Mapbox token.
 - A Mapbox-host request escapes the Playwright route interception.
 - A tracked `.astro` file changes beyond the known
   `.astro/settings.json:lastUpdateCheck` build artifact.
 - The fix appears to require changing the island hydration directive, provider,
-  coordinates, or itinerary behavior.
+  coordinates, itinerary behavior, or global Astro/Vite configuration.
 - A verification command fails twice after one reasonable correction attempt.
 
 ## Maintenance notes
 
 - Keep the Mapbox runtime and CSS behind the same dynamic component boundary;
   moving either import back into `MapSection.tsx` silently defeats the win.
+- Keep `mapbox-gl.css?url` and the singleton marked `<link>` loader together.
+  A future CSP can allow the same-origin stylesheet without requiring
+  `style-src 'unsafe-inline'`.
 - A reviewer should inspect the built network waterfall, keyboard focus on the
   request button, and preservation of the 400px layout height.
 - If the map provider, style URL, or bundler output changes, update the stable
