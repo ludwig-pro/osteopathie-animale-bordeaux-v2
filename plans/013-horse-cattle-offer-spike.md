@@ -12,7 +12,7 @@
 > before execution; do not stage or commit plans yourself.
 >
 > **Drift check (run second)**:
-> `git diff --stat 9aece8f..HEAD -- docs/decisions/horse-cattle-offer.md src/components/landing-page/animals/configuration.ts src/components/landing-page/animals/NewAriaSelectMenu.tsx src/components/landing-page/animals/AriaSelectMenuWeb.tsx src/components/landing-page/about/About.tsx src/components/landing-page/hero/Hero.tsx src/components/landing-page/pricing/Pricing.tsx src/components/landing-page/consultation/ConsultationProcess.tsx src/lib/constants/site.ts`
+> `git diff --stat a53ee3e..HEAD -- docs/decisions/horse-cattle-offer.md src/components/landing-page/animals/configuration.ts src/components/landing-page/animals/NewAriaSelectMenu.tsx src/components/landing-page/animals/AriaSelectMenuWeb.tsx src/components/landing-page/about/About.tsx src/components/landing-page/hero/Hero.tsx src/components/landing-page/pricing/Pricing.tsx src/components/landing-page/consultation/ConsultationProcess.tsx src/lib/constants/site.ts`
 > `git diff --stat HEAD -- docs/decisions/horse-cattle-offer.md src/components/landing-page/animals/configuration.ts src/components/landing-page/animals/NewAriaSelectMenu.tsx src/components/landing-page/animals/AriaSelectMenuWeb.tsx src/components/landing-page/about/About.tsx src/components/landing-page/hero/Hero.tsx src/components/landing-page/pricing/Pricing.tsx src/components/landing-page/consultation/ConsultationProcess.tsx src/lib/constants/site.ts`
 > `git ls-files --others --exclude-standard -- docs/decisions/horse-cattle-offer.md src/components/landing-page/animals/configuration.ts src/components/landing-page/animals/NewAriaSelectMenu.tsx src/components/landing-page/animals/AriaSelectMenuWeb.tsx src/components/landing-page/about/About.tsx src/components/landing-page/hero/Hero.tsx src/components/landing-page/pricing/Pricing.tsx src/components/landing-page/consultation/ConsultationProcess.tsx src/lib/constants/site.ts`
 > The second and third commands must print nothing; otherwise STOP and report
@@ -30,7 +30,7 @@
   six question groups, select one token per species, and provide a durable
   approval reference
 - **Category**: direction
-- **Planned at**: commit `9aece8f`, 2026-07-15
+- **Planned at**: commit `a53ee3e`, 2026-07-16
 
 ## Why this matters
 
@@ -47,32 +47,37 @@ is an owner-validated decision record, not speculative production edits.
   and dedicated images.
 - Both selectors expose those options:
   `NewAriaSelectMenu.tsx:6-14` and `AriaSelectMenuWeb.tsx:100-105`.
-- `src/components/landing-page/about/About.tsx:57-60` says personalized care is
+- `src/components/landing-page/about/About.tsx:55-56` says personalized care is
   offered for dogs, cats, NAC, horses, or cows, in the practice or at home.
-- `src/components/landing-page/hero/Hero.tsx:181-186` says the practitioner is
+- `src/components/landing-page/hero/Hero.tsx:185-186` says the practitioner is
   an expert for dogs, cats, and NAC only.
-- `src/components/landing-page/pricing/Pricing.tsx:37-67` has named cards for
-  dog/cat and NAC plus a breeder package, but no explicit horse or cattle price.
+- `src/components/landing-page/pricing/Pricing.tsx:29-57,200` has named cards
+  for dog/cat and NAC plus a breeder package, but no explicit horse or cattle
+  price.
 - `src/components/landing-page/hero/Hero.tsx:24-25` sends all online booking to
   one generic Calendly consultation URL.
-- `src/components/landing-page/consultation/ConsultationProcess.tsx:274-282`
+- `src/components/landing-page/consultation/ConsultationProcess.tsx:270-281`
   uses a horse treatment photo. Treat it as supporting imagery, not proof of a
   current commercial offer.
 - `src/lib/constants/site.ts:36` says the service area is Bordeaux, Bègles,
   and Gironde, but the code does not specify equine/bovine travel radius,
   availability, pricing, venue, minimum group size, or booking rules.
+- Plans 010-012 changed responsive-image plumbing and repository checks. At
+  commit `a53ee3e`, those changes shifted some line numbers but did not alter
+  any horse/cattle claim fragment above. This plan is rebased to that final
+  repository checkpoint.
 - There is no `docs/` directory or existing owner decision record. Do not infer
   business truth from the current copy.
 
 ## Commands you will need
 
-| Purpose    | Command                                                                                                                                                                               | Expected on success                          |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ----- | ------------- | ------- | -------- | ---------------------------------------------------------------- | ---------------------------------------------------- |
-| Inventory  | `rg -n -i 'cheval                                                                                                                                                                     | vache                                        | bovin | chiens, chats | N\.A\.C | Éleveurs | calendly' src/components/landing-page src/lib/constants/site.ts` | exits 0 and shows all current positioning references |
-| Install    | `yarn install --frozen-lockfile`                                                                                                                                                      | exit 0; lockfile unchanged                   |
-| Format     | `yarn prettier --check docs/decisions/horse-cattle-offer.md`                                                                                                                          | exit 0 after the decision record is complete |
-| Boundary   | compare the complete `git status --porcelain=v1 --untracked-files=all` path set with `docs/decisions/horse-cattle-offer.md` plus the optional coordinator-owned `plans/README.md` row | no other changed path                        |
-| Whitespace | `git diff --check`                                                                                                                                                                    | exit 0                                       |
+| Purpose    | Command                                                                                                                                                                               | Expected on success                                  |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Inventory  | `rg -n -i -e 'cheval' -e 'vache' -e 'bovin' -e 'chiens, chats' -e 'N\.A\.C' -e 'Éleveurs' -e 'calendly' -e 'areaServed' src/components/landing-page src/lib/constants/site.ts`        | exits 0 and shows all current positioning references |
+| Install    | `yarn install --frozen-lockfile`                                                                                                                                                      | exit 0; lockfile unchanged                           |
+| Format     | `yarn prettier --check docs/decisions/horse-cattle-offer.md`                                                                                                                          | exit 0 after the decision record is complete         |
+| Boundary   | compare the complete `git status --porcelain=v1 --untracked-files=all` path set with `docs/decisions/horse-cattle-offer.md` plus the optional coordinator-owned `plans/README.md` row | no other changed path                                |
+| Whitespace | `git diff --check`                                                                                                                                                                    | exit 0                                               |
 
 ## Scope
 
@@ -94,8 +99,14 @@ is an owner-validated decision record, not speculative production edits.
 
 ## Git workflow
 
-- Branch: `codex/013-horse-cattle-offer-spike`
-- Make one commit after explicit validation: `Document horse and cattle offer decision`.
+- Branch: `improve`
+- Make one implementation commit after explicit validation:
+  `Document horse and cattle offer decision`.
+- When execution reaches the owner-prerequisite STOP condition, do not create a
+  placeholder decision record or an empty implementation commit. The central
+  coordinator may commit only the `plans/README.md` status row as
+  `BLOCKED — owner answers pending`; that bookkeeping commit does not satisfy
+  this plan's done criteria.
 - Keep the title imperative and under 72 characters.
 - Do NOT push or open a PR unless the operator instructed it.
 
@@ -122,7 +133,8 @@ cattle:
 - `REMOVE` — they are no longer offered and future work should remove the
   conflicting claims and assets.
 
-**Verify**: `rg -n -i 'cheval|vache|bovin|chiens, chats|N\.A\.C|Éleveurs|calendly' src/components/landing-page src/lib/constants/site.ts` →
+**Verify**:
+`rg -n -i -e 'cheval' -e 'vache' -e 'bovin' -e 'chiens, chats' -e 'N\.A\.C' -e 'Éleveurs' -e 'calendly' -e 'areaServed' src/components/landing-page src/lib/constants/site.ts` →
 matches the inventory in Current state; `git status --short` shows no edit from
 this step.
 
@@ -146,6 +158,11 @@ fill gaps by inference:
 Do not put private customer data, credentials, phone numbers, access tokens, or
 private message contents in the repository. A role plus a durable internal
 reference is sufficient.
+
+When a species is not currently accepted or the owner selects `REMOVE`, each
+otherwise inapplicable operational field must still be answered explicitly as
+`not applicable because the offer is not accepted`. That is a complete answer;
+silence, inference, or an unexplained placeholder is not.
 
 **Verify**: before continuing, all six questions have explicit owner answers,
 one decision token is selected for horses, one is selected for cattle, and a
@@ -197,9 +214,9 @@ not pass. The two species may legitimately have different tokens. In
 `Current public claims`, cite the exact repository path plus the stable exported
 component/configuration symbol and a short identifying claim fragment observed
 at execution `HEAD` (for example `About.tsx` / `QuiSuisJe`), and record the
-audited baseline commit `9aece8f`. Do **not** store line ranges: Plan 010 may
-legitimately reformat the same components in parallel and shift lines without
-changing a claim. In `Owner answers`, record concise answers to all six questions.
+reviewed repository checkpoint commit `a53ee3e`. Do **not** store line ranges:
+future formatting may shift them without changing a claim. In `Owner answers`,
+record concise answers to all six questions.
 In `Follow-up backlog`, separate horse and cattle consequences when their
 decisions differ, and label every item `NOT AUTHORIZED BY THIS SPIKE`.
 `Explicit non-goals` must say that this record changes no production copy,
@@ -275,7 +292,7 @@ whitespace check exits 0.
       captures operational constraints without invented facts.
 - [ ] The inventory command is rerun against the final integration candidate
       before `DONE`; every recorded path/symbol/claim still resolves after any
-      parallel Plan 010 changes.
+      later integration change.
 - [ ] Every follow-up item is marked `NOT AUTHORIZED BY THIS SPIKE`.
 - [ ] Exactly one `Q1` through `Q6` heading exists and each has an explicit
       owner answer rather than a placeholder.
@@ -299,7 +316,8 @@ Stop and report back (do not improvise) if:
   owner review if the public claim itself changed.
 - The business/site owner is unavailable, declines to choose an option, or
   leaves any species, pricing basis, service radius, availability, or booking
-  question unanswered.
+  question without either a factual answer or an explicit, reasoned
+  not-applicable answer.
 - The only validation evidence would require committing private correspondence,
   personal customer data, a credential, or a secret.
 - Either species lacks its own explicit decision token or operational answers.

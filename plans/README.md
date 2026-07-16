@@ -38,7 +38,7 @@ single sequential executor may update its own row directly.
 | [010](./010-responsive-content-images.md)             | Generate real responsive content images             |       P2 |      L | -          | DONE                                  |
 | [011](./011-remove-static-react-hydration.md)         | Stop hydrating static React sections                |       P3 |      S | 010        | DONE                                  |
 | [012](./012-repository-wide-static-checks.md)         | Enforce repository-wide static checks               |       P2 |      M | 002-011    | DONE                                  |
-| [013](./013-horse-cattle-offer-spike.md)              | Decide the horse and cattle service position        |       P2 |      S | -          | TODO                                  |
+| [013](./013-horse-cattle-offer-spike.md)              | Decide the horse and cattle service position        |       P2 |      S | -          | IN PROGRESS                           |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (with a
 one-line reason) | `REJECTED` (with a one-line rationale).
