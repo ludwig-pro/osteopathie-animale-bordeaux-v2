@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 env:
   NODE_VERSION: '22.13.0'
@@ -76,6 +75,9 @@ jobs:
     name: Lighthouse (Remote)
     runs-on: ubuntu-latest
     needs: lint_build
+    permissions:
+      contents: read
+      pull-requests: read
 
     steps:
       - name: Checkout
@@ -260,16 +262,82 @@ jobs:
               --markdown-file /tmp/lighthouse-remote-report.md
           fi
 
+      - name: Stage Lighthouse PR report
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        run: |
+          if [ -f /tmp/lighthouse-remote-report.md ]; then
+            cp /tmp/lighthouse-remote-report.md lighthouse-comment.md
+          else
+            printf '%s\n' \
+              '<!-- lighthouse-remote-report -->' \
+              '## ❌ Lighthouse Remote Report' \
+              '' \
+              'Report file not found.' \
+              > lighthouse-comment.md
+          fi
+
+      - name: Upload Lighthouse PR report
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-comment-body
+          path: lighthouse-comment.md
+          if-no-files-found: error
+
+      - name: Fail job if regression gate failed
+        if: steps.lighthouse_gate.outcome == 'failure'
+        run: exit 1
+
+      - name: Upload remote Lighthouse artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-remote-artifacts
+          path: |
+            .lighthouseci
+            /tmp/lighthouse-remote-summary.json
+            /tmp/lighthouse-remote-report.md
+          if-no-files-found: warn
+
+  lighthouse_comment:
+    name: Publish Lighthouse PR comment
+    needs: lighthouse_remote
+    if: >-
+      !cancelled() &&
+      github.event_name == 'pull_request' &&
+      (needs.lighthouse_remote.result == 'success' ||
+      needs.lighthouse_remote.result == 'failure')
+    permissions:
+      actions: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Lighthouse PR report
+        uses: actions/download-artifact@v4
+        with:
+          name: lighthouse-comment-body
+          path: lighthouse-comment-artifact
+
       - name: Update PR comment with Lighthouse report
-        if: always() && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
             const marker = '<!-- lighthouse-remote-report -->';
-            const body = fs.existsSync('/tmp/lighthouse-remote-report.md')
-              ? fs.readFileSync('/tmp/lighthouse-remote-report.md', 'utf8')
-              : `${marker}\n## ❌ Lighthouse Remote Report\n\nReport file not found.`;
+            const body = fs.readFileSync(
+              'lighthouse-comment-artifact/lighthouse-comment.md',
+              'utf8'
+            );
+
+            if (body !== marker && !body.startsWith(`${marker}\n`)) {
+              throw new Error('Lighthouse report marker is missing.');
+            }
+
+            if (Buffer.byteLength(body, 'utf8') > 60000) {
+              throw new Error('Lighthouse report exceeds 60,000 UTF-8 bytes.');
+            }
+
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
 
@@ -300,18 +368,3 @@ jobs:
                 body,
               });
             }
-
-      - name: Fail job if regression gate failed
-        if: steps.lighthouse_gate.outcome == 'failure'
-        run: exit 1
-
-      - name: Upload remote Lighthouse artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: lighthouse-remote-artifacts
-          path: |
-            .lighthouseci
-            /tmp/lighthouse-remote-summary.json
-            /tmp/lighthouse-remote-report.md
-          if-no-files-found: warn
