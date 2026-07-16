@@ -90,7 +90,7 @@ browser location in this plan.
 
 ## Git workflow
 
-- Branch: `codex/004-directions-fallback`
+- Branch: `improve`
 - Make one logical commit after all gates pass: `Make directions always available`.
 - Keep the title imperative and under 72 characters, matching this repo's
   short commit style.
@@ -162,9 +162,19 @@ Assert:
 4. clicking with a test-installed capture listener that prevents navigation
    does not read `navigator.geolocation` and does not call `window.open`.
 
-Install spies before page code with `page.addInitScript`, verify they are active
-after the hydration wait, but never follow the external link. The test should
-prove link semantics, not Google availability.
+Install spies before page code with `page.addInitScript`. Store call counters
+for `navigator.geolocation.getCurrentPosition` and `window.open` on a dedicated
+test-only `window` property. After the hydration wait, record both counter
+baselines and verify the spies are active. Install a capture listener on the
+directions anchor that prevents its native navigation, click it, then prove
+both counters are unchanged.
+
+Before navigation, also install a `BrowserContext` route for
+`https://www.google.fr/maps/dir/**` that increments a request counter and aborts
+the request, plus a context-level new-page counter. Assert both remain zero
+after the click. This makes an accidental request or popup fail the test while
+still never following the external link. The test should prove link semantics,
+not Google availability.
 
 **Verify**: `yarn test:e2e tests/e2e/directions.spec.ts` → all four assertions pass and the test makes no Google Maps navigation/request.
 
@@ -173,6 +183,12 @@ prove link semantics, not Google availability.
 Format only the four in-scope files, then run lint, build, focused E2E, and the
 full suite. Confirm no geolocation code remains in the map section and no
 lockfile change occurred.
+
+`.astro/settings.json` is a tracked Astro artifact whose `lastUpdateCheck` may
+change during `yarn build`. Record its pre-build hash. If it changes, inspect
+the diff: when and only when `lastUpdateCheck` changed, restore that single
+value with `apply_patch` before the scope check. STOP if any other key or file
+content changed; do not hide an unrelated generated difference.
 
 **Verify**: `yarn prettier --write src/components/landing-page/map/MapSection.tsx src/components/landing-page/map/MapBox.tsx src/lib/directions.ts tests/e2e/directions.spec.ts && yarn lint && yarn build && yarn test:e2e tests/e2e/directions.spec.ts && yarn test:e2e && ! rg -n "navigator\.geolocation|getCurrentPosition|window\.open" src/components/landing-page/map/MapSection.tsx` → every command exits 0; `git status --short --untracked-files=all` lists only the scoped implementation files plus the plan index status row.
 
@@ -198,6 +214,8 @@ Machine-checkable. ALL must hold:
 - [ ] Playwright proves URL/anchor semantics without contacting Google.
 - [ ] `yarn lint`, `yarn build`, the focused suite, and `yarn test:e2e` exit 0.
 - [ ] `yarn.lock` is unchanged.
+- [ ] `.astro/settings.json` is unchanged after restoring only the known
+      `lastUpdateCheck` build artifact; any other generated drift causes STOP.
 - [ ] `git status --short --untracked-files=all` lists only in-scope files and
       the allowed `plans/README.md` status update.
 - [ ] `plans/README.md` status row updated by the plan owner.
@@ -214,6 +232,8 @@ Stop and report back (do not improvise) if:
 - A corporate policy forbids Google Maps links or requires a different maps
   provider.
 - The shared helper creates a server-build error or requires browser globals.
+- `yarn build` changes `.astro/settings.json` beyond its `lastUpdateCheck`
+  value.
 - A verification command fails twice after a reasonable fix attempt.
 - The fix requires touching an out-of-scope file.
 
