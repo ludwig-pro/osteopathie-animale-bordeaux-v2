@@ -25,7 +25,7 @@
 - **Priority**: P1
 - **Effort**: M
 - **Risk**: HIGH
-- **Depends on**: `plans/001-consent-gated-analytics.md`, `plans/002-contact-form-validation.md`
+- **Depends on**: `plans/002-contact-form-validation.md`
 - **Category**: tests
 - **Planned at**: commit `9aece8f`, 2026-07-15
 
@@ -40,14 +40,16 @@ closes the RFC only after authorized humans verify the provider-side evidence.
 
 ## Current state
 
-- `src/components/landing-page/contact/ContactForm.tsx:68-81` renders
+- `src/components/landing-page/contact/ContactForm.tsx:133-162` renders
   `name="contact"`, `data-netlify="true"`, `bot-field`, and the hidden
   `form-name=contact` marker.
-- `src/components/landing-page/contact/ContactForm.tsx:25-44` sends a
-  URL-encoded AJAX `POST /` and treats a successful HTTP response as success.
+- `src/components/landing-page/contact/ContactForm.tsx:30-127` validates the
+  form, sends a URL-encoded AJAX `POST /`, and treats a successful HTTP response
+  as success.
 - `playwright.config.ts:18-24` always builds and serves Astro preview locally.
   Local preview does not run Netlify's post-processing or form backend.
-- `tests/e2e/booking.smoke.spec.ts` checks booking CTAs only. There is no test
+- `tests/e2e/contact-form-validation.spec.ts` covers the local form contract,
+  while `tests/e2e/booking.smoke.spec.ts` covers booking CTAs. There is no test
   against a deployed Netlify URL.
 - `RFC.md:299-308` leaves the form marker, honeypot, notification, synthetic
   submission, UX, production migration, and legacy-provider cancellation
@@ -105,14 +107,14 @@ only. It must never submit synthetic data to the production domain.
   explicit one-shot acceptance command.
 - Adding Turnstile, changing providers, or revalidating every pricing/uptime
   assertion in the legacy RFC.
-- Pushing, opening/merging a PR, deploying, or cancelling a paid service
+- Pushing, opening/merging a PR, deploying, submitting a real form, or
+  cancelling a paid service
   without explicit operator authorization.
 
 ## Git workflow
 
-- Branch: `codex/003-verify-netlify-forms`
-- This acceptance crosses a deploy boundary, so use two reviewable commits (and
-  two PRs if the production deploy/cancellation window requires it):
+- Branch: `improve`
+- This acceptance crosses a deploy boundary, so use two reviewable checkpoints:
   1. `Add Netlify preview form acceptance` for `package.json`, the remote
      Playwright config, and its test. This commit must exist on an authorized
      Deploy Preview before the synthetic POST can be proved.
@@ -132,8 +134,9 @@ only. It must never submit synthetic data to the production domain.
 
 ### Step 1: Add an opt-in remote-only Playwright boundary
 
-Create `playwright.netlify.config.ts` with `testDir: './tests/netlify'`, one
-Chromium project, no `webServer`, and `baseURL` from
+Create `playwright.netlify.config.ts` with `testDir: './tests/netlify'`,
+`retries: 0`, `workers: 1`, one Chromium project, no `webServer`, and
+`baseURL` from
 `NETLIFY_FORM_TEST_URL`. This URL must be the atomic permalink for one Deploy
 Preview, not its mutable `deploy-preview-N` alias. Validate the environment
 while loading the config:
@@ -170,16 +173,19 @@ operator-generated `NETLIFY_FORM_TEST_MARKER`. In one serial test:
    `ssr` attribute, fill the valid contract from Plan 002 with clearly synthetic
    values, and put the unique marker in `message`;
 4. submit once;
-5. assert the in-page success message and exactly one `POST /` whose origin
-   exactly equals the atomic origin. Route every POST globally: abort and fail
-   the test on any POST to another origin, including a 307/308 redirect, and
-   assert the fetch response's final origin is still atomic.
+5. assert the in-page success message and exactly one form `POST /` whose origin
+   exactly equals the atomic origin. Route every request globally: abort known
+   analytics providers, then abort and fail the test on any remaining POST to
+   another origin, including a 307/308 redirect. Assert the form response's
+   final origin is still atomic.
 
-Do not accept analytics to make the test pass. If the undecided Axeptio overlay
+This acceptance does not test analytics consent because Plan 001 was rejected.
+Block GTM, Google measurement/Ads, and PostHog hosts during the run so their
+availability cannot affect the form result. Inspect request bodies and fail if
+the unique form marker appears in `request.url()` or `request.postData()` for
+any request other than the one allowed atomic `POST /`. If the Axeptio overlay
 blocks pointer actions, use Playwright's forced form controls and submit button
-only after hydration; Plan 002 already owns visual/user-flow coverage. Assert
-no GTM, Google measurement/Ads, or PostHog request occurs during this form
-acceptance run.
+only after hydration; Plan 002 already owns visual/user-flow coverage.
 
 Never log form contents, headers, cookies, recipient addresses, or dashboard
 responses. Do not implement automatic retry around the POST; a failed test may
@@ -190,18 +196,21 @@ still have created a submission.
 ### Step 2: Prove local build markers without exercising Netlify
 
 Run install, lint, build, and the normal E2E suite. Inspect `dist/index.html`
-for the static contact form, honeypot, and hidden form-name marker. Plans 001
-and 002 must already be complete, and their local consent/validation suites
-must pass as part of the full suite.
+for the static contact form, honeypot, and hidden form-name marker. Plan 002
+must already be complete, and its local validation suite must pass as part of
+the full suite. Also run the remote config with `--list` against a syntactically
+valid fake atomic URL bound to the current commit; this may collect the one
+remote test but must not navigate or submit.
 
-**Verify**: `yarn lint && yarn build && rg -n 'name="contact"|data-netlify="true"|name="bot-field"|name="form-name"' dist/index.html && yarn test:e2e` → every command exits 0, all four markers appear, and no Netlify Preview or production POST occurs.
+**Verify**: `yarn lint && yarn build && rg -n 'name="contact"|data-netlify="true"|name="bot-field"|name="form-name"' dist/index.html && yarn test:e2e && NETLIFY_FORM_TEST_DEPLOY_ID=0123456789abcdef01234567 NETLIFY_FORM_TEST_COMMIT_SHA="$(git rev-parse HEAD)" NETLIFY_FORM_TEST_URL=https://0123456789abcdef01234567--hopeful-lumiere-46fc2e.netlify.app/ NETLIFY_FORM_TEST_MARKER=CONFIG_ONLY yarn test:e2e:netlify --list` → every command exits 0, all four markers appear, the local suite does not collect the remote test, and the remote config lists one test without navigating or submitting.
 
 ### Step 3: Obtain and preflight an authorized Deploy Preview
 
 Ask the operator for an existing Deploy Preview URL for the branch/PR that
-contains Plans 001 and 002 plus Step 1, or for explicit authorization to
+contains Plan 002 plus Step 1, or for explicit authorization to
 push/open a PR so Netlify can create one. Do not infer that authorization from
-this plan.
+this plan or from the repository being linked to Netlify CLI. A CLI draft
+deploy is still a deploy and also requires explicit authorization.
 
 Set local shell variables without committing them:
 
@@ -258,7 +267,7 @@ Deploy Preview URL, marker, and pass/fail for dashboard/email. Do not commit the
 submission body, recipient, sender, dashboard screenshots, tokens, site ID, or
 headers.
 
-**Verify**: `NETLIFY_FORM_TEST_URL="$NETLIFY_FORM_TEST_URL" NETLIFY_FORM_TEST_DEPLOY_ID="$NETLIFY_FORM_TEST_DEPLOY_ID" NETLIFY_FORM_TEST_COMMIT_SHA="$NETLIFY_FORM_TEST_COMMIT_SHA" NETLIFY_FORM_TEST_MARKER="$NETLIFY_FORM_TEST_MARKER" yarn test:e2e:netlify` → one test passes, reports exactly one POST to the atomic origin and zero provider-ingestion requests; an authorized operator separately confirms the same marker once in the pinned site's dashboard and once in the inbox.
+**Verify**: `NETLIFY_FORM_TEST_URL="$NETLIFY_FORM_TEST_URL" NETLIFY_FORM_TEST_DEPLOY_ID="$NETLIFY_FORM_TEST_DEPLOY_ID" NETLIFY_FORM_TEST_COMMIT_SHA="$NETLIFY_FORM_TEST_COMMIT_SHA" NETLIFY_FORM_TEST_MARKER="$NETLIFY_FORM_TEST_MARKER" yarn test:e2e:netlify` → one test passes, reports exactly one form POST to the atomic origin, blocks analytics providers, and proves the marker appears in no other request; an authorized operator separately confirms the same marker once in the pinned site's dashboard and once in the inbox.
 
 ### Step 5: Close the RFC only after all external gates are true
 
@@ -309,16 +318,20 @@ submission as a generic final gate.
   not sufficient evidence.
 - Run the preview POST once, then correlate its unique marker manually in the
   authorized Netlify dashboard and notification inbox.
-- Prove exactly one POST targets the atomic preview, no foreign-origin POST or
-  redirect escapes, and no GTM/Google/PostHog load or ingestion request occurs.
+- Prove exactly one form POST targets the atomic preview, no foreign-origin
+  POST or redirect escapes, analytics providers are blocked, and the unique
+  marker is absent from every other request.
 - Verify production only with read-only HTML/deploy evidence.
 
 ## Done criteria
 
 Machine-checkable or explicitly operator-attested. ALL must hold:
 
-- [ ] Plans 001 and 002 are complete and their consent/validation tests pass.
+- [ ] Plan 002 is complete and its validation tests pass; Plan 001 is explicitly
+      rejected and is not treated as a dependency.
 - [ ] `yarn test:e2e` does not collect the remote Netlify test.
+- [ ] The remote Playwright config fixes `retries: 0`, `workers: 1`, and a
+      single serial test so a runner cannot duplicate a real submission.
 - [ ] The remote config rejects missing, malformed, mutable-preview,
       wrong-site, credentialed, ported, queried, fragmented, redirected, and
       production URLs before a POST is possible.
@@ -331,8 +344,9 @@ Machine-checkable or explicitly operator-attested. ALL must hold:
       attribute, proving Netlify post-processing ran for this deploy.
 - [ ] One Deploy Preview submission passes, uses a unique marker, makes exactly
       one POST to the atomic origin, and makes zero POSTs to any other origin.
-- [ ] The acceptance run makes no GTM, Google measurement/Ads, or PostHog load
-      or ingestion request.
+- [ ] GTM, Google measurement/Ads, and PostHog hosts are blocked during the
+      acceptance run, and the unique marker is never sent to them or any other
+      non-form endpoint.
 - [ ] An authorized operator confirms that marker exactly once in the Netlify
       dashboard and notification inbox, under the pinned site and
       `deploy-preview` context.
@@ -351,8 +365,6 @@ Machine-checkable or explicitly operator-attested. ALL must hold:
 Stop and report back (do not improvise) if:
 
 - The code at the locations in "Current state" no longer matches the excerpts.
-- Plan 001 is incomplete or cannot keep every analytics/provider request silent
-  while consent is undecided.
 - Plan 002 is incomplete or its field/form contract differs from this plan.
 - The operator cannot provide or authorize creation of a Deploy Preview.
 - The atomic URL, deploy ID, stable-preview record, local `HEAD`, or full commit
@@ -362,8 +374,8 @@ Stop and report back (do not improvise) if:
 - The URL is mutable, production, credentialed, ported, queried, fragmented,
   redirects anywhere, or does not match the exact atomic permalink for
   `hopeful-lumiere-46fc2e`.
-- Any POST targets a non-atomic origin, or any GTM/Google/PostHog request appears
-  while consent remains undecided.
+- Any form POST targets a non-atomic origin, an analytics provider cannot be
+  blocked deterministically, or the unique marker appears in another request.
 - Authorized Netlify dashboard and notification-inbox access are unavailable.
 - A remote test fails after clicking submit; check the dashboard before any
   retry and report whether the marker exists.
