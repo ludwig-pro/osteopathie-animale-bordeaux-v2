@@ -91,8 +91,11 @@ async function assertResponsiveImage(locator: Locator, page: Page) {
     srcSet: image.srcset,
     sizes: image.sizes,
     renderedWidth: image.getBoundingClientRect().width,
+    renderedHeight: image.getBoundingClientRect().height,
     naturalWidth: image.naturalWidth,
     naturalHeight: image.naturalHeight,
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
   }));
 
   expect(imageData.srcSet).not.toBe('');
@@ -124,7 +127,10 @@ async function assertResponsiveImage(locator: Locator, page: Page) {
   const widths = candidates.map(({ width }) => width).sort((a, b) => a - b);
   const expectedWidth =
     widths.find((width) => width >= imageData.renderedWidth) ?? widths.at(-1);
-  expect(currentCandidate?.width).toBe(expectedWidth);
+  expect(
+    currentCandidate?.width,
+    `${imageData.alt} rendered at ${imageData.renderedWidth}x${imageData.renderedHeight}px in ${imageData.viewportWidth}x${imageData.viewportHeight} with sizes "${imageData.sizes}"`
+  ).toBe(expectedWidth);
 
   const logicalImageKey = logicalImageKeysByAlt.get(imageData.alt);
   expect(
