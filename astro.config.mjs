@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
+import sitemap from '@astrojs/sitemap';
 import tailwind from '@astrojs/tailwind';
 import sentry from '@sentry/astro';
 
@@ -19,7 +20,16 @@ const sentryIntegration = sentry({
 });
 
 export default defineConfig({
-  integrations: [react(), tailwind(), sentryIntegration],
+  site: 'https://www.osteopathie-animale-bordeaux.fr',
+  trailingSlash: 'always',
+  integrations: [
+    react(),
+    tailwind(),
+    sitemap({
+      filter: (page) => new URL(page).pathname.replace(/\/+$/, '') !== '/404',
+    }),
+    sentryIntegration,
+  ],
   output: 'static',
   image: {
     responsiveStyles: true,

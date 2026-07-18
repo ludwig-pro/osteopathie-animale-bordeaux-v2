@@ -34,7 +34,7 @@ export default function QuiSuisJe({ agatheImg }: QuiSuisJeProps) {
                   <div className="sm:col-span-2">
                     <div className="space-y-4">
                       <div className="text-lg leading-6 font-medium space-y-1">
-                        <h3>Agathe Lescout</h3>
+                        <h2 className="text-lg">Agathe Lescout</h2>
                         <p className="text-gold-600">
                           Ostéopathe / Professeur à l'EAO - École d'Aquitaine
                           d'Ostéopathie

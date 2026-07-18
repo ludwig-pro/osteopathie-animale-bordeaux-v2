@@ -26,15 +26,15 @@ Site vitrine d'Agathe Lescout, désormais propulsé par [Astro](https://astro.bu
 
 ```
 .
-├── astro.config.mjs        # Configuration Astro + intégrations (React, Tailwind, Netlify)
+├── astro.config.mjs        # Configuration statique Astro + React, Tailwind et sitemap
 ├── public/                 # Fichiers statiques servis tels quels
 ├── src/
-│   ├── components/         # Composants React réutilisables
-│   │   ├── pages/Home.jsx  # Composition de la page d'accueil
-│   │   └── layout.css      # Styles globaux (Tailwind)
-│   ├── hooks/              # Hooks côté navigateur
+│   ├── components/         # Composants communs, landing page et layout
 │   ├── images/             # Assets utilisés dans les composants
+│   ├── layouts/            # Layout HTML commun et wrappers Astro
+│   ├── lib/                # Métadonnées, constantes, analytics et hooks
 │   └── pages/              # Routes Astro (`.astro`)
+├── tests/e2e/              # Contrats Playwright et smoke tests
 ├── tailwind.config.js      # Configuration Tailwind (content, palette…)
 ├── package.json            # Scripts et dépendances
 └── yarn.lock               # Généré après `yarn install`
@@ -45,7 +45,16 @@ Site vitrine d'Agathe Lescout, désormais propulsé par [Astro](https://astro.bu
 - `yarn dev` : serveur de développement Astro (HMR).
 - `yarn build` : génération statique prête pour Netlify.
 - `yarn preview` : prévisualisation du build localement.
+- `yarn lint` : contrôle ESLint des sources Astro, JS et TypeScript.
+- `yarn test:e2e` : suite Playwright complète sur le build de production.
+- `yarn test:e2e tests/e2e/seo.spec.ts` : contrat SEO statique ciblé.
 - `yarn format` : formatage Prettier (`.js`, `.jsx`, `.md`, `.astro`, etc.).
+
+## 🔎 Contrat SEO statique
+
+Le site est généré avec `output: 'static'`, une origine de production explicite et une politique d'URL avec slash final. Le build publie `robots.txt`, `sitemap-index.xml` et ses shards. `BaseLayout.astro` impose title, description, intention d'indexation et canonical par route.
+
+Le test `tests/e2e/seo.spec.ts` contrôle notamment la canonical, le JSON-LD, la 404 `noindex`, les landmarks, le sitemap et le contenu critique sans JavaScript. Toute future route indexable doit être ajoutée à ce contrat.
 
 ## 📈 Monitoring (Sentry)
 
@@ -87,11 +96,11 @@ Comportement de chargement :
 
 ## 🌐 Déploiement
 
-Le site cible Netlify via `@astrojs/netlify`. Configure les variables d’environnement (Mapbox, ReCAPTCHA, GTM…) dans le dashboard Netlify avant de déployer.
+Netlify publie directement le dossier statique `dist/`; aucun adapter Astro Netlify n'est activé. Configure les variables d’environnement (Mapbox, Sentry, GTM, PostHog…) dans le dashboard Netlify avant de déployer. Une validation distante n'est recevable que si la Deploy Preview correspond au SHA exact du commit contrôlé.
 
 ## 📚 Ressources supplémentaires
 
 - [Documentation Astro](https://docs.astro.build)
 - [Intégration React](https://docs.astro.build/en/guides/integrations-guide/react/)
 - [Astro + Tailwind](https://docs.astro.build/en/guides/integrations-guide/tailwind/)
-- [Adapter Netlify](https://docs.astro.build/en/guides/integrations-guide/netlify/)
+- [Intégration Sitemap](https://docs.astro.build/en/guides/integrations-guide/sitemap/)

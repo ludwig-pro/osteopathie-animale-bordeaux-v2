@@ -1,7 +1,9 @@
 RFC — Migration formulaire de contact vers Netlify Forms (Quick Win)
 
-Auteur : Ludwig • Date : 2025‑10‑12 • Statut : Draft → À valider
-Contexte : Site vitrine en Astro/React déployé sur Netlify. Le formulaire actuel envoie vers Getform (coûteux). Objectif : migrer vers Netlify Forms intégré (gratuit, 0 maintenance).
+Auteur : Ludwig • Date : 2025‑10‑12 • Statut : Implémenté dans le code — validation Netlify production à confirmer
+Contexte historique : site vitrine en Astro/React déployé sur Netlify. Le formulaire initial envoyait vers Getform (coûteux). Objectif : migrer vers Netlify Forms intégré (gratuit, 0 maintenance).
+
+État constaté le 19 juillet 2026 : le formulaire contient les attributs Netlify, le honeypot et la soumission URL-encodée vers `/`. La détection dans le dashboard, la notification email, une soumission réelle et la fin éventuelle de Getform restent à vérifier sur un déploiement correspondant au commit contrôlé. Les sections ci-dessous conservent l'historique et la cible de la décision.
 
 ⸻
 
@@ -299,20 +301,20 @@ Ajouter au formulaire :
 ## 11. Critères de complétion
 
 ### MVP (fonctionnel minimal)
-- [ ] Formulaire modifié avec `data-netlify="true"`
-- [ ] Honeypot ajouté (`bot-field`)
+- [x] Formulaire modifié avec `data-netlify="true"`
+- [x] Honeypot ajouté (`bot-field`)
 - [ ] Email notification configuré dans Netlify UI
 - [ ] Soumission test → email reçu sur Gmail
-- [ ] UX succès/erreur fonctionnelle (React)
+- [x] UX succès/erreur implémentée dans React
 - [ ] Migration prod effectuée
 - [ ] Getform annulé (après 1 semaine de validation)
 
-### Succès mesurable
-- ✅ **Coût** : $0/mois (vs $20-50/mois Getform)
-- ✅ **Fiabilité** : 99.9% uptime Netlify
-- ✅ **Maintenance** : 0 heure/mois
-- ✅ **Délivrabilité** : >95% inbox rate
-- ✅ **Setup time** : <2 heures (vs 2-3 semaines pour self-hosted)
+### Objectifs de succès (à valider en production)
+- **Coût cible** : $0/mois (vs $20-50/mois Getform)
+- **Fiabilité cible** : 99.9% uptime Netlify
+- **Maintenance cible** : 0 heure/mois
+- **Délivrabilité cible** : >95% inbox rate
+- **Setup time cible** : <2 heures (vs 2-3 semaines pour self-hosted)
 
 ⸻
 

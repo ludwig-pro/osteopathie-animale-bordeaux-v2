@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://www.osteopathie-animale-bordeaux.fr/sitemap-index.xml

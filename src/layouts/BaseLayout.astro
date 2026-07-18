@@ -1,19 +1,40 @@
 ---
+import { normalizeCanonicalPath } from '../lib/seo';
+
+type JsonPrimitive = string | number | boolean | null;
+type JsonValue =
+  | JsonPrimitive
+  | { readonly [key: string]: JsonValue }
+  | readonly JsonValue[];
+type JsonObject = { readonly [key: string]: JsonValue };
+
 export interface Props {
   title: string;
-  description?: string;
-  siteUrl?: string;
-  canonicalUrl?: string;
-  schema?: unknown;
+  description: string;
+  indexing: 'index' | 'noindex';
+  schema?: JsonObject | readonly JsonObject[];
+  socialImage?: string | URL;
+  socialImageAlt?: string;
 }
 
-const {
-  title,
-  description = "L'Ostéopathe animalier Agathe Lescout, intervenant sur Bordeaux et Gironde!",
-  siteUrl = 'https://www.osteopathie-animale-bordeaux.fr',
-  canonicalUrl = siteUrl,
-  schema,
-} = Astro.props;
+const { title, description, indexing, schema, socialImage, socialImageAlt } =
+  Astro.props;
+
+if (!Astro.site) {
+  throw new Error('Astro site URL is required to build canonical metadata.');
+}
+
+if (socialImage && !socialImageAlt) {
+  throw new Error('socialImageAlt is required when socialImage is provided.');
+}
+
+const canonicalPath = normalizeCanonicalPath(Astro.url.pathname);
+const canonicalUrl = new URL(canonicalPath, Astro.site).toString();
+const robotsContent =
+  indexing === 'noindex' ? 'noindex,follow' : 'index,follow';
+const socialImageUrl = socialImage
+  ? new URL(socialImage.toString(), Astro.site).toString()
+  : undefined;
 const gtmId = import.meta.env.PUBLIC_GTM_ID;
 const isGtmEnabled = Boolean(gtmId);
 const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
@@ -37,13 +58,29 @@ const posthogDelayMs = Number.parseInt(
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="robots" content={robotsContent} />
     <link rel="canonical" href={canonicalUrl} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:locale" content="fr_FR" />
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:card"
+      content={socialImageUrl ? 'summary_large_image' : 'summary'}
+    />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {
+      socialImageUrl && socialImageAlt && (
+        <>
+          <meta property="og:image" content={socialImageUrl} />
+          <meta property="og:image:alt" content={socialImageAlt} />
+          <meta name="twitter:image" content={socialImageUrl} />
+          <meta name="twitter:image:alt" content={socialImageAlt} />
+        </>
+      )
+    }
     <meta name="theme-color" content="#c0823f" />
     <link rel="icon" type="image/png" href="/icon.png" />
     {

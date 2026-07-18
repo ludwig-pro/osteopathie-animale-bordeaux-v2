@@ -36,9 +36,9 @@ export default function CarteCabinet({ id }: CarteCabinetProps) {
                 </span>
               </div>
               <div className="mt-6">
-                <h2 className="text-3xl font-extrabold tracking-tight text-gold-500">
+                <h3 className="text-3xl font-extrabold tracking-tight text-gold-500">
                   Bègles
-                </h2>
+                </h3>
                 <p className="mt-4 text-lg text-gray-500">
                   34 rue du Maréchal Joffre
                 </p>
