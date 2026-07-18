@@ -243,7 +243,7 @@ Replace the one-off `getImage` calls with the helper. Use these width sets and
 | `AnimalSectionWrapper.astro`           | dog, cat, horse, rabbit, cow | `480, 768, 1280` | `(min-width: 1280px) 592px, (min-width: 1024px) calc(50vw - 3rem), (min-width: 768px) 452px, (min-width: 640px) calc(50vw + 8.25rem), calc(100vw + 10rem)`     |
 | `PrixWrapper.astro`                    | dog/cat, ferret, package     | `320, 640, 800`  | `(min-width: 1280px) 390px, (min-width: 1024px) 436px, (min-width: 640px) calc(50vw - 2.25rem), calc(100vw - 2rem)`                                            |
 | `DeroulementConsultationWrapper.astro` | kitten, correction           | `480, 768, 1200` | `(min-width: 1280px) 624px, (min-width: 1024px) calc(50vw - 1rem), (min-width: 640px) 560px, (min-width: 576px) 576px, 100vw`                                  |
-| `OsteopathieAnimaleWrapper.astro`      | bulldog                      | `480, 768, 1200` | `(min-width: 1280px) 478px, (min-width: 1024px) 571px, (min-width: 768px) calc(100vw + 2.5rem), (min-width: 640px) calc(100vw + 10.5rem), calc(100vw + 11rem)` |
+| `OsteopathieAnimaleWrapper.astro`      | bulldog                      | `560, 768, 1200` | `(min-width: 1280px) 478px, (min-width: 1024px) 571px, (min-width: 768px) calc(100vw + 2.5rem), (min-width: 640px) calc(100vw + 10.5rem), calc(100vw + 11rem)` |
 | `QuiSuisJeWrapper.astro`               | Agathe portrait              | `320, 640, 960`  | `(min-width: 1280px) 390px, (min-width: 1024px) calc(33.333vw - 2.334rem), (min-width: 640px) calc(33.333vw - 2rem), calc(100vw - 2rem)`                       |
 
 These hints are calibrated against a read-only DPR-1 run of the current
@@ -267,14 +267,17 @@ under-sized selections immediately before several breakpoints.
 
 For the bulldog, `lg:h-full lg:w-auto` makes its width depend on the text
 column's resulting height, so the measured integer ceilings at `lg` and `xl`
-are more accurate than a synthetic `50vw` term. Its middle candidate is `768`
-to cover both the measured `551px` and `570.66px` slots and moderate
-font-metric growth across operating systems; the `1200px` candidate remains
-available for the `808px` tablet slot and higher-DPR displays. Conservatively
-keep the `571px` hint until the stable `1280px` max-width layout even though
-Chromium's current text wrapping makes the visual width fall below `480px`
-around `1246px`; a small temporary over-selection is safer than a
-font-dependent under-sized selection.
+are more accurate than a synthetic `50vw` term. Start its candidate set at
+`560`: this covers both the measured `551px` mobile slot and the stable `xl`
+slot, which CI measured at `533.33px` on Ubuntu versus `477.33px` on macOS.
+The `768px` candidate covers the measured `570.66px` macOS `lg` slot and the
+Ubuntu `lg` slot, which CI proved was greater than `640px` but no greater than
+`768px`. The `1200px` candidate remains available for the `808px` tablet slot
+and higher-DPR displays. This keeps candidate selection adequate across both
+font environments without changing layout CSS. Conservatively keep the
+`571px` hint until the stable `1280px` max-width layout even after Chromium's
+current text wrapping makes the visual width fall below `560px`; a small
+temporary over-selection is safer than a font-dependent under-sized selection.
 
 At every measured viewport, and throughout a read-only breakpoint sweep, the
 hints above select the smallest listed candidate that is not narrower than the
