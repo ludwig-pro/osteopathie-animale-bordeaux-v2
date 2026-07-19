@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": false
+  },
+  "include": ["playwright*.config.ts", "tests/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".astro",
+    "playwright-report",
+    "test-results"
+  ]
+}

@@ -1,14 +1,13 @@
 ---
-import { getImage } from 'astro:assets';
 import About from '../../components/landing-page/about/About';
+import { buildResponsiveImage } from '../../lib/responsiveImage';
 import agathe from '../../images/agathe.jpg';
 
-const agatheImg = await getImage({
-  src: agathe,
-  width: 800,
-  format: 'webp',
-  quality: 80,
-});
+const agatheImg = await buildResponsiveImage(
+  agathe,
+  [320, 640, 960],
+  '(min-width: 1280px) 390px, (min-width: 1024px) calc(33.333vw - 2.334rem), (min-width: 640px) calc(33.333vw - 2rem), calc(100vw - 2rem)'
+);
 ---
 
-<About client:visible agatheImg={agatheImg} />
+<About agatheImg={agatheImg} />

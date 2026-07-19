@@ -1,26 +1,17 @@
 ---
-import { getImage } from 'astro:assets';
 import ConsultationProcess from '../../components/landing-page/consultation/ConsultationProcess';
+import { buildResponsiveImage } from '../../lib/responsiveImage';
 import youngcat from '../../images/yougncat.jpeg';
 import correction from '../../images/correction.jpg';
 
-const youngcatImg = await getImage({
-  src: youngcat,
-  width: 800,
-  format: 'webp',
-  quality: 80,
-});
+const widths = [480, 768, 1200] as const;
+const sizes =
+  '(min-width: 1280px) 624px, (min-width: 1024px) calc(50vw - 1rem), (min-width: 640px) 560px, (min-width: 576px) 576px, 100vw';
 
-const correctionImg = await getImage({
-  src: correction,
-  width: 800,
-  format: 'webp',
-  quality: 80,
-});
+const [youngcatImg, correctionImg] = await Promise.all([
+  buildResponsiveImage(youngcat, widths, sizes),
+  buildResponsiveImage(correction, widths, sizes),
+]);
 ---
 
-<ConsultationProcess
-  client:visible
-  youngcatImg={youngcatImg}
-  correctionImg={correctionImg}
-/>
+<ConsultationProcess youngcatImg={youngcatImg} correctionImg={correctionImg} />

@@ -1,13 +1,7 @@
-type ImageData = {
-  src: string;
-  srcSet: {
-    attribute: string;
-  };
-  attributes?: Record<string, unknown>;
-};
+import type { ResponsiveImageData } from '../../../lib/responsiveImage';
 
 type QuiSuisJeProps = {
-  agatheImg: ImageData;
+  agatheImg: ResponsiveImageData;
 };
 
 export default function QuiSuisJe({ agatheImg }: QuiSuisJeProps) {
@@ -22,12 +16,14 @@ export default function QuiSuisJe({ agatheImg }: QuiSuisJeProps) {
                   <div className="aspect-w-3 aspect-h-2 sm:aspect-w-3 sm:aspect-h-4">
                     <img
                       src={agatheImg.src}
-                      srcSet={agatheImg.srcSet.attribute}
+                      srcSet={agatheImg.srcSet}
+                      sizes={agatheImg.sizes}
                       alt="Portrait d'Agathe Lescout, ostéopathe spécialisée dans les animaux"
-                      width={800}
-                      height={1000}
+                      width={agatheImg.width}
+                      height={agatheImg.height}
                       loading="lazy"
                       decoding="async"
+                      data-testid="responsive-content-image"
                       className="shadow-lg rounded-lg w-full h-full object-cover"
                     />
                   </div>

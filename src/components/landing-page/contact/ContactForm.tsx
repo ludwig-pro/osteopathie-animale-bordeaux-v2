@@ -1,39 +1,104 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { pushDataLayerEvent } from '../../../lib/analytics';
 import FormField from './FormField';
 
+type ValidationErrors = {
+  name?: string;
+  email?: string;
+  contactMethod?: string;
+  message?: string;
+};
+
+const readFormString = (formData: FormData, name: string) => {
+  const value = formData.get(name);
+  return typeof value === 'string' ? value.trim() : '';
+};
+
 export default function ContactForm() {
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [hydrationReady, setHydrationReady] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
+    {}
+  );
+
+  useEffect(() => {
+    setHydrationReady(true);
+  }, []);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const name = readFormString(formData, 'name');
+    const animal = readFormString(formData, 'animal');
+    const email = readFormString(formData, 'email');
+    const phone = readFormString(formData, 'phone');
+    const message = readFormString(formData, 'message');
+    const emailInput = form.elements.namedItem(
+      'email'
+    ) as HTMLInputElement | null;
+    const nextValidationErrors: ValidationErrors = {};
+
+    if (!name) {
+      nextValidationErrors.name = 'Veuillez renseigner votre nom.';
+    }
+
+    if (!message) {
+      nextValidationErrors.message = 'Veuillez décrire votre demande.';
+    }
+
+    if (!email && !phone) {
+      nextValidationErrors.contactMethod =
+        'Veuillez renseigner un email ou un téléphone.';
+    }
+
+    if (email && emailInput?.validity.typeMismatch) {
+      nextValidationErrors.email = 'Veuillez renseigner un email valide.';
+    }
+
+    if (Object.keys(nextValidationErrors).length > 0) {
+      setValidationErrors(nextValidationErrors);
+      setSuccess(false);
+      setSubmitError(false);
+      const firstInvalidName = nextValidationErrors.name
+        ? 'name'
+        : nextValidationErrors.email || nextValidationErrors.contactMethod
+          ? 'email'
+          : 'message';
+      form.querySelector<HTMLElement>(`[name="${firstInvalidName}"]`)?.focus();
+      return;
+    }
+
+    setValidationErrors({});
+    formData.set('name', name);
+    formData.set('animal', animal);
+    formData.set('email', email);
+    formData.set('phone', phone);
+    formData.set('message', message);
+    formData.set('form-name', 'contact');
     setLoading(true);
     setSuccess(false);
-    setError(false);
+    setSubmitError(false);
     pushDataLayerEvent('contact_form_submit_started', {
       formName: 'contact',
     });
 
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-
-    // Add form-name for Netlify
-    formData.append('form-name', 'contact');
-
     try {
       // Convert FormData to URLSearchParams for Netlify Forms
-      const formObject = Object.fromEntries(formData.entries()) as Record<
-        string,
-        string
-      >;
+      const body = new URLSearchParams();
+      formData.forEach((value, key) => {
+        if (typeof value === 'string') {
+          body.append(key, value);
+        }
+      });
 
       // eslint-disable-next-line no-undef
       const response = await fetch('/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(formObject).toString(),
+        body: body.toString(),
       });
 
       if (response.ok) {
@@ -45,14 +110,14 @@ export default function ContactForm() {
         // Reset success message after 5 seconds
         setTimeout(() => setSuccess(false), 5000);
       } else {
-        setError(true);
+        setSubmitError(true);
         pushDataLayerEvent('contact_form_submit_failed', {
           formName: 'contact',
           status: response.status,
         });
       }
     } catch (_err) {
-      setError(true);
+      setSubmitError(true);
       pushDataLayerEvent('contact_form_submit_failed', {
         formName: 'contact',
         status: 'network_error',
@@ -72,10 +137,26 @@ export default function ContactForm() {
           data-netlify="true"
           data-netlify-honeypot="bot-field"
           onSubmit={handleSubmit}
+          noValidate={hydrationReady}
           className="grid grid-cols-1 gap-y-6"
         >
           {/* Honeypot field for spam protection */}
-          <input type="hidden" name="bot-field" />
+          <div
+            data-testid="contact-honeypot"
+            className="hidden"
+            aria-hidden="true"
+          >
+            <label htmlFor="bot-field">
+              Ne remplissez pas ce champ si vous êtes humain
+            </label>
+            <input
+              id="bot-field"
+              type="text"
+              name="bot-field"
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
 
           {/* Hidden field for Netlify form detection */}
           <input type="hidden" name="form-name" value="contact" />
@@ -85,6 +166,8 @@ export default function ContactForm() {
             placeholder="Nom"
             type="text"
             autoComplete="name"
+            required
+            error={validationErrors.name}
           />
 
           <FormField
@@ -99,6 +182,13 @@ export default function ContactForm() {
             placeholder="Email"
             type="email"
             autoComplete="email"
+            error={validationErrors.email}
+            invalid={Boolean(validationErrors.contactMethod)}
+            ariaDescribedBy={
+              validationErrors.contactMethod
+                ? 'contact-method-error'
+                : undefined
+            }
           />
 
           <FormField
@@ -106,13 +196,30 @@ export default function ContactForm() {
             placeholder="Téléphone"
             type="tel"
             autoComplete="tel"
+            invalid={Boolean(validationErrors.contactMethod)}
+            ariaDescribedBy={
+              validationErrors.contactMethod
+                ? 'contact-method-error'
+                : undefined
+            }
           />
+          {validationErrors.contactMethod && (
+            <p
+              id="contact-method-error"
+              role="alert"
+              className="mt-2 text-sm text-red-600"
+            >
+              {validationErrors.contactMethod}
+            </p>
+          )}
 
           <FormField
             name="message"
             placeholder="Message"
             type="textarea"
             rows={4}
+            required
+            error={validationErrors.message}
           />
 
           {/* RGPD compliance text */}
@@ -150,7 +257,7 @@ export default function ContactForm() {
           )}
 
           {/* Error message */}
-          {error && (
+          {submitError && (
             <div className="rounded-md bg-red-50 p-4">
               <div className="flex">
                 <div className="flex-shrink-0">

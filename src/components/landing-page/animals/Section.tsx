@@ -1,17 +1,11 @@
-type ImageData = {
-  src: string;
-  srcSet: {
-    attribute: string;
-  };
-  attributes?: Record<string, unknown>;
-};
+import type { ResponsiveImageData } from '../../../lib/responsiveImage';
 
 type SectionProps = {
   name: string;
   text: string;
   imageKey: string;
   alt: string;
-  imageData: ImageData;
+  imageData: ResponsiveImageData;
 };
 
 export default function Section({ name, text, alt, imageData }: SectionProps) {
@@ -27,12 +21,14 @@ export default function Section({ name, text, alt, imageData }: SectionProps) {
         <div className="-mr-48 sm:pl-6 md:-mr-16 lg:px-0 lg:m-0 lg:relative lg:h-full">
           <img
             src={imageData.src}
-            srcSet={imageData.srcSet.attribute}
+            srcSet={imageData.srcSet}
+            sizes={imageData.sizes}
             alt={alt}
-            width={1200}
-            height={800}
+            width={imageData.width}
+            height={imageData.height}
             loading="lazy"
             decoding="async"
+            data-testid="responsive-content-image"
             className="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:left-0 lg:h-full lg:max-w-none object-cover"
           />
         </div>

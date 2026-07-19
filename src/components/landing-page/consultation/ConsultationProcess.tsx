@@ -1,14 +1,8 @@
-type ImageData = {
-  src: string;
-  srcSet: {
-    attribute: string;
-  };
-  attributes?: Record<string, unknown>;
-};
+import type { ResponsiveImageData } from '../../../lib/responsiveImage';
 
 type DeroulementConsultationProps = {
-  youngcatImg: ImageData;
-  correctionImg: ImageData;
+  youngcatImg: ResponsiveImageData;
+  correctionImg: ResponsiveImageData;
 };
 
 export default function DeroulementConsultation({
@@ -146,12 +140,14 @@ export default function DeroulementConsultation({
             </svg>
             <img
               src={youngcatImg.src}
-              srcSet={youngcatImg.srcSet.attribute}
+              srcSet={youngcatImg.srcSet}
+              sizes={youngcatImg.sizes}
               alt="Chaton tigré donnant la patte lors d'un examen ostéopathique"
-              width={1200}
-              height={800}
+              width={youngcatImg.width}
+              height={youngcatImg.height}
               loading="lazy"
               decoding="async"
+              data-testid="responsive-content-image"
               className="relative mx-auto rounded-lg w-full object-cover"
             />
           </div>
@@ -273,12 +269,14 @@ export default function DeroulementConsultation({
               </svg>
               <img
                 src={correctionImg.src}
-                srcSet={correctionImg.srcSet.attribute}
+                srcSet={correctionImg.srcSet}
+                sizes={correctionImg.sizes}
                 alt="Ostéopathe pratiquant une manipulation vertébrale sur un cheval"
-                width={1200}
-                height={800}
+                width={correctionImg.width}
+                height={correctionImg.height}
                 loading="lazy"
                 decoding="async"
+                data-testid="responsive-content-image"
                 className="relative mx-auto rounded-lg w-full object-cover"
               />
             </div>

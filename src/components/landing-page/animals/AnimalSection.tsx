@@ -1,20 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
+import type { ResponsiveImageData } from '../../../lib/responsiveImage';
 import Section from './Section';
 import { configuration, type AnimalKey } from './configuration';
 // import AriaSelecMenu from "./AriaSelectMenu"
 import AriaSelecMenu from './NewAriaSelectMenu';
 import AriaSelecMenuWeb from './AriaSelectMenuWeb';
 
-type ImageData = {
-  src: string;
-  srcSet: {
-    attribute: string;
-  };
-  attributes?: Record<string, unknown>;
-};
-
 type OptimizedImages = {
-  [key: string]: ImageData;
+  [key: string]: ResponsiveImageData;
 };
 
 type AnimalSectionProps = {

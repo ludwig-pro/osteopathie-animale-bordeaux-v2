@@ -1,20 +1,12 @@
 import { useState } from 'react';
 import { Transition } from '@headlessui/react';
-
-// Type simplifié compatible avec GetImageResult d'Astro
-type ImageData = {
-  src: string;
-  srcSet: {
-    attribute: string;
-  };
-  attributes?: Record<string, unknown>;
-};
+import type { ResponsiveImageData } from '../../../lib/responsiveImage';
 
 type PrixProps = {
   id?: string;
-  chienetchatImg: ImageData;
-  furetImg: ImageData;
-  forfaitImg: ImageData;
+  chienetchatImg: ResponsiveImageData;
+  furetImg: ResponsiveImageData;
+  forfaitImg: ResponsiveImageData;
 };
 
 type CardProps = {
@@ -31,7 +23,7 @@ type CardProps = {
     | undefined;
   option: string;
   isDomicile: boolean;
-  image: ImageData;
+  image: ResponsiveImageData;
 };
 
 const prestations = [
@@ -186,12 +178,14 @@ function Card({
       <div className="flex-shrink-0">
         <img
           src={image.src}
-          srcSet={image.srcSet.attribute}
+          srcSet={image.srcSet}
+          sizes={image.sizes}
           alt={alt}
-          width={800}
-          height={400}
+          width={image.width}
+          height={image.height}
           loading="lazy"
           decoding="async"
+          data-testid="responsive-content-image"
           className="h-48 w-full object-cover"
         />
       </div>

@@ -117,7 +117,7 @@ async function main() {
     args['score-seo'];
   const reportPath = hasProvidedScores
     ? null
-    : args.report ?? (await findLatestReport(reportsDir));
+    : (args.report ?? (await findLatestReport(reportsDir)));
   const deltaThreshold = Number.parseFloat(
     process.env.LIGHTHOUSE_DELTA_THRESHOLD ?? '0.05'
   );

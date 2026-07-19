@@ -57,12 +57,12 @@ const posthogDelayMs = Number.parseInt(
     }
 
     <!-- Preconnect to third-party domains for faster loading -->
-    <link rel="preconnect" href="https://api.mapbox.com" />
     <link rel="preconnect" href="https://www.google.com" />
 
     <script is:inline>
       (function (w, d) {
         var RECOVERY_KEY_PREFIX = 'module-script-recovery:';
+        var HISTORY_STATE_KEY = '__moduleScriptRecoveryAttempted';
         var KNOWN_MODULE_SCRIPT_ERRORS = [
           'Importing a module script failed.',
           'Failed to fetch dynamically imported module',
@@ -70,6 +70,30 @@ const posthogDelayMs = Number.parseInt(
         ];
 
         var hasRecoveryAttempted = false;
+
+        var hasHistoryRecoveryAttempted = function () {
+          try {
+            return w.history.state[HISTORY_STATE_KEY] === true;
+          } catch (_error) {
+            return false;
+          }
+        };
+
+        var markHistoryRecoveryAttempted = function () {
+          try {
+            var currentState = w.history.state;
+            var nextState =
+              currentState !== null && typeof currentState === 'object'
+                ? Object.assign({}, currentState)
+                : {};
+
+            nextState[HISTORY_STATE_KEY] = true;
+            w.history.replaceState(nextState, '', w.location.href);
+            return true;
+          } catch (_error) {
+            return false;
+          }
+        };
 
         var getRecoveryKey = function (event) {
           var target = event && event.target;
@@ -143,7 +167,14 @@ const posthogDelayMs = Number.parseInt(
 
             w.sessionStorage.setItem(storageKey, '1');
           } catch (_error) {
-            // Ignore sessionStorage errors and fall back to an in-memory guard.
+            if (hasHistoryRecoveryAttempted()) {
+              return;
+            }
+
+            if (!markHistoryRecoveryAttempted()) {
+              hasRecoveryAttempted = true;
+              return;
+            }
           }
 
           hasRecoveryAttempted = true;

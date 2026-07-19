@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 env:
   NODE_VERSION: '22.13.0'
@@ -32,8 +31,17 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Check formatting
+        run: yarn format:check
+
       - name: Lint
         run: yarn lint
+
+      - name: Typecheck application and tests
+        run: yarn typecheck
+
+      - name: Run unit tests
+        run: yarn test:unit
 
       - name: Build
         run: yarn build
@@ -76,6 +84,9 @@ jobs:
     name: Lighthouse (Remote)
     runs-on: ubuntu-latest
     needs: lint_build
+    permissions:
+      contents: read
+      pull-requests: read
 
     steps:
       - name: Checkout
@@ -89,6 +100,10 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
+
+      - name: Test Netlify Lighthouse comment parser
+        if: github.event_name == 'pull_request'
+        run: node --test scripts/parse-netlify-lighthouse-comment.test.js
 
       - name: Resolve audit URL
         id: target
@@ -121,34 +136,36 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const path = require('node:path');
+            const { pathToFileURL } = require('node:url');
             const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const issue_number = context.issue.number;
+            const expectedHeadSha = context.payload.pull_request?.head?.sha;
 
-            const parseFromBody = (body) => {
-              const perf = body.match(/(?:\*\*)?Performance(?:\*\*)?:\s*(\d+)/i);
-              const acc = body.match(/(?:\*\*)?Accessibility(?:\*\*)?:\s*(\d+)/i);
-              const bp = body.match(/(?:\*\*)?Best Practices(?:\*\*)?:\s*(\d+)/i);
-              const seo = body.match(/(?:\*\*)?SEO(?:\*\*)?:\s*(\d+)/i);
-              const preview = body.match(
-                /Deploy Preview \|\s*\[(https?:\/\/[^\]]+)\]/i
-              );
-              const deployLog = body.match(/Latest deploy log \|\s*(https?:\/\/\S+)/i);
-              if (!perf || !acc || !bp || !seo) {
-                return null;
-              }
-              return {
-                performance: perf[1],
-                accessibility: acc[1],
-                bestPractices: bp[1],
-                seo: seo[1],
-                previewUrl: preview ? preview[1] : '',
-                deployLogUrl: deployLog ? deployLog[1] : '',
-              };
-            };
+            if (
+              typeof expectedHeadSha !== 'string' ||
+              !/^[0-9a-f]{40}$/i.test(expectedHeadSha)
+            ) {
+              core.setFailed('Pull request head SHA is missing or malformed.');
+              return;
+            }
+
+            const parserUrl = pathToFileURL(
+              path.join(
+                process.env.GITHUB_WORKSPACE,
+                'scripts',
+                'parse-netlify-lighthouse-comment.js'
+              )
+            );
+            const {
+              matchesPullRequestHead,
+              parseNetlifyLighthouseComment,
+            } = await import(parserUrl.href);
 
             let parsed = null;
+            const loggedStaleCommentIds = new Set();
             for (let attempt = 1; attempt <= 90; attempt += 1) {
               const comments = await github.paginate(
                 github.rest.issues.listComments,
@@ -166,24 +183,32 @@ jobs:
                 if (!comment.body) {
                   continue;
                 }
-                const candidate = parseFromBody(comment.body);
+                const candidate = parseNetlifyLighthouseComment(comment.body);
                 if (!candidate) {
                   continue;
                 }
-                const hasPreviewForCurrentPr =
-                  candidate.previewUrl &&
-                  candidate.previewUrl.includes(`deploy-preview-${issue_number}--`);
-                if (hasPreviewForCurrentPr) {
+                if (
+                  matchesPullRequestHead(
+                    candidate,
+                    issue_number,
+                    expectedHeadSha
+                  )
+                ) {
                   parsed = candidate;
                   break;
                 }
-                if (!parsed) {
-                  parsed = candidate;
+                if (!loggedStaleCommentIds.has(comment.id)) {
+                  core.info(
+                    `Ignoring stale or mismatched Netlify Lighthouse comment ID ${comment.id}.`
+                  );
+                  loggedStaleCommentIds.add(comment.id);
                 }
               }
 
               if (parsed) {
-                core.info(`Found Netlify Lighthouse scores on attempt ${attempt}.`);
+                core.info(
+                  `Found Netlify Lighthouse scores for commit ${parsed.commitSha} on attempt ${attempt}.`
+                );
                 break;
               }
 
@@ -202,6 +227,7 @@ jobs:
             core.setOutput('seo', parsed.seo);
             core.setOutput('preview_url', parsed.previewUrl);
             core.setOutput('deploy_log_url', parsed.deployLogUrl);
+            core.setOutput('commit_sha', parsed.commitSha);
             core.info(
               `Parsed Netlify Lighthouse scores: perf=${parsed.performance}, access=${parsed.accessibility}, bp=${parsed.bestPractices}, seo=${parsed.seo}`
             );
@@ -227,8 +253,25 @@ jobs:
           LH_BP: ${{ steps.netlify_scores.outputs.best_practices }}
           LH_SEO: ${{ steps.netlify_scores.outputs.seo }}
           LH_PREVIEW_URL: ${{ steps.netlify_scores.outputs.preview_url }}
+          LH_COMMIT_SHA: ${{ steps.netlify_scores.outputs.commit_sha }}
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           if [ "$EVENT_NAME" = "pull_request" ]; then
+            if [[ ! "$LH_COMMIT_SHA" =~ ^[0-9a-f]{40}$ ]] ||
+              [[ ! "$EXPECTED_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] ||
+              [ "$LH_COMMIT_SHA" != "$EXPECTED_HEAD_SHA" ]; then
+              printf '%s\n' \
+                '<!-- lighthouse-remote-report -->' \
+                '## ❌ Lighthouse Remote Report' \
+                '' \
+                'Netlify Lighthouse scores were not evaluated for this run.' \
+                '' \
+                '- Source: netlify-pr-comment' \
+                '- Detail: comment commit is missing, malformed, or does not match the current head' \
+                > /tmp/lighthouse-remote-report.md
+              exit 1
+            fi
+
             if [ -z "$LH_PERF" ] || [ -z "$LH_ACC" ] || [ -z "$LH_BP" ] || [ -z "$LH_SEO" ]; then
               printf '%s\n' \
                 '<!-- lighthouse-remote-report -->' \
@@ -260,16 +303,82 @@ jobs:
               --markdown-file /tmp/lighthouse-remote-report.md
           fi
 
+      - name: Stage Lighthouse PR report
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        run: |
+          if [ -f /tmp/lighthouse-remote-report.md ]; then
+            cp /tmp/lighthouse-remote-report.md lighthouse-comment.md
+          else
+            printf '%s\n' \
+              '<!-- lighthouse-remote-report -->' \
+              '## ❌ Lighthouse Remote Report' \
+              '' \
+              'Report file not found.' \
+              > lighthouse-comment.md
+          fi
+
+      - name: Upload Lighthouse PR report
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-comment-body
+          path: lighthouse-comment.md
+          if-no-files-found: error
+
+      - name: Fail job if regression gate failed
+        if: steps.lighthouse_gate.outcome == 'failure'
+        run: exit 1
+
+      - name: Upload remote Lighthouse artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-remote-artifacts
+          path: |
+            .lighthouseci
+            /tmp/lighthouse-remote-summary.json
+            /tmp/lighthouse-remote-report.md
+          if-no-files-found: warn
+
+  lighthouse_comment:
+    name: Publish Lighthouse PR comment
+    needs: lighthouse_remote
+    if: >-
+      !cancelled() &&
+      github.event_name == 'pull_request' &&
+      (needs.lighthouse_remote.result == 'success' ||
+      needs.lighthouse_remote.result == 'failure')
+    permissions:
+      actions: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Lighthouse PR report
+        uses: actions/download-artifact@v4
+        with:
+          name: lighthouse-comment-body
+          path: lighthouse-comment-artifact
+
       - name: Update PR comment with Lighthouse report
-        if: always() && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
             const marker = '<!-- lighthouse-remote-report -->';
-            const body = fs.existsSync('/tmp/lighthouse-remote-report.md')
-              ? fs.readFileSync('/tmp/lighthouse-remote-report.md', 'utf8')
-              : `${marker}\n## ❌ Lighthouse Remote Report\n\nReport file not found.`;
+            const body = fs.readFileSync(
+              'lighthouse-comment-artifact/lighthouse-comment.md',
+              'utf8'
+            );
+
+            if (body !== marker && !body.startsWith(`${marker}\n`)) {
+              throw new Error('Lighthouse report marker is missing.');
+            }
+
+            if (Buffer.byteLength(body, 'utf8') > 60000) {
+              throw new Error('Lighthouse report exceeds 60,000 UTF-8 bytes.');
+            }
+
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
 
@@ -300,18 +409,3 @@ jobs:
                 body,
               });
             }
-
-      - name: Fail job if regression gate failed
-        if: steps.lighthouse_gate.outcome == 'failure'
-        run: exit 1
-
-      - name: Upload remote Lighthouse artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: lighthouse-remote-artifacts
-          path: |
-            .lighthouseci
-            /tmp/lighthouse-remote-summary.json
-            /tmp/lighthouse-remote-report.md
-          if-no-files-found: warn
