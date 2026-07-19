@@ -2,14 +2,14 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useEffect, useRef, useState } from 'react';
 import { API_CONFIG } from '../../../lib/constants/api';
+import { BUSINESS_CONFIG } from '../../../lib/constants/site';
 
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
 };
 
-const directionsUrl =
-  'https://www.google.fr/maps/dir/?api=1&destination=44.805434,-0.550281&travelmode=driving';
+const directionsUrl = `https://www.google.fr/maps/dir/?api=1&destination=${BUSINESS_CONFIG.geo.latitude},${BUSINESS_CONFIG.geo.longitude}&travelmode=driving`;
 
 type MapBoxProps = {
   lng: number;
@@ -58,7 +58,7 @@ const MapBox = ({ lng, lat, label }: MapBoxProps) => {
     new mapboxgl.Marker().setLngLat([lng, lat]).setPopup(popup).addTo(map);
 
     return () => map.remove();
-  }, []);
+  }, [lat, label, lng]);
 
   return (
     <div className="relative h-full w-full">

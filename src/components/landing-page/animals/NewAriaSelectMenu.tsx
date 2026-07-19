@@ -2,14 +2,14 @@
 import { Fragment, useState } from 'react';
 import { Listbox, Transition } from '@headlessui/react';
 import { CheckIcon, SelectorIcon } from '@heroicons/react/solid';
+import {
+  ACTIVE_SPECIES,
+  type ActiveSpeciesKey,
+} from '../../../lib/constants/services';
 
-const option = {
-  chien: 'Le chien',
-  chat: 'Le chat',
-  cheval: 'Le cheval',
-  vache: 'La vache',
-  nac: 'Les nouveaux animaux de compagnie',
-};
+const option = Object.fromEntries(
+  ACTIVE_SPECIES.map((animal) => [animal.key, animal.menuLabel])
+) as Record<ActiveSpeciesKey, string>;
 
 const animals = Object.entries(option);
 
@@ -18,15 +18,15 @@ function classNames(...classes: (string | boolean | undefined | null)[]) {
 }
 
 type AriaSelectMenuProps = {
-  initialAnimal: string;
-  setAnimal: (animal: string) => void;
+  initialAnimal: ActiveSpeciesKey;
+  setAnimal: (animal: ActiveSpeciesKey) => void;
 };
 
 export default function AriaSelectMenu({
   initialAnimal,
   setAnimal,
 }: AriaSelectMenuProps) {
-  const [selected, setSelected] = useState(initialAnimal);
+  const [selected, setSelected] = useState<ActiveSpeciesKey>(initialAnimal);
 
   return (
     <div className="sm:hidden mt-8">
@@ -41,9 +41,7 @@ export default function AriaSelectMenu({
           <>
             <div className="mt-1 relative">
               <Listbox.Button className="relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-gold-500 focus:border-gold-500 sm:text-sm">
-                <span className="block truncate">
-                  {option[selected as keyof typeof option]}
-                </span>
+                <span className="block truncate">{option[selected]}</span>
                 <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                   <SelectorIcon
                     className="h-5 w-5 text-gray-400"
@@ -72,7 +70,8 @@ export default function AriaSelectMenu({
                           'cursor-default select-none relative py-2 pl-8 pr-4'
                         )
                       }
-                      value={animal[0]}
+                      value={animal[0] as ActiveSpeciesKey}
+                      data-animal-key={animal[0]}
                     >
                       {({ selected, active }) => (
                         <>

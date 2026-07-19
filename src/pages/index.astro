@@ -3,8 +3,6 @@ import Footer from '../components/layout/Footer';
 import ContactWrapper from '../components/landing-page/contact/ContactWrapper';
 import MapSection from '../components/landing-page/map/MapSection';
 import WhenToConsult from '../components/landing-page/when-to-consult/WhenToConsult';
-import agathePortrait from '../images/agathe.jpg';
-import heroImage from '../images/dog-homepage.jpg';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AnimalSectionWrapper from '../layouts/wrappers/AnimalSectionWrapper.astro';
 import DeroulementConsultationWrapper from '../layouts/wrappers/DeroulementConsultationWrapper.astro';
@@ -12,55 +10,70 @@ import HeroWrapper from '../layouts/wrappers/HeroWrapper.astro';
 import OsteopathieAnimaleWrapper from '../layouts/wrappers/OsteopathieAnimaleWrapper.astro';
 import PrixWrapper from '../layouts/wrappers/PrixWrapper.astro';
 import QuiSuisJeWrapper from '../layouts/wrappers/QuiSuisJeWrapper.astro';
+import { SERVICE_AREA } from '../lib/constants/services';
 import { BUSINESS_CONFIG, SITE_CONFIG } from '../lib/constants/site';
 
 const title = SITE_CONFIG.title;
 const description = SITE_CONFIG.description;
 const siteUrl = SITE_CONFIG.url;
+const websiteId = `${siteUrl}/#website`;
+const personId = `${siteUrl}/#agathe-lescout`;
+const businessId = `${siteUrl}/#local-business`;
 
 const homepageSchema = {
   '@context': 'https://schema.org',
-  '@type': 'LocalBusiness',
-  '@id': `${siteUrl}#local-business`,
-  name: BUSINESS_CONFIG.name,
-  description,
-  url: siteUrl,
-  image: [
-    new URL(heroImage.src, siteUrl).toString(),
-    new URL(agathePortrait.src, siteUrl).toString(),
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': websiteId,
+      url: `${siteUrl}/`,
+      name: BUSINESS_CONFIG.publicName,
+      description,
+      inLanguage: 'fr-FR',
+      publisher: { '@id': businessId },
+    },
+    {
+      '@type': 'Person',
+      '@id': personId,
+      name: BUSINESS_CONFIG.practitionerName,
+      jobTitle: BUSINESS_CONFIG.practitionerJobTitle,
+      description: BUSINESS_CONFIG.registration.wording,
+      identifier: {
+        '@type': 'PropertyValue',
+        propertyID: "Registre national d'aptitude",
+        value: BUSINESS_CONFIG.registration.registryNumber,
+      },
+      sameAs: BUSINESS_CONFIG.sameAs,
+    },
+    {
+      '@type': 'LocalBusiness',
+      '@id': businessId,
+      name: BUSINESS_CONFIG.publicName,
+      description,
+      url: `${siteUrl}/`,
+      telephone: BUSINESS_CONFIG.telephone.e164,
+      email: BUSINESS_CONFIG.email,
+      priceRange: BUSINESS_CONFIG.priceRange,
+      address: {
+        '@type': 'PostalAddress',
+        ...BUSINESS_CONFIG.address,
+      },
+      geo: {
+        '@type': 'GeoCoordinates',
+        ...BUSINESS_CONFIG.geo,
+      },
+      openingHoursSpecification: {
+        '@type': 'OpeningHoursSpecification',
+        ...BUSINESS_CONFIG.hours.office.schema,
+      },
+      areaServed: SERVICE_AREA.descriptive.map((area) => ({
+        '@type': area.schemaType,
+        name: area.name,
+      })),
+      sameAs: BUSINESS_CONFIG.sameAs,
+      employee: { '@id': personId },
+    },
   ],
-  telephone: BUSINESS_CONFIG.telephone,
-  email: BUSINESS_CONFIG.email,
-  priceRange: BUSINESS_CONFIG.priceRange,
-  address: {
-    '@type': 'PostalAddress',
-    ...BUSINESS_CONFIG.address,
-  },
-  geo: {
-    '@type': 'GeoCoordinates',
-    ...BUSINESS_CONFIG.geo,
-  },
-  openingHoursSpecification: BUSINESS_CONFIG.openingHoursSpecification.map(
-    (hours) => ({
-      '@type': 'OpeningHoursSpecification',
-      ...hours,
-    })
-  ),
-  areaServed: BUSINESS_CONFIG.areaServed,
-  sameAs: BUSINESS_CONFIG.sameAs,
-  founder: {
-    '@type': 'Person',
-    name: BUSINESS_CONFIG.practitionerName,
-    jobTitle: BUSINESS_CONFIG.practitionerJobTitle,
-  },
-  contactPoint: {
-    '@type': 'ContactPoint',
-    contactType: 'customer support',
-    telephone: BUSINESS_CONFIG.telephone,
-    email: BUSINESS_CONFIG.email,
-    availableLanguage: ['fr'],
-    areaServed: 'FR',
-  },
 };
 ---
 

@@ -5,6 +5,12 @@ import {
   pushDataLayerEvent,
   type AnalyticsPayload,
 } from '../../../lib/analytics';
+import {
+  ACTIVE_SPECIES,
+  APPOINTMENT_MODES,
+  BOOKING_CONFIG,
+} from '../../../lib/constants/services';
+import { BUSINESS_CONFIG, SITE_CONFIG } from '../../../lib/constants/site';
 import * as Icons from '../../common/icons';
 
 const navigation = [
@@ -21,8 +27,14 @@ const navigationSvg = {
   '#osteopathie': <Icons.Osteopathie />,
 };
 
-const url_calendly =
-  'https://calendly.com/osteopathe-animalier/consultation-osteopathique'; // 'https://calendly.com/osteopathe-animalier/';
+const activeSpeciesLabel = new Intl.ListFormat('fr', {
+  style: 'long',
+  type: 'conjunction',
+}).format(
+  ACTIVE_SPECIES.map((animal) =>
+    animal.key === 'nac' ? 'NAC' : `${animal.key}s`
+  )
+);
 
 type HeroProps = {
   children?: ReactNode;
@@ -50,7 +62,7 @@ export default function Hero({
 
   const handleCalendlyOpenClick = useCallback(() => {
     trackCalendlyStep('calendly_external_link_clicked', {
-      destination: url_calendly,
+      destination: BOOKING_CONFIG.online.url,
       source: 'hero',
       target: '_blank',
     });
@@ -170,33 +182,34 @@ export default function Hero({
                     className="block text-white"
                     style={{ textShadow: '#143545  1px 0 10px' }}
                   >
-                    Agathe Lescout
+                    {SITE_CONFIG.homepage.heading}
                   </span>
                   <span
                     className="block text-gold-500"
                     style={{ textShadow: '#143545 1px 0 10px' }}
                   >
-                    ostéopathe animalier
+                    {BUSINESS_CONFIG.practitionerName}
                   </span>
                   <span
                     className="block text-white text-2xl mt-2 font-medium"
                     style={{ textShadow: '#143545 1px 0 10px' }}
                   >
-                    Votre experte pour le bien-être de vos chiens, chats et
-                    N.A.C.
+                    Consultations pour {activeSpeciesLabel},{' '}
+                    {APPOINTMENT_MODES.office.label.toLowerCase()} ou{' '}
+                    {APPOINTMENT_MODES.home.label.toLowerCase()} sur rendez-vous
                   </span>
                 </h1>
                 <div className="mt-10 max-w-sm mx-auto sm:max-w-none sm:flex sm:justify-center">
                   <div className="space-y-4 sm:space-y-0 sm:mx-auto sm:inline-grid sm:grid-cols-2 sm:gap-5">
                     <a
-                      href={url_calendly}
+                      href={BOOKING_CONFIG.online.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       data-testid="cta-booking-online"
                       onClick={handleCalendlyOpenClick}
                       className={calendlyCtaClassName}
                     >
-                      Prendre rendez-vous en ligne
+                      {BOOKING_CONFIG.online.label}
                     </a>
                     <a
                       href="#contact"

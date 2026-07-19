@@ -115,10 +115,17 @@ export default function ContactForm() {
             rows={4}
           />
 
-          {/* RGPD compliance text */}
+          {/* Information on personal-data processing */}
           <p className="text-sm text-gray-500">
-            En soumettant ce formulaire, vous acceptez que vos données soient
-            traitées pour vous contacter.
+            Les informations envoyées servent uniquement à répondre à votre
+            demande de contact ou de rendez-vous. Consultez notre{' '}
+            <a
+              href="/politique-confidentialite/"
+              className="font-medium text-gold-600 underline hover:text-gold-700"
+            >
+              politique de confidentialité
+            </a>{' '}
+            pour connaître leur durée de conservation et vos droits.
           </p>
 
           {/* Success message */}

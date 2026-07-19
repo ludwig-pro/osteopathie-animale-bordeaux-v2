@@ -8,6 +8,12 @@ const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN;
 const sentryOrg = process.env.SENTRY_ORG;
 const sentryProject = process.env.SENTRY_PROJECT;
 
+const sitemapExcludedPaths = new Set([
+  '/404',
+  '/mentions-legales',
+  '/politique-confidentialite',
+]);
+
 const sentryIntegration = sentry({
   enabled: { client: true, server: false },
   ...(sentryAuthToken && sentryOrg && sentryProject
@@ -26,7 +32,10 @@ export default defineConfig({
     react(),
     tailwind(),
     sitemap({
-      filter: (page) => new URL(page).pathname.replace(/\/+$/, '') !== '/404',
+      filter: (page) => {
+        const pathname = new URL(page).pathname.replace(/\/+$/, '') || '/';
+        return !sitemapExcludedPaths.has(pathname);
+      },
     }),
     sentryIntegration,
   ],

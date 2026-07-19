@@ -5,6 +5,10 @@ import { mergeProps } from '@react-aria/utils';
 import { useFocus } from '@react-aria/interactions';
 import { useTreeState } from '@react-stately/tree';
 import { useMenu, useMenuItem } from '@react-aria/menu';
+import {
+  ACTIVE_SPECIES,
+  type ActiveSpeciesKey,
+} from '../../../lib/constants/services';
 
 type MenuProps = {
   children: ReactNode;
@@ -84,25 +88,27 @@ function MenuItem({ item, state, onAction }: MenuItemProps) {
       ref={ref}
       className={`${
         isFocused ? selectedStyle : unselectedStyle
-      } w-1/4 py-4 px-1 text-center border-b-2 font-medium text-base cursor-pointer`}
+      } flex-1 py-4 px-1 text-center border-b-2 font-medium text-base cursor-pointer`}
+      data-animal-key={item.key}
     >
       {item.rendered}
     </li>
   );
 }
 type AriaSelecMenuWebProps = {
-  setAnimal: (animal: string) => void;
+  setAnimal: (animal: ActiveSpeciesKey) => void;
 };
 
 export default function AriaSelecMenuWeb({ setAnimal }: AriaSelecMenuWebProps) {
   return (
     <div className="hidden sm:block ">
-      <Menu onAction={setAnimal} aria-label="Tabs">
-        <Item key="chien">Le chien</Item>
-        <Item key="chat">Le chat</Item>
-        <Item key="cheval">Le cheval</Item>
-        <Item key="vache">La vache</Item>
-        <Item key="nac">N.A.C.</Item>
+      <Menu
+        onAction={(key) => setAnimal(key as ActiveSpeciesKey)}
+        aria-label="Animaux pris en charge"
+      >
+        {ACTIVE_SPECIES.map((animal) => (
+          <Item key={animal.key}>{animal.menuLabel}</Item>
+        ))}
       </Menu>
     </div>
   );

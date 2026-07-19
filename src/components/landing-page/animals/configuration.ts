@@ -1,4 +1,10 @@
-export type AnimalKey = 'chien' | 'chat' | 'cheval' | 'vache' | 'nac';
+import {
+  ACTIVE_SPECIES,
+  type ActiveSpecies,
+  type ActiveSpeciesKey,
+} from '../../../lib/constants/services';
+
+export type AnimalKey = ActiveSpeciesKey;
 
 export type AnimalConfig = {
   name: string;
@@ -9,10 +15,14 @@ export type AnimalConfig = {
 
 export type AnimalsConfiguration = Record<AnimalKey, AnimalConfig>;
 
+const activeSpeciesByKey = Object.fromEntries(
+  ACTIVE_SPECIES.map((animal) => [animal.key, animal])
+) as Record<AnimalKey, ActiveSpecies>;
+
 export const configuration: AnimalsConfiguration = {
   chien: {
-    name: 'Le chien',
-    imageKey: 'sectionChien',
+    name: activeSpeciesByKey.chien.displayName,
+    imageKey: activeSpeciesByKey.chien.imageKey,
     text: `Tout comme nous, le corps du chien subit les contraintes de la
       vie quotidienne. Agility, canicross, simples jeux ou promenade,
       quelle que soit son activité votre chien est soumis à des
@@ -33,11 +43,11 @@ export const configuration: AnimalsConfiguration = {
       meilleures allures au travail. Tout ce qu'il faut pour que lui
       et vous puissiez continuer à prendre du plaisir dans votre
       activité !`,
-    alt: 'deux chiens',
+    alt: activeSpeciesByKey.chien.imageAlt,
   },
   chat: {
-    name: 'Le chat',
-    imageKey: 'sectionChat',
+    name: activeSpeciesByKey.chat.displayName,
+    imageKey: activeSpeciesByKey.chat.imageKey,
     text: `Malgré sa souplesse légendaire, le chat est pourtant le premier
       à subir les chutes, les faux mouvements et autres petits
       traumatismes du quotidien, et il sera le dernier à montrer les
@@ -49,53 +59,11 @@ export const configuration: AnimalsConfiguration = {
       avec tic de léchage, la rééducation post-traumatique suite à une
       chute, l'arthrose, les troubles respiratoires et l'insuffisance
       rénale.`,
-    alt: 'un chat',
-  },
-  cheval: {
-    name: 'Le cheval',
-    imageKey: 'sectionCheval',
-    text: `"Nous avons presque oublié combien il est étonnant qu'un animal
-      aussi grand, aussi puissant et aussi intelligent puisse accepter
-      sur son dos un autre animal tellement plus faible!" Peter Gray.
-      Nombreuses sont les activités équestres, et les contraintes qui
-      s'appliquent sur le dos, les articulations et le système
-      physiologique du cheval sont plus importantes que pour tout
-      autre espèce domestique. La domestication du cheval s'accompagne
-      par des changements dans ses habitudes pouvant entraîner des
-      pathologies tels que lombalgie, ensellement, troubles digestifs,
-      boiterie etc… Bien souvent ses pathologies s'accompagnent d'une
-      baisse de performance, d'un changement de comportement ou d'une
-      irrégularité d'allure. En équitation, les professionnels ou les
-      amateurs, font de plus en plus appel à des ostéopathes
-      animaliers pour soulager les douleurs de leur cheval, le
-      préparer à des épreuves importantes ou améliorer ses
-      performances. Ils peuvent également le consulter en prévention
-      afin d'éviter tendinites, arthroses ou entorses à répétition.`,
-    alt: 'un cheval',
-  },
-  vache: {
-    name: 'La vache',
-    imageKey: 'sectionVache',
-    text: `Qu'elle soit laitière ou allaitante la vache en milieu d'élevage
-      est souvent sujette aux glissades, peut se coincer dans les
-      logettes ou les cornadis et ainsi se blesser, se bloquer le dos
-      et se mettre à boiter. En conséquence, la douleur et la fatigue
-      peut affaiblir l'animal, diminuer son état général et entraîner
-      des pertes en rendement. Les lésions sont également fréquentes
-      lors de la mise bas, surtout lorsque cette dernière a été
-      difficile pour la mère ou pour le veau. L'ostéopathie peut
-      réellement jouer un rôle important dans le bien-être animal dans
-      le milieu de l'élevage. L'éleveur faisant appel régulièrement à
-      un ostéopathe peut travailler à la qualité de ses produits et le
-      bien-être de ses animaux. Les principaux motifs de consultation
-      pour les bovins sont les boiteries, les troubles digestifs et
-      respiratoires, les vêlages difficiles, la vache couchée, le veau
-      qui ne tête pas ou qui ne se lève pas.`,
-    alt: 'une vache',
+    alt: activeSpeciesByKey.chat.imageAlt,
   },
   nac: {
-    name: 'Les nouveaux animaux de compagnie',
-    imageKey: 'sectionLapin',
+    name: activeSpeciesByKey.nac.displayName,
+    imageKey: activeSpeciesByKey.nac.imageKey,
     text: `Rongeurs, lapins, furets, tous ces nouveaux animaux domestiques
       font désormais partie de nos vies et subissent tout autant que
       les autres espèces les contraintes de la vie quotidienne. Ses
@@ -107,6 +75,6 @@ export const configuration: AnimalsConfiguration = {
       post-traumatiques (chute, coincé dans la cage etc…), les
       troubles digestifs et respiratoires, une perte d'état général et
       un changement de comportement.`,
-    alt: 'un lapin',
+    alt: activeSpeciesByKey.nac.imageAlt,
   },
 };

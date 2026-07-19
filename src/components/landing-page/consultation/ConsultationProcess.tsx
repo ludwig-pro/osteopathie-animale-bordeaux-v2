@@ -1,3 +1,8 @@
+import {
+  ACTIVE_SPECIES,
+  APPOINTMENT_MODES,
+} from '../../../lib/constants/services';
+
 type ImageData = {
   src: string;
   srcSet: {
@@ -13,8 +18,17 @@ type DeroulementConsultationProps = {
 
 export default function DeroulementConsultation({
   youngcatImg,
-  correctionImg,
+  correctionImg: _correctionImg,
 }: DeroulementConsultationProps) {
+  const activeSpecies = new Intl.ListFormat('fr', {
+    style: 'long',
+    type: 'conjunction',
+  }).format(
+    ACTIVE_SPECIES.map((animal) =>
+      animal.key === 'nac' ? 'NAC' : `${animal.key}s`
+    )
+  );
+
   return (
     <div className="py-16 bg-gold-50 overflow-hidden lg:py-24">
       <div className="relative max-w-xl mx-auto px-4 sm:px-6 lg:px-8 lg:max-w-7xl">
@@ -238,49 +252,18 @@ export default function DeroulementConsultation({
             </div>
 
             <div className="mt-10 -mx-4 relative lg:mt-0 lg:col-start-1">
-              <svg
-                className="absolute left-1/2 transform -translate-x-1/2 translate-y-16 lg:hidden"
-                width="784"
-                height="404"
-                fill="#EEC675"
-                viewBox="0 0 784 404"
-                aria-hidden="true"
-              >
-                <defs>
-                  <pattern
-                    id="e80155a9-dfde-425a-b5ea-1f6fadd20131"
-                    x="0"
-                    y="0"
-                    width="20"
-                    height="20"
-                    patternUnits="userSpaceOnUse"
-                  >
-                    <rect
-                      x="0"
-                      y="0"
-                      width="4"
-                      height="4"
-                      className="text-gold-200"
-                      fill="currentColor"
-                    />
-                  </pattern>
-                </defs>
-                <rect
-                  width="784"
-                  height="404"
-                  fill="url(#e80155a9-dfde-425a-b5ea-1f6fadd20131)"
-                />
-              </svg>
-              <img
-                src={correctionImg.src}
-                srcSet={correctionImg.srcSet.attribute}
-                alt="Ostéopathe pratiquant une manipulation vertébrale sur un cheval"
-                width={1200}
-                height={800}
-                loading="lazy"
-                decoding="async"
-                className="relative mx-auto rounded-lg w-full object-cover"
-              />
+              <div className="relative mx-auto rounded-lg bg-white p-8 shadow-lg ring-1 ring-black ring-opacity-5 sm:p-12">
+                <h3 className="text-2xl font-extrabold text-gold-600">
+                  Consultations sur rendez-vous
+                </h3>
+                <p className="mt-4 text-lg text-gray-600">
+                  Pour {activeSpecies},{' '}
+                  {APPOINTMENT_MODES.office.label.toLowerCase()} à{' '}
+                  {APPOINTMENT_MODES.office.location} ou{' '}
+                  {APPOINTMENT_MODES.home.label.toLowerCase()} dans la{' '}
+                  {APPOINTMENT_MODES.home.location.toLowerCase()}.
+                </p>
+              </div>
             </div>
           </div>
         </div>

@@ -28,8 +28,8 @@ export default function AnimalSection({
 }: AnimalSectionProps) {
   const [animal, setAnimalState] = useState<AnimalKey>('chien');
 
-  const setAnimal = (animalKey: string) => {
-    setAnimalState(animalKey as AnimalKey);
+  const setAnimal = (animalKey: AnimalKey) => {
+    setAnimalState(animalKey);
   };
   const [height, setHeight] = useState(0);
   const ref = useRef<HTMLDivElement>(null);

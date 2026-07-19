@@ -1,7 +1,11 @@
 import { useState } from 'react';
-import { Transition } from '@headlessui/react';
+import {
+  APPOINTMENT_MODES,
+  PRICING_CONFIG,
+  type AppointmentModeKey,
+  type PricingService,
+} from '../../../lib/constants/services';
 
-// Type simplifié compatible avec GetImageResult d'Astro
 type ImageData = {
   src: string;
   srcSet: {
@@ -18,62 +22,18 @@ type PrixProps = {
 };
 
 type CardProps = {
-  id: string;
-  title: string;
-  price: string;
-  alt: string;
-  variants:
-    | Array<{
-        description: string;
-        basePrice: string;
-        domicilePrice: string;
-      }>
-    | undefined;
-  option: string;
-  isDomicile: boolean;
+  service: PricingService;
+  mode: AppointmentModeKey;
   image: ImageData;
 };
-
-const prestations = [
-  {
-    id: 'chien-chat',
-    title: 'Chien & Chat',
-    alt: 'Chien et chat ensemble représentant les consultations pour ces animaux',
-    imageKey: 'chienetchat' as const,
-    basePrice: '60',
-    domicilePrice: '80',
-    variants: [
-      { description: 'adulte', basePrice: '60', domicilePrice: '60' },
-      { description: 'moins de 6 mois', basePrice: '50', domicilePrice: '50' },
-      { description: 'moins de 3 mois', basePrice: '40', domicilePrice: '40' },
-    ],
-  },
-  {
-    id: 'nac',
-    title: 'N.A.C',
-    alt: 'Furet représentant les Nouveaux Animaux de Compagnie (NAC)',
-    imageKey: 'furet' as const,
-    basePrice: '50',
-    domicilePrice: '50',
-  },
-  {
-    id: 'forfait',
-    title: 'Forfait',
-    alt: 'Illustration du forfait mensuel pour les éleveurs',
-    imageKey: 'forfait' as const,
-    basePrice: '40',
-    domicilePrice: '40',
-  },
-];
 
 function classNames(...classes: (string | boolean | undefined | null)[]) {
   return classes.filter(Boolean).join(' ');
 }
 
 function Prix({ id, chienetchatImg, furetImg, forfaitImg }: PrixProps) {
-  const [option, setOption] = useState('cabinet');
-
-  const images = {
+  const [mode, setMode] = useState<AppointmentModeKey>('office');
+  const images: Record<PricingService['imageKey'], ImageData> = {
     chienetchat: chienetchatImg,
     furet: furetImg,
     forfait: forfaitImg,
@@ -88,106 +48,68 @@ function Prix({ id, chienetchatImg, furetImg, forfaitImg }: PrixProps) {
           </h2>
 
           <div className="relative self-center mt-6 bg-gold-200 rounded-lg p-0.5 flex sm:mt-8">
-            <button
-              type="button"
-              className={classNames(
-                'relative w-1/2 rounded-md py-2 text-sm font-medium whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-gold-500 focus:z-10 sm:w-auto sm:px-8 shadow-sm border',
-                option === 'cabinet'
-                  ? 'bg-white border-gold-300 text-gray-900'
-                  : 'border-transparent text-gray-700'
-              )}
-              onClick={() => setOption('cabinet')}
-            >
-              En cabinet
-            </button>
-            <button
-              type="button"
-              className={classNames(
-                'relative w-1/2 rounded-md py-2 text-sm font-medium whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-gold-500 focus:z-10 sm:w-auto sm:px-8 shadow-sm border',
-                option === 'domicile'
-                  ? 'bg-white border border-gold-300 text-gray-900'
-                  : ' border-transparent text-gray-700'
-              )}
-              onClick={() => setOption('domicile')}
-            >
-              À domicile
-            </button>
+            {Object.values(APPOINTMENT_MODES).map((appointmentMode) => (
+              <button
+                key={appointmentMode.key}
+                type="button"
+                data-appointment-mode={appointmentMode.key}
+                aria-pressed={mode === appointmentMode.key}
+                className={classNames(
+                  'relative w-1/2 rounded-md py-2 text-sm font-medium whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-gold-500 focus:z-10 sm:w-auto sm:px-8 shadow-sm border',
+                  mode === appointmentMode.key
+                    ? 'bg-white border-gold-300 text-gray-900'
+                    : 'border-transparent text-gray-700'
+                )}
+                onClick={() => setMode(appointmentMode.key)}
+              >
+                {appointmentMode.label}
+              </button>
+            ))}
           </div>
         </div>
-        <div className="relative h-24">
-          <Transition
-            show={option === 'domicile'}
-            enter="transition-all duration-200 ease-in-out"
-            enterFrom="opacity-0 transform -translate-y-1"
-            enterTo="opacity-100 transform translate-y-0"
-            leave="transition-all duration-150 ease-in-out"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
+        <div className="flex min-h-24 justify-center">
+          <p
+            className="mt-4 max-w-xl text-gray-600 text-md sm:text-center"
+            data-testid="travel-fee"
           >
-            <div className="absolute w-full flex justify-center">
-              <p className="mt-4 text-gray-600 text-md sm:text-center max-w-xl">
-                *Pour votre confort, je me déplace à votre domicile sur toute la
-                région bordelaise. Un forfait déplacement de{' '}
-                <span className="font-bold text-lg text-gray-900">10€</span>{' '}
-                s'applique, vous permettant de profiter d'une consultation dans
-                l'environnement familier de votre animal.
-              </p>
-            </div>
-          </Transition>
+            Pour une consultation {APPOINTMENT_MODES.home.label.toLowerCase()}{' '}
+            dans la {APPOINTMENT_MODES.home.location.toLowerCase()}, un forfait
+            déplacement de{' '}
+            <span className="font-bold text-lg text-gray-900">
+              {PRICING_CONFIG.travelFeeEur} €
+            </span>{' '}
+            s'ajoute au tarif de la consultation.
+          </p>
         </div>
-        <div
-          className={classNames(
-            'mt-12 space-y-4 sm:mt-16 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-6 lg:max-w-4xl lg:mx-auto xl:max-w-none xl:mx-0 xl:grid-cols-3'
-          )}
-        >
-          {prestations.map(
-            ({
-              id,
-              title,
-              alt,
-              imageKey,
-              basePrice,
-              domicilePrice,
-              variants,
-            }) => {
-              return (
-                <Card
-                  id={id}
-                  key={id}
-                  title={title}
-                  alt={alt}
-                  price={option === 'cabinet' ? basePrice : domicilePrice}
-                  isDomicile={option === 'domicile'}
-                  variants={variants}
-                  option={option}
-                  image={images[imageKey]}
-                />
-              );
-            }
-          )}
+        <div className="mt-12 space-y-4 sm:mt-16 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-6 lg:max-w-4xl lg:mx-auto xl:max-w-none xl:mx-0 xl:grid-cols-3">
+          {PRICING_CONFIG.services.map((service) => (
+            <Card
+              service={service}
+              key={service.id}
+              mode={mode}
+              image={images[service.imageKey]}
+            />
+          ))}
         </div>
       </div>
     </div>
   );
 }
 
-function Card({
-  id,
-  title,
-  price,
-  alt,
-  variants,
-  option,
-  isDomicile: _isDomicile,
-  image,
-}: CardProps) {
+function Card({ service, mode, image }: CardProps) {
+  const isHome = mode === 'home';
+
   return (
-    <div className="flex flex-col rounded-lg shadow-lg overflow-hidden">
+    <article
+      className="flex flex-col rounded-lg shadow-lg overflow-hidden"
+      data-pricing-service={service.id}
+      data-active-species={service.activeSpecies.join(',')}
+    >
       <div className="flex-shrink-0">
         <img
           src={image.src}
           srcSet={image.srcSet.attribute}
-          alt={alt}
+          alt={service.imageAlt}
           width={800}
           height={400}
           loading="lazy"
@@ -195,59 +117,55 @@ function Card({
           className="h-48 w-full object-cover"
         />
       </div>
-      <div className="p-6  flex-1 flex flex-col">
+      <div className="p-6 flex-1 flex flex-col">
         <div className="flex-none">
-          <h3 className="text-xl leading-6 font-bold text-gold-500">{title}</h3>
+          <h3 className="text-xl leading-6 font-bold text-gold-500">
+            {service.title}
+          </h3>
         </div>
-        <div className="flex flex-1 flex-col  content-end justify-end">
-          {id === 'forfait' && (
-            <div className="mt-4">
-              <p className="text-lg leading-6 font-bold text-gray-700">
-                Éleveurs{' '}
-                <span className="text-base">à partir de 3 animaux</span>
-              </p>
-              <p className="mt-2 text-lg leading-6 font-bold text-gray-700">
-                Visite mensuelle
-              </p>
-              <p className="mt-2 text-lg leading-6 font-bold text-gray-700">
-                Rééducation
-              </p>
-            </div>
+        <div className="flex flex-1 flex-col content-end justify-end">
+          {service.conditions && (
+            <ul className="mt-4 text-lg leading-6 font-bold text-gray-700">
+              {service.conditions.map((condition) => (
+                <li className="mt-2" key={condition}>
+                  {condition}
+                </li>
+              ))}
+            </ul>
           )}
-          {variants ? (
-            variants.map(({ description, basePrice, domicilePrice }, index) => (
+          {service.variants ? (
+            service.variants.map(({ description, amountEur }, index) => (
               <p
-                key={`${id}-${description}`}
+                key={`${service.id}-${description}`}
                 className={classNames(
-                  'mt-4 text-right',
+                  'text-right',
                   index === 0 ? 'mt-4' : 'mt-2'
                 )}
               >
                 <span className="text-lg font-bold text-gray-700">
-                  {description}
-                  {'   '}
+                  {description}{' '}
                 </span>
                 <span className="text-4xl font-extrabold text-gold-500">
-                  {option === 'cabinet' ? basePrice : domicilePrice}
+                  {amountEur}
                 </span>
                 <span className="text-base font-medium text-gold-600">
-                  €{option === 'domicile' && '*'}
+                  €{isHome && '*'}
                 </span>
               </p>
             ))
           ) : (
-            <p className="mt-4 text-right ">
+            <p className="mt-4 text-right">
               <span className="text-4xl font-extrabold text-gold-500">
-                {price}
+                {service.amountEur}
               </span>
               <span className="text-base font-medium text-gold-600">
-                €{option === 'domicile' && '*'}
+                €{isHome && '*'}
               </span>
             </p>
           )}
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 

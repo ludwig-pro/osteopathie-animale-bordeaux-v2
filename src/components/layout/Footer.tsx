@@ -1,3 +1,5 @@
+import { BUSINESS_CONFIG } from '../../lib/constants/site';
+
 export default function Footer() {
   const year = new Date().getFullYear();
   return (
@@ -6,7 +8,9 @@ export default function Footer() {
         <div className="mt-12 border-t border-gray-200 pt-8 md:flex md:items-center md:justify-between lg:mt-16">
           <div className="flex space-x-6 md:order-2">
             <a
-              href="https://www.facebook.com/AgatheLescout/"
+              href={BUSINESS_CONFIG.profiles.facebook}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-gray-400 hover:text-gold-500"
             >
               <span className="sr-only">Facebook</span>
@@ -24,23 +28,38 @@ export default function Footer() {
               </svg>
             </a>
           </div>
-          <p className="mt-8 text-base text-gray-400 md:mt-0 md:order-1">
-            &copy;{' '}
-            {`${year} Agathe Lescout, Ostéopathe Animalier. Tous droits
-            réservés.`}
-            <span>
+          <div className="mt-8 text-base text-gray-500 md:mt-0 md:order-1">
+            <p>
+              &copy;{' '}
+              {`${year} ${BUSINESS_CONFIG.practitionerName}, ostéopathe animalier. Tous droits réservés.`}
+            </p>
+            <nav
+              aria-label="Informations légales"
+              className="mt-2 flex flex-wrap gap-x-4 gap-y-2"
+            >
+              <a
+                href="/mentions-legales/"
+                className="underline hover:text-gold-600"
+              >
+                Mentions légales
+              </a>
+              <a
+                href="/politique-confidentialite/"
+                className="underline hover:text-gold-600"
+              >
+                Politique de confidentialité
+              </a>
               <button
                 onClick={() => {
                   window.openAxeptioCookie?.();
                   window.openAxeptioCookies?.();
                 }}
-                className="text-gray-400 hover:text-gray-400"
+                className="underline hover:text-gold-600"
               >
-                {' '}
                 Vos préférences en matière de cookies
               </button>
-            </span>
-          </p>
+            </nav>
+          </div>
         </div>
       </div>
     </footer>

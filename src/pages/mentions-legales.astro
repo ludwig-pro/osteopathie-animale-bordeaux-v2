@@ -1,0 +1,133 @@
+---
+import Footer from '../components/layout/Footer';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { BUSINESS_CONFIG, LEGAL_CONFIG } from '../lib/constants/site';
+
+const title = `Mentions légales | ${BUSINESS_CONFIG.practitionerName}`;
+const description = `Identité de l'éditrice, coordonnées professionnelles et informations d'hébergement du site de ${BUSINESS_CONFIG.practitionerName}.`;
+const professionalAddress = `${BUSINESS_CONFIG.address.streetAddress}, ${BUSINESS_CONFIG.address.postalCode} ${BUSINESS_CONFIG.address.addressLocality}`;
+---
+
+<BaseLayout title={title} description={description} indexing="noindex">
+  <main class="min-h-screen bg-white px-4 py-16 sm:px-6 lg:px-8">
+    <article class="mx-auto max-w-3xl text-gray-700">
+      <h1 class="text-4xl font-extrabold tracking-tight text-gold-600">
+        Mentions légales
+      </h1>
+
+      <section class="mt-10">
+        <h2 class="text-2xl font-bold text-gray-900">Éditrice du site</h2>
+        <dl class="mt-4 space-y-2">
+          <div>
+            <dt class="inline font-semibold">Nom :</dt>
+            <dd class="inline">{LEGAL_CONFIG.operator.name}</dd>
+          </div>
+          <div>
+            <dt class="inline font-semibold">Forme juridique :</dt>
+            <dd class="inline">{LEGAL_CONFIG.operator.legalForm}</dd>
+          </div>
+          <div>
+            <dt class="inline font-semibold">SIREN :</dt>
+            <dd class="inline">{LEGAL_CONFIG.operator.siren}</dd>
+          </div>
+          <div>
+            <dt class="inline font-semibold">SIRET actif :</dt>
+            <dd class="inline">{LEGAL_CONFIG.operator.siret}</dd>
+          </div>
+          <div>
+            <dt class="inline font-semibold">Code APE :</dt>
+            <dd class="inline">{LEGAL_CONFIG.operator.apeCode}</dd>
+          </div>
+          <div>
+            <dt class="inline font-semibold">Adresse professionnelle :</dt>
+            <dd class="inline">{professionalAddress}</dd>
+          </div>
+          <div>
+            <dt class="inline font-semibold">Téléphone :</dt>
+            <dd class="inline">
+              <a
+                class="underline hover:text-gold-600"
+                href={`tel:${BUSINESS_CONFIG.telephone.e164}`}
+              >
+                {BUSINESS_CONFIG.telephone.display}
+              </a>
+            </dd>
+          </div>
+          <div>
+            <dt class="inline font-semibold">E-mail :</dt>
+            <dd class="inline">
+              <a
+                class="underline hover:text-gold-600"
+                href={`mailto:${BUSINESS_CONFIG.email}`}
+              >
+                {BUSINESS_CONFIG.email}
+              </a>
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="mt-10">
+        <h2 class="text-2xl font-bold text-gray-900">Activité réglementée</h2>
+        <p class="mt-4">
+          {BUSINESS_CONFIG.registration.wording}. Numéro d'inscription : <strong
+            >{BUSINESS_CONFIG.registration.registryNumber}</strong
+          >. Cette formulation ne signifie ni vétérinaire, ni « certification
+          CNOV ».
+        </p>
+        <p class="mt-3">
+          <a
+            class="underline hover:text-gold-600"
+            href={BUSINESS_CONFIG.registration.officialDirectoryUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Vérifier l'inscription dans l'annuaire officiel
+          </a>
+        </p>
+      </section>
+
+      <section class="mt-10">
+        <h2 class="text-2xl font-bold text-gray-900">
+          Direction de la publication
+        </h2>
+        <p class="mt-4">{LEGAL_CONFIG.operator.publicationDirector}</p>
+      </section>
+
+      <section class="mt-10">
+        <h2 class="text-2xl font-bold text-gray-900">Hébergement</h2>
+        <p class="mt-4">
+          {LEGAL_CONFIG.host.name}<br />
+          {LEGAL_CONFIG.host.address}
+        </p>
+        <p class="mt-3">
+          Netlify ne publie pas de numéro de téléphone officiel unique pour ce
+          service. Aucun numéro non vérifié n'est donc affiché. Le contact de
+          l'hébergeur passe par son{' '}
+          <a
+            class="underline hover:text-gold-600"
+            href={LEGAL_CONFIG.host.supportUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            canal d'assistance officiel
+          </a>. Ses{' '}
+          <a
+            class="underline hover:text-gold-600"
+            href={LEGAL_CONFIG.host.termsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            conditions d'utilisation
+          </a>{' '}
+          sont également accessibles en ligne.
+        </p>
+      </section>
+
+      <p class="mt-12 text-sm text-gray-500">
+        Informations vérifiées le 19 juillet 2026.
+      </p>
+    </article>
+  </main>
+  <Footer client:visible />
+</BaseLayout>
