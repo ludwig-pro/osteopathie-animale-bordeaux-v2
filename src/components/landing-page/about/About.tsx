@@ -1,3 +1,9 @@
+import {
+  ACTIVE_SPECIES,
+  APPOINTMENT_MODES,
+} from '../../../lib/constants/services';
+import { BUSINESS_CONFIG } from '../../../lib/constants/site';
+
 type ImageData = {
   src: string;
   srcSet: {
@@ -11,6 +17,15 @@ type QuiSuisJeProps = {
 };
 
 export default function QuiSuisJe({ agatheImg }: QuiSuisJeProps) {
+  const activeSpecies = new Intl.ListFormat('fr', {
+    style: 'long',
+    type: 'conjunction',
+  }).format(
+    ACTIVE_SPECIES.map((animal) =>
+      animal.key === 'nac' ? 'NAC' : `${animal.key}s`
+    )
+  );
+
   return (
     <div className="bg-gray-50">
       <div className="mx-auto py-12 px-4 max-w-7xl sm:px-6 lg:px-8 lg:py-24">
@@ -23,7 +38,7 @@ export default function QuiSuisJe({ agatheImg }: QuiSuisJeProps) {
                     <img
                       src={agatheImg.src}
                       srcSet={agatheImg.srcSet.attribute}
-                      alt="Portrait d'Agathe Lescout, ostéopathe spécialisée dans les animaux"
+                      alt={`Portrait d’${BUSINESS_CONFIG.practitionerName}, praticienne en ostéopathie animale`}
                       width={800}
                       height={1000}
                       loading="lazy"
@@ -34,41 +49,42 @@ export default function QuiSuisJe({ agatheImg }: QuiSuisJeProps) {
                   <div className="sm:col-span-2">
                     <div className="space-y-4">
                       <div className="text-lg leading-6 font-medium space-y-1">
-                        <h3>Agathe Lescout</h3>
+                        <h2 className="text-lg">
+                          {BUSINESS_CONFIG.practitionerName}
+                        </h2>
                         <p className="text-gold-600">
-                          Ostéopathe / Professeur à l'EAO - École d'Aquitaine
-                          d'Ostéopathie
+                          {BUSINESS_CONFIG.practitionerJobTitle}
                         </p>
                       </div>
                       <div className="text-lg">
                         <p className="text-gray-500">
-                          Passionnée par le bien-être animal, je suis Agathe
-                          Lescout, ostéopathe dédiée aux animaux en région
-                          Aquitaine. Forte d'un master en physiologie et
-                          comportement animal, j'ai approfondi ma vocation en me
-                          spécialisant en ostéopathie animale au CNESOA pendant
-                          4 ans. <br />
-                          Ma pratique englobe une gamme étendue de techniques -
-                          du structurel aux étirements musculaires, en passant
-                          par le viscéral, le tissulaire, les approches
-                          crânio-sacrées, les techniques réflexes et
-                          l'acupressure. <br />
-                          <br />
-                          Mon objectif ? <br />
-                          Offrir des soins personnalisés et adaptés à chaque
-                          animal, qu'il s'agisse de chiens, chats, NAC, chevaux
-                          ou vaches, en cabinet ou à domicile. Mon engagement
-                          pour l'excellence dans le bien-être animal est
-                          certifié par mon inscription au Registre National
-                          d'Aptitude en ostéopathie animale, validé par l'Ordre
-                          National des Vétérinaires (CNOV){' '}
+                          Je suis {BUSINESS_CONFIG.practitionerName},{' '}
+                          {BUSINESS_CONFIG.registration.wording.toLowerCase()}.
+                          Mon numéro d'inscription est{' '}
+                          <strong>
+                            {BUSINESS_CONFIG.registration.registryNumber}
+                          </strong>
+                          . L'annuaire actuel de l'Ordre national des
+                          vétérinaires recense cette inscription depuis le 22
+                          novembre 2018, après délibération du 21 novembre 2018.{' '}
                           <a
-                            href="https://extranet.veterinaire.fr/annuaires/osteopathes-rna"
+                            href={
+                              BUSINESS_CONFIG.registration.officialDirectoryUrl
+                            }
                             target="_blank"
                             rel="noreferrer"
+                            className="underline"
                           >
-                            le site internet du CNOV.
+                            Consulter l'annuaire officiel
                           </a>
+                          . <br />
+                          <br />
+                          Je reçois les {activeSpecies}{' '}
+                          {APPOINTMENT_MODES.office.label.toLowerCase()} à{' '}
+                          {APPOINTMENT_MODES.office.location} et me déplace{' '}
+                          {APPOINTMENT_MODES.home.label.toLowerCase()} dans la{' '}
+                          {APPOINTMENT_MODES.home.location.toLowerCase()}, sur
+                          rendez-vous.
                         </p>
                       </div>
                     </div>

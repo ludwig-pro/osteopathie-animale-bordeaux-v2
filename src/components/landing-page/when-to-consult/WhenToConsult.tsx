@@ -1,13 +1,5 @@
 import type { ReactElement } from 'react';
-import {
-  Bilan,
-  BreakBone,
-  Articulation,
-  Grow,
-  Thunder,
-  Gate,
-  Lungs,
-} from '../../common/icons';
+import { Bilan, BreakBone, Articulation, Gate } from '../../common/icons';
 
 type QuandConsulterProps = {
   id?: string;
@@ -21,44 +13,28 @@ type ReasonProps = {
 
 const reasons = [
   {
-    title: 'Bilan annuel',
+    title: 'Mobilité et posture',
     description:
-      "Une à deux consultations par an permet de prévenir des pathologies liées à la croissance, à l'activité et à l'âge",
-    icon: () => <Bilan />,
-  },
-  {
-    title: 'Réeducation',
-    description:
-      'Post-chirurgicale ou post-traumatique (fracture, tendinite, entorse etc.)',
-    icon: () => <BreakBone />,
-  },
-  {
-    title: 'Troubles ostéo-articulaire',
-    description:
-      "Boiterie, arthrose, contracture, irrégularité d'allure, dorsalgie etc.",
+      'Raideur, asymétrie ou changement d’allure, après avis vétérinaire lorsqu’un diagnostic médical est nécessaire.',
     icon: () => <Articulation />,
   },
   {
-    title: 'Croissance',
-    description: "Défaut d'aplombs, malformation, dysplasie etc.",
-    icon: () => <Grow />,
-  },
-  {
-    title: 'Troubles du comportement',
-    description: 'Craintes excessives, agressivité, tics etc.',
-    icon: () => <Thunder />,
-  },
-  {
-    title: 'Sport',
+    title: 'Après un événement',
     description:
-      'Baisse des performances, préparation à la compétition et récupération',
+      'Après un traumatisme ou une intervention, uniquement avec l’accord vétérinaire et si l’état est compatible avec un accompagnement fonctionnel.',
+    icon: () => <BreakBone />,
+  },
+  {
+    title: 'Activité quotidienne',
+    description:
+      'Évaluation fonctionnelle tenant compte de l’âge et de l’activité, sans fréquence standard ni promesse de prévention ou de performance.',
+    icon: () => <Bilan />,
+  },
+  {
+    title: 'Suivi coordonné',
+    description:
+      'En complément du suivi vétérinaire, dans le champ des manipulations autorisées.',
     icon: () => <Gate />,
-  },
-  {
-    title: 'Troubles fonctionnels',
-    description:
-      'Systèmes respiratoire, nerveux, digestif, vasculaire, reproducteur, urinaire et hormonal',
-    icon: () => <Lungs />,
   },
 ];
 
@@ -102,15 +78,17 @@ export default function QuandConsulter({ id }: QuandConsulterProps) {
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-gold-800">
-                Contre-indications
+                Quand contacter un vétérinaire ?
               </h3>
               <div className="mt-2 text-sm text-gold-700">
                 <p>
-                  Attention, l'ostéopathie n'intervient jamais en 1ère
-                  intention, si votre animal présente des signes fiévreux ou
-                  inflammatoires (abattement, chaleur, douleur, gonflement) ou
-                  un changement brusque de comportement, veuillez vous référer à
-                  votre vétérinaire.
+                  Contactez d’abord un vétérinaire en cas de traumatisme,
+                  douleur importante ou prolongée, fièvre, abattement,
+                  gonflement, difficulté respiratoire, trouble digestif ou
+                  urinaire, changement brutal, ou si les symptômes persistent ou
+                  s’aggravent. Aucune manipulation ne doit être réalisée si elle
+                  risque d’aggraver l’état ou de retarder le diagnostic. En cas
+                  d’urgence, n’attendez pas.
                 </p>
               </div>
             </div>

@@ -1,4 +1,6 @@
 import { Phone, Email } from '../../common/icons';
+import { APPOINTMENT_MODES } from '../../../lib/constants/services';
+import { BUSINESS_CONFIG } from '../../../lib/constants/site';
 import ContactInfoItem from './ContactInfoItem';
 
 export default function ContactInfo() {
@@ -10,34 +12,33 @@ export default function ContactInfo() {
         </h2>
 
         <h3 className="mt-6 text-lg font-extrabold tracking-tight text-gold-500 sm:text-xl">
-          À domicile
+          {APPOINTMENT_MODES.home.label}
         </h3>
         <p className="mt-2 text-lg leading-6 text-gray-500">
-          <span className="font-bold">Sur rendez-vous, </span>je m'adapte à
-          votre emploi du temps du lundi au vendredi.
+          {BUSINESS_CONFIG.hours.home.display}.
         </p>
 
         <h3 className="mt-6 text-lg font-extrabold tracking-tight text-gold-500 sm:text-xl">
-          En cabinet
+          {APPOINTMENT_MODES.office.label}
         </h3>
         <h4 className="mt-3 text-lg leading-6 text-gray-500 font-bold">
-          Bègles :
+          {APPOINTMENT_MODES.office.location} :
         </h4>
         <p className="ml-2 mt-3 text-lg leading-6 text-gray-500">
-          Lundi et Vendredi : 9h à 19h
+          {BUSINESS_CONFIG.hours.office.display}.
         </p>
 
         <dl className="mt-8 text-base text-gray-500">
           <ContactInfoItem
             icon={<Phone />}
-            href="tel:+33665550792"
-            label="0665550792"
+            href={`tel:${BUSINESS_CONFIG.telephone.e164}`}
+            label={BUSINESS_CONFIG.telephone.display}
             srLabel="Téléphone"
           />
           <ContactInfoItem
             icon={<Email />}
-            href="mailto:agathe.lescout.osteo@gmail.com"
-            label="agathe.lescout.osteo@gmail.com"
+            href={`mailto:${BUSINESS_CONFIG.email}`}
+            label={BUSINESS_CONFIG.email}
             srLabel="Email"
           />
         </dl>

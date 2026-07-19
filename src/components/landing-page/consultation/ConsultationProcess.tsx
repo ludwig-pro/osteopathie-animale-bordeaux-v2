@@ -1,3 +1,8 @@
+import {
+  ACTIVE_SPECIES,
+  APPOINTMENT_MODES,
+} from '../../../lib/constants/services';
+
 type ImageData = {
   src: string;
   srcSet: {
@@ -13,8 +18,17 @@ type DeroulementConsultationProps = {
 
 export default function DeroulementConsultation({
   youngcatImg,
-  correctionImg,
+  correctionImg: _correctionImg,
 }: DeroulementConsultationProps) {
+  const activeSpecies = new Intl.ListFormat('fr', {
+    style: 'long',
+    type: 'conjunction',
+  }).format(
+    ACTIVE_SPECIES.map((animal) =>
+      animal.key === 'nac' ? 'NAC' : `${animal.key}s`
+    )
+  );
+
   return (
     <div className="py-16 bg-gold-50 overflow-hidden lg:py-24">
       <div className="relative max-w-xl mx-auto px-4 sm:px-6 lg:px-8 lg:max-w-7xl">
@@ -57,10 +71,9 @@ export default function DeroulementConsultation({
             Déroulement d'une consultation
           </h2>
           <p className="mt-4 max-w-3xl mx-auto text-center text-xl text-gray-500">
-            Une consultation en ostéopathie débute toujours par une description
-            des symptômes, s'il y'en a, et une anamnèse, c'est à dire un bilan
-            sur les antécédents de l'animal, sur son activité et son
-            alimentation.
+            La consultation débute par le recueil du motif, des antécédents, de
+            l’activité et des informations vétérinaires utiles afin de vérifier
+            que la situation relève du champ de l’ostéopathie animale.
           </p>
         </div>
 
@@ -73,20 +86,15 @@ export default function DeroulementConsultation({
                     <p className="text-2xl">1</p>
                   </div>
                   <p className="ml-16 text-lg leading-6 font-medium text-gold-600">
-                    Examen clinique
+                    Évaluation préalable
                   </p>
                 </dt>
                 <dd className="mt-2 ml-16 text-base text-gray-500">
-                  L'ostéopathe vérifie si l'animal est apte à recevoir une
-                  consultation ostéopathique. Pour cela il vérifie l'état
-                  général de l'animal (aspect des muqueuses, présences de signes
-                  fiévreux ou inflammatoire, abattement ou forte douleur etc.).
-                  En cas de la présence de l'un de ces signes votre ostéopathe
-                  vous dirigera vers votre vétérinaire afin d'apporter les soins
-                  urgents et nécessaires à votre animal. Une fois votre animal
-                  hors de danger, et en toutes connaissances de causes, votre
-                  ostéopathe pourra accompagner votre animal vers son
-                  rétablissement.
+                  La praticienne observe l’état général de l’animal. Si un
+                  diagnostic ou un traitement médical est nécessaire, si la
+                  situation est hors champ, ou si une manipulation risque
+                  d’aggraver l’état ou de gêner le diagnostic, elle ne poursuit
+                  pas et oriente vers un vétérinaire.
                 </dd>
               </div>
 
@@ -96,16 +104,14 @@ export default function DeroulementConsultation({
                     <p className="text-2xl">2</p>
                   </div>
                   <p className="ml-16 text-lg leading-6 font-medium text-gold-600">
-                    Examen ostéopathique
+                    Observation fonctionnelle
                   </p>
                 </dt>
                 <dd className="mt-2 ml-16 text-base text-gray-500">
-                  L'ostéopathe réalise une observation dynamique, il regarde
-                  l'animal se déplacer aux différentes allures afin de remarquer
-                  d'éventuelles irrégularités. Il procède ensuite à une
-                  palpation du corps, des tests articulaires et viscéraux afin
-                  de pouvoir déterminer les zones de restrictions, les
-                  sensibilités et établir son diagnostic final.
+                  Avec votre accord, la praticienne observe les déplacements,
+                  puis procède à la palpation et à l’évaluation de la mobilité.
+                  Cette observation peut conduire à un diagnostic ostéopathique,
+                  distinct du diagnostic vétérinaire.
                 </dd>
               </div>
             </dl>
@@ -201,14 +207,14 @@ export default function DeroulementConsultation({
                       <p className="text-2xl">3</p>
                     </div>
                     <p className="ml-16 text-lg leading-6 font-medium text-gold-600">
-                      Traitement
+                      Manipulations
                     </p>
                   </dt>
                   <dd className="mt-2 ml-16 text-base text-gray-500">
-                    Une fois le diagnostic ostéopathique établi, l'ostéopathe
-                    réalise l'ensemble des techniques adaptées à la lésion et à
-                    votre animale, pour corriger les dysfonctions trouvées et
-                    rétablir l'équilibre général du corps.
+                    Les manipulations sont exclusivement manuelles, externes,
+                    non instrumentales et non forcées. Elles sont adaptées aux
+                    réactions de l’animal et interrompues en cas de douleur
+                    prolongée.
                   </dd>
                 </div>
 
@@ -218,69 +224,33 @@ export default function DeroulementConsultation({
                       <p className="text-2xl">4</p>
                     </div>
                     <p className="ml-16 text-lg leading-6 font-medium text-gold-600">
-                      Suivi
+                      Consignes et vigilance
                     </p>
                   </dt>
                   <dd className="mt-2 ml-16 text-base text-gray-500">
-                    Après une séance d'ostéopathie, l'animal a besoin de 24 à
-                    48h de repos durant lesquelles son corps va s'équilibrer. Le
-                    corps de votre animal aura ensuite besoin de 10 à 15 jours
-                    pour s'habituer à son nouveau schéma corporel, surtout si
-                    les lésions traitées étaient anciennes. Durant cette période
-                    votre animal peut présenter des symptômes tels que
-                    irrégularité d'allure, fatigue, diarrhée légère etc. Si les
-                    symptômes vous semblent trop importants ou s'ils persistent
-                    au delà de 15 jours, n'hésitez pas à recontacter votre
-                    ostéopathe pour une contre-visite gratuite.
+                    Les consignes de suivi sont individualisées : il n’existe
+                    pas de délai universel de repos ou d’effet. En cas de
+                    douleur, d’apparition, de persistance ou d’aggravation de
+                    symptômes, contactez un vétérinaire et informez la
+                    praticienne. En cas d’urgence, n’attendez pas.
                   </dd>
                 </div>
               </dl>
             </div>
 
             <div className="mt-10 -mx-4 relative lg:mt-0 lg:col-start-1">
-              <svg
-                className="absolute left-1/2 transform -translate-x-1/2 translate-y-16 lg:hidden"
-                width="784"
-                height="404"
-                fill="#EEC675"
-                viewBox="0 0 784 404"
-                aria-hidden="true"
-              >
-                <defs>
-                  <pattern
-                    id="e80155a9-dfde-425a-b5ea-1f6fadd20131"
-                    x="0"
-                    y="0"
-                    width="20"
-                    height="20"
-                    patternUnits="userSpaceOnUse"
-                  >
-                    <rect
-                      x="0"
-                      y="0"
-                      width="4"
-                      height="4"
-                      className="text-gold-200"
-                      fill="currentColor"
-                    />
-                  </pattern>
-                </defs>
-                <rect
-                  width="784"
-                  height="404"
-                  fill="url(#e80155a9-dfde-425a-b5ea-1f6fadd20131)"
-                />
-              </svg>
-              <img
-                src={correctionImg.src}
-                srcSet={correctionImg.srcSet.attribute}
-                alt="Ostéopathe pratiquant une manipulation vertébrale sur un cheval"
-                width={1200}
-                height={800}
-                loading="lazy"
-                decoding="async"
-                className="relative mx-auto rounded-lg w-full object-cover"
-              />
+              <div className="relative mx-auto rounded-lg bg-white p-8 shadow-lg ring-1 ring-black ring-opacity-5 sm:p-12">
+                <h3 className="text-2xl font-extrabold text-gold-600">
+                  Consultations sur rendez-vous
+                </h3>
+                <p className="mt-4 text-lg text-gray-600">
+                  Pour {activeSpecies},{' '}
+                  {APPOINTMENT_MODES.office.label.toLowerCase()} à{' '}
+                  {APPOINTMENT_MODES.office.location} ou{' '}
+                  {APPOINTMENT_MODES.home.label.toLowerCase()} dans la{' '}
+                  {APPOINTMENT_MODES.home.location.toLowerCase()}.
+                </p>
+              </div>
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an Astro-based showcase website for Agathe Lescout, an animal osteopath serving Bordeaux and Gironde. The site uses Astro for the main framework with React components (via `client:only="react"`) and Tailwind CSS for styling.
+This is an Astro-based showcase website for Agathe Lescout, an animal osteopath serving Bordeaux and Gironde. Astro pre-renders the HTML in static mode; React islands add interactivity through selective `client:load` and `client:visible` hydration. Tailwind CSS provides styling.
 
 ## Development Commands
 
@@ -28,6 +28,10 @@ yarn preview
 yarn format          # Format with Prettier
 yarn lint            # Run ESLint
 yarn lint:fix        # Auto-fix ESLint issues
+
+# Browser contracts against the production build
+yarn test:e2e
+yarn test:e2e tests/e2e/seo.spec.ts
 ```
 
 ## Architecture
@@ -35,26 +39,27 @@ yarn lint:fix        # Auto-fix ESLint issues
 ### Astro + React Hybrid
 
 The site follows Astro's architecture where:
+
 - `.astro` files define pages and layouts (`src/pages/`, `src/layouts/`)
-- React components (`.tsx`) are used for interactive sections via `client:only="react"` directive
-- All React components are client-side only (no SSR for React components)
+- React components (`.tsx`) are pre-rendered into the static HTML and selectively hydrated with Astro client directives
+- Indexable copy and landmarks must remain available in the generated HTML when JavaScript is disabled
 
 ### Page Structure
 
 The main page (`src/pages/index.astro`) is composed of multiple section components imported and rendered in order:
+
 1. Hero
 2. AnimalSection (with animal selection menu)
-3. Consultations
-4. CarteCabinet (map)
-5. QuandConsulter
-6. Prix
-7. DeroulementConsultation
-8. OsteopathieAnimale
-9. QuiSuisJe
-10. Contact (with ReCAPTCHA)
-11. Footer
+3. CarteCabinet (map)
+4. QuandConsulter
+5. Prix
+6. DeroulementConsultation
+7. OsteopathieAnimale
+8. QuiSuisJe
+9. Contact (Netlify Forms)
+10. Footer
 
-Each section is a self-contained React component in `src/components/sections/`.
+Landing-page sections live under `src/components/landing-page/`; Astro wrappers for image processing and hydration boundaries live under `src/layouts/wrappers/`.
 
 ### Component Organization
 
@@ -62,29 +67,21 @@ Each section is a self-contained React component in `src/components/sections/`.
 src/components/
 ├── common/
 │   ├── icons/          # Custom SVG icon components
-│   ├── Banner/         # Banner component
-│   └── ResponsiveImage.tsx
-├── contact/
-│   ├── Contact.tsx     # Contact form with ReCAPTCHA
-│   ├── ContactModal.tsx
-│   └── MapBox.tsx      # Mapbox integration
+│   └── Banner/         # Banner component
+├── landing-page/
+│   ├── animals/        # Animal content and accessible selectors
+│   ├── contact/        # Contact UI and Netlify form
+│   ├── hero/           # Navigation and primary heading
+│   ├── map/            # Mapbox integration
+│   └── [other sections]
 ├── layout/
 │   └── Footer.tsx
-├── pages/
-│   └── Home.tsx        # (Legacy, check if still used)
-└── sections/
-    ├── AnimalSection/  # Complex section with select menus
-    │   ├── AnimalSection.tsx
-    │   ├── Section.tsx
-    │   ├── NewAriaSelectMenu.tsx  # Mobile menu
-    │   ├── AriaSelectMenuWeb.tsx  # Desktop menu
-    │   └── configutation.ts       # Animal data config
-    └── [Various section components]
 ```
 
 ### TypeScript Configuration
 
 The project uses **strict TypeScript settings** (`tsconfig.json` extends `astro/tsconfigs/strict`):
+
 - `@typescript-eslint/no-explicit-any` is set to `error` - **never use `any` type**
 - All strict compiler options are enabled
 - Path alias: `@/*` maps to `src/*`
@@ -93,6 +90,7 @@ The project uses **strict TypeScript settings** (`tsconfig.json` extends `astro/
 ### ESLint Configuration
 
 Uses flat config format (`eslint.config.js`):
+
 - Separate rules for `.ts/.tsx` and `.astro` files
 - Strict TypeScript rules enforced
 - No explicit function return types required (disabled for React)
@@ -101,6 +99,7 @@ Uses flat config format (`eslint.config.js`):
 ### Styling
 
 **Tailwind CSS** with custom theme extensions:
+
 - Custom color palette: `gold-*` (50-1000), `canard`, `canard-light`
 - Forms plugin enabled (`@tailwindcss/forms`)
 - Background images configured in `tailwind.config.js`
@@ -109,45 +108,48 @@ Uses flat config format (`eslint.config.js`):
 
 ### Environment Variables
 
-Required variables (see `.env`):
-- `PUBLIC_RECAPTCHA_KEY` - Google ReCAPTCHA v3 for contact form
+Relevant variables (see `.env` and `astro.config.mjs`):
+
 - `PUBLIC_MAPBOX_TOKEN` - Mapbox GL JS for map display
-- `PUBLIC_GTM_ID` - Google Tag Manager (already set to GTM-KCM49LQ)
+- `PUBLIC_GTM_ID` - Google Tag Manager
+- `PUBLIC_POSTHOG_KEY` / `PUBLIC_POSTHOG_HOST` - PostHog analytics
+- `PUBLIC_SENTRY_DSN` - Sentry browser monitoring
 
 All public env vars are prefixed with `PUBLIC_` per Astro conventions.
 
 ### External Services
 
-1. **Mapbox GL JS** (v2.8.1) - Used in `CarteCabinet` component
+1. **Mapbox GL JS** - Used in `CarteCabinet`
    - CSS loaded in `BaseLayout.astro` head
-2. **Google ReCAPTCHA v3** - Used in `Contact` component
-   - Integrated via `react-google-recaptcha-v3`
-3. **Google Tag Manager** - Inline script in `BaseLayout.astro`
-4. **React Calendly** - Appointment booking integration
+2. **Netlify Forms** - Contact form transport and honeypot handling
+3. **Google Tag Manager / PostHog** - Deferred analytics bootstrapped in `BaseLayout.astro`
+4. **Sentry** - Optional client monitoring configured in `astro.config.mjs`
+5. **React Calendly** - Appointment booking integration
 
 ## Key Technical Details
 
 ### React Aria
 
 The project uses React Aria for accessible UI components:
+
 - `AnimalSection` has two select menu implementations (mobile/desktop)
 - Extensive use of `@react-aria/*` and `@react-stately/*` packages
 
 ### Client-Side Hydration
 
-All React components use `client:only="react"` directive, meaning:
-- No server-side rendering for React components
-- Components only render in the browser
-- Ensure browser-specific code doesn't break during build
+React islands are rendered into the static build before their client-side hydration runs. Use `client:load` only for immediately interactive islands and `client:visible` for deferred hydration. Browser-only code must remain guarded, and critical SEO content must not depend on hydration.
 
 ### Hooks
 
-Custom hooks in `src/hooks/`:
-- `useHasMounted.js` - Handles hydration and mount state
+Custom hooks live in `src/lib/hooks/`, including `useHasMounted.ts` for hydration-aware behavior.
 
 ## Deployment
 
 Target platform: **Netlify** (static output)
+
 - `output: 'static'` in `astro.config.mjs`
-- Adapter previously used but removed for static mode
+- `@astrojs/sitemap` emits the production sitemap index during the build
+- `BaseLayout.astro` derives per-route canonical metadata from `Astro.site`
+- No Astro Netlify adapter is enabled; Netlify publishes `dist/`
 - Set environment variables in Netlify dashboard before deploying
+- Validate remote redirects and 404 behavior only on a Deploy Preview built from the exact commit under review

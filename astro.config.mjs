@@ -1,11 +1,18 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
+import sitemap from '@astrojs/sitemap';
 import tailwind from '@astrojs/tailwind';
 import sentry from '@sentry/astro';
 
 const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN;
 const sentryOrg = process.env.SENTRY_ORG;
 const sentryProject = process.env.SENTRY_PROJECT;
+
+const sitemapExcludedPaths = new Set([
+  '/404',
+  '/mentions-legales',
+  '/politique-confidentialite',
+]);
 
 const sentryIntegration = sentry({
   enabled: { client: true, server: false },
@@ -19,7 +26,19 @@ const sentryIntegration = sentry({
 });
 
 export default defineConfig({
-  integrations: [react(), tailwind(), sentryIntegration],
+  site: 'https://www.osteopathie-animale-bordeaux.fr',
+  trailingSlash: 'always',
+  integrations: [
+    react(),
+    tailwind(),
+    sitemap({
+      filter: (page) => {
+        const pathname = new URL(page).pathname.replace(/\/+$/, '') || '/';
+        return !sitemapExcludedPaths.has(pathname);
+      },
+    }),
+    sentryIntegration,
+  ],
   output: 'static',
   image: {
     responsiveStyles: true,

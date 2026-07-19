@@ -1,10 +1,12 @@
 import { useHasMounted } from '../../../lib/hooks/useHasMounted';
+import {
+  ACTIVE_SPECIES,
+  APPOINTMENT_MODES,
+} from '../../../lib/constants/services';
+import { BUSINESS_CONFIG } from '../../../lib/constants/site';
 
 import { Map } from '../../common/icons';
 import MapBox from './MapBox';
-
-const LNG = -0.550281;
-const LAT = 44.805434;
 
 type CarteCabinetProps = {
   id?: string;
@@ -12,6 +14,18 @@ type CarteCabinetProps = {
 
 export default function CarteCabinet({ id }: CarteCabinetProps) {
   const hasMounted = useHasMounted();
+  const { address, geo, profiles } = BUSINESS_CONFIG;
+  const directionsUrl = `https://www.google.fr/maps/dir/?api=1&destination=${geo.latitude},${geo.longitude}&travelmode=driving`;
+  const activeSpecies = new Intl.ListFormat('fr', {
+    style: 'long',
+    type: 'conjunction',
+  }).format(
+    ACTIVE_SPECIES.map((animal) =>
+      animal.key === 'nac'
+        ? 'les nouveaux animaux de compagnie'
+        : `les ${animal.key}s`
+    )
+  );
 
   return (
     <div
@@ -20,12 +34,14 @@ export default function CarteCabinet({ id }: CarteCabinetProps) {
     >
       <div className="relative">
         <h2 className="pt-16 text-center text-3xl leading-8 font-extrabold tracking-tight text-gold-600 sm:text-4xl">
-          Consultations en Cabinet à Bègles
+          Consultations {APPOINTMENT_MODES.office.label.toLowerCase()} à{' '}
+          {address.addressLocality}
         </h2>
         <p className="mt-4 max-w-3xl mx-auto text-center text-xl text-gray-500">
-          Nous sommes ravis de vous accueillir dans notre cabinet situé à
-          Bègles. Profitez d'un environnement professionnel et adapté pour les
-          soins de vos animaux.
+          Nous sommes ravis de vous accueillir{' '}
+          {APPOINTMENT_MODES.office.label.toLowerCase()} à{' '}
+          {address.addressLocality}, sur rendez-vous. Ce lieu reçoit{' '}
+          {activeSpecies}.
         </p>
         <div className="lg:mx-auto lg:max-w-7xl lg:px-8 lg:grid lg:grid-cols-2 lg:grid-flow-col-dense lg:gap-24">
           <div className="px-4 max-w-xl mx-auto sm:px-6 lg:py-16 lg:max-w-none lg:mx-0 lg:px-0">
@@ -36,11 +52,19 @@ export default function CarteCabinet({ id }: CarteCabinetProps) {
                 </span>
               </div>
               <div className="mt-6">
-                <h2 className="text-3xl font-extrabold tracking-tight text-gold-500">
-                  Bègles
-                </h2>
+                <h3 className="text-3xl font-extrabold tracking-tight text-gold-500">
+                  {address.addressLocality}
+                </h3>
                 <p className="mt-4 text-lg text-gray-500">
-                  34 rue du Maréchal Joffre
+                  <a
+                    href={profiles.googleBusiness}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gold-500 hover:text-gold-600 underline"
+                  >
+                    {address.streetAddress}, {address.postalCode}{' '}
+                    {address.addressLocality}
+                  </a>
                 </p>
                 <p className="mt-2 text-lg text-gray-500">
                   Parking gratuit place du bi-centenaire <br />
@@ -55,7 +79,7 @@ export default function CarteCabinet({ id }: CarteCabinetProps) {
                   </a>
                 </p>
                 <p className="mt-2 text-lg text-gray-500">
-                  Accès rocade sortie 20 Cadaujac / Bègles.
+                  Accès rocade sortie 20 Cadaujac / {address.addressLocality}.
                 </p>
                 <p className="mt-2 text-lg text-gray-500">
                   Accès tram C arrêt Stade Musard.
@@ -64,7 +88,7 @@ export default function CarteCabinet({ id }: CarteCabinetProps) {
                   onClick={() => {
                     navigator.geolocation.getCurrentPosition((position) => {
                       const { latitude, longitude } = position.coords;
-                      const googleMapsUrl = `https://www.google.fr/maps/dir/?api=1&origin=${latitude},${longitude}&destination=44.805434,-0.550281&travelmode=driving`;
+                      const googleMapsUrl = `${directionsUrl}&origin=${latitude},${longitude}`;
                       window.open(
                         googleMapsUrl,
                         '_blank',
@@ -91,7 +115,11 @@ export default function CarteCabinet({ id }: CarteCabinetProps) {
                   </div>
                 )}
                 {hasMounted && (
-                  <MapBox lng={LNG} lat={LAT} label="Cabinet de Bègles" />
+                  <MapBox
+                    lng={geo.longitude}
+                    lat={geo.latitude}
+                    label={`Cabinet de ${address.addressLocality}`}
+                  />
                 )}
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { XIcon } from '@heroicons/react/outline';
 import { useState } from 'react';
+import { APPOINTMENT_MODES } from '../../../lib/constants/services';
 
 export default function Banner() {
   const [show, setShow] = useState(true);
@@ -18,8 +19,12 @@ export default function Banner() {
       >
         <div className="pointer-events-auto flex items-center justify-between gap-x-6 bg-gray-900 px-6 py-2.5 sm:rounded-xl sm:py-3 sm:pl-4 sm:pr-3.5">
           <p className="text-sm leading-6 text-white">
-            Prise de rendez-vous ouverte pour le cabinet d'Ostéopathie Animale
-            de <strong className="font-semibold">Bègles</strong> !
+            Prise de rendez-vous ouverte{' '}
+            <strong className="font-semibold">
+              {APPOINTMENT_MODES.office.label.toLowerCase()} à{' '}
+              {APPOINTMENT_MODES.office.location}
+            </strong>{' '}
+            et {APPOINTMENT_MODES.home.label.toLowerCase()}.
           </p>
           <button
             type="button"

@@ -1,0 +1,47 @@
+# Réconciliation des citations locales
+
+Snapshot revérifié le **19 juillet 2026**. Les plateformes externes ne sont pas modifiées par ce dépôt. Le statut « à harmoniser » signifie qu'une correction doit être faite dans l'interface du fournisseur par une personne disposant de l'accès adéquat.
+
+## Référence à propager
+
+- Nom : **Agathe Lescout Ostéopathie animale Bordeaux**
+- Adresse professionnelle : **34 rue du Maréchal Joffre, 33130 Bègles**
+- Téléphone : **06 65 55 07 92**
+- Offre active : **chien, chat et NAC**
+- Cabinet : **sur rendez-vous lundi et vendredi, 9 h–19 h**
+- Domicile : **sur rendez-vous du lundi au vendredi, région bordelaise**
+- Site canonique : **https://www.osteopathie-animale-bordeaux.fr/**
+
+## État des sources
+
+| Source                                                                                                         | Contrôle                              | Snapshot public revérifié                                                                                                                                   | Écart avec la référence                                                         | Action externe                                                                                                                    | Statut                      |
+| -------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| [Site officiel](https://www.osteopathie-animale-bordeaux.fr/)                                                  | Contrôlé par le dépôt                 | Adresse actuelle, téléphone, cabinet lundi et vendredi 9 h–19 h ; hero chien/chat/NAC ; du contenu historique mentionnait encore équin et bovin             | Offre et identité n'étaient pas centralisées                                    | Corrigé dans le présent changement ; déploiement à faire séparément                                                               | Aligné dans le code         |
+| [API actuelle de l'annuaire RNA](https://extranet.veterinaire.fr/api/directories/search-osteopaths)            | Source officielle CNOV                | OA69 actif ; adresse 34 rue du Maréchal Joffre ; inscription le 22/11/2018                                                                                  | Aucun sur ces champs                                                            | Utiliser comme preuve machine actuelle ; orienter les visiteurs vers le [hub des annuaires](https://www.veterinaire.fr/annuaires) | Référence actuelle          |
+| [Liste historique Nouvelle-Aquitaine](https://www.veterinaire.fr/annuaires/liste-regionale-nouvelle-aquitaine) | Source officielle historique          | OA69 après délibération du 21/11/2018 ; ancienne adresse 35 allée Boyer                                                                                     | Adresse obsolète                                                                | Conserver comme preuve de la délibération, mais demander la réconciliation de l'adresse et ne jamais l'utiliser comme NAP actuel  | Citation obsolète           |
+| [Google Business Profile](https://www.google.com/maps/place/?q=place_id:ChIJwyvy7e8nVQ0Ru7HFAZyjJkY)           | Propriété non démontrée               | Profil public correspondant ; horaire observé à 9 h 30 et lien de site encore en HTTP                                                                       | Ouverture 9 h 30 au lieu de 9 h ; URL non HTTPS                                 | Corriger heures et URL depuis le compte Business Profile ; ne pas écraser le site avec ces valeurs                                | À harmoniser                |
+| [Calendly](https://calendly.com/osteopathe-animalier/consultation-osteopathique)                               | Compte externe, contrôle non démontré | Consultation cabinet Bègles de 45 minutes ; aucun parcours domicile ou forfait dédié n'est prouvé ; créneaux visibles du lundi au vendredi lors de la revue | Les disponibilités de l'agenda dépassent les jours de cabinet publiés           | Limiter le CTA au cabinet ; vérifier les disponibilités ; ne jamais transformer les créneaux volatils en horaires fixes           | À harmoniser                |
+| [Facebook](https://www.facebook.com/AgatheLescout/)                                                            | Propriété non démontrée               | Page publique utilisée depuis le site                                                                                                                       | Détails NAP non vérifiables sans accès complet à la page                        | Vérifier adresse, heures, espèces et URL depuis le compte                                                                         | Revue externe requise       |
+| [KS-Osteopathie](https://www.ks-osteopathie.fr/osteopathes/33039-begles/fafejahfcccajjbjebj.htm)               | Non contrôlé                          | 5 place du 14 Juillet ; horaires lundi–vendredi 9 h 30–19 h ; mention de Saint-Aubin-de-Médoc ; formulation « certifiée CNOV »                              | Adresse, horaires, zone et formulation réglementaire obsolètes ou non justifiés | Demander correction ou suppression ; remplacer par adresse actuelle, jours lundi/vendredi et RNA OA69 sans « certification »      | À harmoniser en priorité    |
+| [Zoola](https://zoola.fr/professionnel/osteopathe-animaux/agathe-lescout-oa69/)                                | Non contrôlé                          | OA69 et téléphone cohérents ; anciennes listes publiques associent 35 allée Boyer et équin/bovin                                                            | Adresse et espèces obsolètes                                                    | Demander adresse actuelle et retrait équin/bovin ; conserver chien/chat/NAC et OA69                                               | À harmoniser en priorité    |
+| [Chien.com](https://www.chien.com/adresse/osteopathe-masseur-pour-chien/agathe-lescout-48576.php)              | Non contrôlé                          | SIREN 842272999, OA69 et téléphone cohérents ; 33 rue Léon Jouhaux, 33800 Bordeaux                                                                          | Ancienne adresse et anciennes allégations de prévention                         | Demander mise à jour de l'adresse et renvoi vers la page d'accueil actuelle                                                       | À harmoniser                |
+| [Osteolib](https://osteolib.eu/Ost%C3%A9opathes/Bordeaux/-LESCOUT_Agathe/8188)                                 | Non contrôlé                          | 33 rue Léon Jouhaux, téléphone cohérent, anciennes spécialités équin/gros animaux, pas de lien de réservation                                               | Adresse, espèces et réservation obsolètes                                       | Demander adresse actuelle, chien/chat/NAC et URL du site officiel                                                                 | À harmoniser                |
+| Chats du Monde                                                                                                 | Non contrôlé                          | Aucun profil direct stable n'a été retrouvé dans les résultats publics pendant cette revue ; des miroirs reprennent l'ancienne adresse rue Léon-Jouhaux     | Citation impossible à attribuer avec certitude                                  | Rechercher depuis l'interface de l'annuaire avant toute demande ; ne pas corriger une fiche homonyme                              | Inaccessible avec certitude |
+
+## Ordre de correction recommandé
+
+1. Déployer le site exact contenant les constantes et pages juridiques validées.
+2. Corriger Google Business Profile : URL HTTPS, ouverture 9 h, jours du cabinet.
+3. Vérifier le type d'événement Calendly : cabinet Bègles, espèces chien/chat/NAC et disponibilités cohérentes avec l'agenda réel.
+4. Réconcilier l'adresse de la liste historique Nouvelle-Aquitaine sans perdre la preuve de délibération.
+5. Demander la correction de KS-Osteopathie et Zoola, qui cumulent les écarts les plus visibles.
+6. Corriger Chien.com et Osteolib, puis rechercher les éventuels miroirs de l'ancienne adresse.
+7. Recontrôler les pages publiques après indexation ; conserver captures datées et URL de chaque demande dans le registre opérationnel du propriétaire, hors de ce dépôt public.
+
+## Limites vérifiées
+
+- Aucun accès propriétaire aux profils Google, Facebook, Calendly ou annuaires n'a été supposé.
+- Le site renvoie vers le hub public stable `https://www.veterinaire.fr/annuaires` : les anciennes routes d'interface extranet répondent 403 aux robots. L'API actuelle sert à la preuve datée, pas de lien de navigation destiné aux visiteurs.
+- Aucune note, aucun avis et aucune autorité de domaine n'est réutilisé dans le JSON-LD.
+- Les départements associés à OA69 dans l'annuaire réglementaire ne définissent pas la zone de déplacement commerciale.
+- Les images du dépôt restent sans métadonnée de droits exploitable ; aucune image sociale n'est publiée.
