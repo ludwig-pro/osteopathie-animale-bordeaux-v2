@@ -1,3 +1,5 @@
+import EditorialReview from '../../common/EditorialReview';
+
 type ImageData = {
   src: string;
   srcSet: {
@@ -23,30 +25,25 @@ export default function OsteopathieAnimale({
             <div>
               <div className="mt-6">
                 <h2 className="text-3xl font-extrabold tracking-tight text-gold-500">
-                  Qu'est ce que l'ostéopathie pour les animaux ?
+                  Qu’est-ce que l’ostéopathie animale ?
                 </h2>
                 <p className="mt-4 text-lg text-gray-500">
-                  L'ostéopathie animale est une thérapie faisant appel à des
-                  manipulations douces afin de soulager l'animal et rétablir
-                  l'équilibre du corps. Souvent associée au "cracking", on pense
-                  souvent qu'elle ne concerne que les individus vieillissants
-                  sujets à l'arthrose ou aux sportifs de compétitions. Pourtant
-                  les applications et les techniques sont nombreuses.
-                  Structurel, crânien, tissulaire, étirement musculaire,
-                  viscéral etc... toutes ces techniques font parties de
-                  l'ostéopathie et s'appliquent sur l'ensemble du corps de
-                  l'animal que ce soit au niveau articulaire, musculaire ou
-                  viscéral. Et ce quel que soit son âge ou son activité ! Mais
-                  l'ostéopathie est avant tout une thérapie préventive ! Une
-                  consultation régulière garantie à votre animal une bonne santé
-                  tout au long de l'année et prévient des pathologies liées à
-                  l'âge (arthrose, insuffisance rénale etc...) ou à l'activité
-                  (entorse, rupture des ligaments croisés etc...) Depuis avril
-                  2017 l'ostéopathie animale est réglementée par l'Ordre
-                  National des Vétérinaires, vous assurant ainsi d'avoir un
-                  thérapeute compétent et des consultations de qualités pour le
-                  bien être de votre animal.
+                  Les actes d’ostéopathie animale sont des manipulations et
+                  mobilisations musculo-squelettiques ou myo-fasciales,
+                  exclusivement manuelles, externes, non instrumentales et non
+                  forcées. Leur champ est limité aux troubles fonctionnels. Les
+                  pathologies organiques qui nécessitent un diagnostic ou un
+                  traitement vétérinaire sont exclues de ce champ.
                 </p>
+                <p className="mt-4 text-lg text-gray-500">
+                  Avant toute manipulation, la praticienne vérifie que la
+                  situation relève de ce champ. Elle oriente vers un vétérinaire
+                  lorsqu’un diagnostic ou un traitement est nécessaire, lorsque
+                  les symptômes persistent ou s’aggravent, ou lorsque la
+                  situation est hors champ. L’ostéopathie animale ne remplace
+                  pas le suivi vétérinaire.
+                </p>
+                <EditorialReview />
               </div>
             </div>
           </div>

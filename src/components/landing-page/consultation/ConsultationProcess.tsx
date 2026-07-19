@@ -71,10 +71,9 @@ export default function DeroulementConsultation({
             Déroulement d'une consultation
           </h2>
           <p className="mt-4 max-w-3xl mx-auto text-center text-xl text-gray-500">
-            Une consultation en ostéopathie débute toujours par une description
-            des symptômes, s'il y'en a, et une anamnèse, c'est à dire un bilan
-            sur les antécédents de l'animal, sur son activité et son
-            alimentation.
+            La consultation débute par le recueil du motif, des antécédents, de
+            l’activité et des informations vétérinaires utiles afin de vérifier
+            que la situation relève du champ de l’ostéopathie animale.
           </p>
         </div>
 
@@ -87,20 +86,15 @@ export default function DeroulementConsultation({
                     <p className="text-2xl">1</p>
                   </div>
                   <p className="ml-16 text-lg leading-6 font-medium text-gold-600">
-                    Examen clinique
+                    Évaluation préalable
                   </p>
                 </dt>
                 <dd className="mt-2 ml-16 text-base text-gray-500">
-                  L'ostéopathe vérifie si l'animal est apte à recevoir une
-                  consultation ostéopathique. Pour cela il vérifie l'état
-                  général de l'animal (aspect des muqueuses, présences de signes
-                  fiévreux ou inflammatoire, abattement ou forte douleur etc.).
-                  En cas de la présence de l'un de ces signes votre ostéopathe
-                  vous dirigera vers votre vétérinaire afin d'apporter les soins
-                  urgents et nécessaires à votre animal. Une fois votre animal
-                  hors de danger, et en toutes connaissances de causes, votre
-                  ostéopathe pourra accompagner votre animal vers son
-                  rétablissement.
+                  La praticienne observe l’état général de l’animal. Si un
+                  diagnostic ou un traitement médical est nécessaire, si la
+                  situation est hors champ, ou si une manipulation risque
+                  d’aggraver l’état ou de gêner le diagnostic, elle ne poursuit
+                  pas et oriente vers un vétérinaire.
                 </dd>
               </div>
 
@@ -110,16 +104,14 @@ export default function DeroulementConsultation({
                     <p className="text-2xl">2</p>
                   </div>
                   <p className="ml-16 text-lg leading-6 font-medium text-gold-600">
-                    Examen ostéopathique
+                    Observation fonctionnelle
                   </p>
                 </dt>
                 <dd className="mt-2 ml-16 text-base text-gray-500">
-                  L'ostéopathe réalise une observation dynamique, il regarde
-                  l'animal se déplacer aux différentes allures afin de remarquer
-                  d'éventuelles irrégularités. Il procède ensuite à une
-                  palpation du corps, des tests articulaires et viscéraux afin
-                  de pouvoir déterminer les zones de restrictions, les
-                  sensibilités et établir son diagnostic final.
+                  Avec votre accord, la praticienne observe les déplacements,
+                  puis procède à la palpation et à l’évaluation de la mobilité.
+                  Cette observation peut conduire à un diagnostic ostéopathique,
+                  distinct du diagnostic vétérinaire.
                 </dd>
               </div>
             </dl>
@@ -215,14 +207,14 @@ export default function DeroulementConsultation({
                       <p className="text-2xl">3</p>
                     </div>
                     <p className="ml-16 text-lg leading-6 font-medium text-gold-600">
-                      Traitement
+                      Manipulations
                     </p>
                   </dt>
                   <dd className="mt-2 ml-16 text-base text-gray-500">
-                    Une fois le diagnostic ostéopathique établi, l'ostéopathe
-                    réalise l'ensemble des techniques adaptées à la lésion et à
-                    votre animale, pour corriger les dysfonctions trouvées et
-                    rétablir l'équilibre général du corps.
+                    Les manipulations sont exclusivement manuelles, externes,
+                    non instrumentales et non forcées. Elles sont adaptées aux
+                    réactions de l’animal et interrompues en cas de douleur
+                    prolongée.
                   </dd>
                 </div>
 
@@ -232,20 +224,15 @@ export default function DeroulementConsultation({
                       <p className="text-2xl">4</p>
                     </div>
                     <p className="ml-16 text-lg leading-6 font-medium text-gold-600">
-                      Suivi
+                      Consignes et vigilance
                     </p>
                   </dt>
                   <dd className="mt-2 ml-16 text-base text-gray-500">
-                    Après une séance d'ostéopathie, l'animal a besoin de 24 à
-                    48h de repos durant lesquelles son corps va s'équilibrer. Le
-                    corps de votre animal aura ensuite besoin de 10 à 15 jours
-                    pour s'habituer à son nouveau schéma corporel, surtout si
-                    les lésions traitées étaient anciennes. Durant cette période
-                    votre animal peut présenter des symptômes tels que
-                    irrégularité d'allure, fatigue, diarrhée légère etc. Si les
-                    symptômes vous semblent trop importants ou s'ils persistent
-                    au delà de 15 jours, n'hésitez pas à recontacter votre
-                    ostéopathe pour une contre-visite gratuite.
+                    Les consignes de suivi sont individualisées : il n’existe
+                    pas de délai universel de repos ou d’effet. En cas de
+                    douleur, d’apparition, de persistance ou d’aggravation de
+                    symptômes, contactez un vétérinaire et informez la
+                    praticienne. En cas d’urgence, n’attendez pas.
                   </dd>
                 </div>
               </dl>

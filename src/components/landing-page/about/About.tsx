@@ -38,7 +38,7 @@ export default function QuiSuisJe({ agatheImg }: QuiSuisJeProps) {
                     <img
                       src={agatheImg.src}
                       srcSet={agatheImg.srcSet.attribute}
-                      alt={`Portrait de ${BUSINESS_CONFIG.practitionerName}, ${BUSINESS_CONFIG.practitionerJobTitle.toLowerCase()}`}
+                      alt={`Portrait d’${BUSINESS_CONFIG.practitionerName}, praticienne en ostéopathie animale`}
                       width={800}
                       height={1000}
                       loading="lazy"
@@ -78,12 +78,6 @@ export default function QuiSuisJe({ agatheImg }: QuiSuisJeProps) {
                             Consulter l'annuaire officiel
                           </a>
                           . <br />
-                          <br />
-                          Ma pratique englobe une gamme étendue de techniques -
-                          du structurel aux étirements musculaires, en passant
-                          par le viscéral, le tissulaire, les approches
-                          crânio-sacrées, les techniques réflexes et
-                          l'acupressure. <br />
                           <br />
                           Je reçois les {activeSpecies}{' '}
                           {APPOINTMENT_MODES.office.label.toLowerCase()} à{' '}
