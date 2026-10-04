@@ -1,0 +1,134 @@
+---
+import { Image } from 'astro:assets';
+import {
+  CaretRightIcon,
+  HandHeartIcon,
+  PhoneIcon,
+} from '@phosphor-icons/react';
+import BaseLayout from './BaseLayout.astro';
+import BookingLink from '../components/site/BookingLink';
+import AnimalsSection from '../components/site/AnimalsSection.astro';
+import Consultation from './wrappers/DeroulementConsultationWrapper.astro';
+import WhenToConsult from '../components/landing-page/when-to-consult/WhenToConsult';
+import {
+  animalCopy,
+  animalPages,
+  type AnimalPageData,
+} from '../lib/content/animal-pages';
+import { prestations } from '../lib/content/pricing';
+import { SITE_CONFIG, BUSINESS_CONFIG } from '../lib/constants/site';
+
+interface Props {
+  animal: AnimalPageData;
+}
+const { animal } = Astro.props;
+const { lead, paragraphs, alt } = animalCopy(animal.slug);
+const price = prestations.find((item) => item.id === animal.pricingId)!;
+const canonicalUrl = `${SITE_CONFIG.url}/animaux/${animal.slug}/`;
+const title = `Ostéopathie pour ${animal.subject} à Bordeaux | Agathe Lescout`;
+const description = `${animal.specialty} à Bordeaux, Bègles et en Gironde avec Agathe Lescout. Consultations en cabinet et à domicile.`;
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: title,
+  description,
+  url: canonicalUrl,
+  serviceType: animal.specialty,
+  provider: {
+    '@type': 'LocalBusiness',
+    '@id': `${SITE_CONFIG.url}#local-business`,
+    name: BUSINESS_CONFIG.name,
+    telephone: BUSINESS_CONFIG.telephone,
+  },
+  areaServed: BUSINESS_CONFIG.areaServed,
+};
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonicalUrl={canonicalUrl}
+  schema={schema}
+  socialImage={animal.image.src}
+>
+  <main id="root" class="animal-page">
+    <section class="animal-hero site-container">
+      <nav class="breadcrumbs" aria-label="Fil d’Ariane">
+        <a href="/">Accueil</a
+        ><CaretRightIcon size={12} aria-hidden="true" /><a href="/#animaux"
+          >Vos animaux</a
+        ><CaretRightIcon size={12} aria-hidden="true" /><span
+          aria-current="page"
+          >{animal.label}</span
+        >
+      </nav>
+      <div class="animal-hero-grid">
+        <div>
+          <p class="eyebrow">{animal.specialty} · Bordeaux & Gironde</p>
+          <h1>L’ostéopathie <em>pour {animal.subject}.</em></h1>
+          <p class="body-copy">{lead}</p>
+          <div class="hero-actions">
+            <BookingLink source={`animal-${animal.slug}`} client:visible />
+            <a href="/#contact" class="hero-phone"
+              ><PhoneIcon size={15} aria-hidden="true" />Prendre rendez-vous par
+              téléphone</a
+            >
+          </div>
+        </div>
+        <Image
+          src={animal.image}
+          alt={alt}
+          widths={[480, 960, 1440]}
+          sizes="(min-width: 1352px) 580px, (min-width: 641px) 45vw, calc(100vw - 40px)"
+          width={960}
+          format="webp"
+          loading="eager"
+          fetchpriority="high"
+          class="animal-hero-photo"
+        />
+      </div>
+    </section>
+    <nav class="animal-subnav" aria-label="Choisir un animal">
+      {animalPages.map((page) => <a
+        href={`/animaux/${page.slug}/`}
+        aria-current={page.slug === animal.slug ? 'page' : undefined}
+        >{page.label}</a
+      >)}
+    </nav>
+    <section class="section-space site-container animal-story">
+      <article>
+        <p class="eyebrow mb-4">Un accompagnement adapté</p>
+        <h2>{animal.specialty}</h2>
+        <div class="body-copy">
+          {paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+        </div>
+      </article>
+      <aside class="animal-booking-card">
+        <HandHeartIcon size={30} weight="light" aria-hidden="true" />
+        <h3 class="mt-4">La consultation</h3>
+        {price.variants ? (
+          price.variants.map((variant) => <div class="price-line">
+            <span>{variant.description}</span
+            ><strong>{variant.basePrice}<small> €</small></strong>
+          </div>)
+        ) : (
+          <div class="price-line">
+            <span>{animal.label}</span
+            ><strong>{price.basePrice}<small> €</small></strong>
+          </div>
+        )}
+        <p>
+          Un forfait déplacement de 10€ s'applique aux consultations à domicile.
+        </p>
+        <BookingLink
+          client:visible
+          source={`animal-${animal.slug}-tarifs`}
+          className="mt-6 w-full"
+        /><a href="/#tarifs" class="text-link mt-2">Voir tous les tarifs</a>
+      </aside>
+    </section>
+    <Consultation />
+    <WhenToConsult />
+    <div class="border-t border-border"><AnimalsSection /></div>
+  </main>
+</BaseLayout>

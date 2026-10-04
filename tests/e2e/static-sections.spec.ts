@@ -44,7 +44,7 @@ test.describe('Static content section boundaries', () => {
     await expectInteractiveBoundary(
       page.locator('[data-testid="cta-booking-online"]')
     );
-    await expectInteractiveBoundary(
+    await expectStaticBoundary(
       page.getByRole('heading', { name: "L'ostéopathie pour qui ?" })
     );
     await expectInteractiveBoundary(
@@ -54,6 +54,9 @@ test.describe('Static content section boundaries', () => {
       page.getByRole('heading', { name: 'Tarifs' })
     );
     await expectInteractiveBoundary(page.locator('#contactForm'));
-    await expectInteractiveBoundary(page.locator('footer'));
+    await expectStaticBoundary(page.locator('footer'));
+    await expectInteractiveBoundary(
+      page.getByRole('button', { name: '01 Examen clinique' })
+    );
   });
 });

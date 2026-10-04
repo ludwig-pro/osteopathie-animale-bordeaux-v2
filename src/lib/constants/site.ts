@@ -3,7 +3,7 @@ export const SITE_CONFIG = {
   description:
     "Consultations d'ostéopathie animale à Bordeaux, Bègles et en Gironde avec Agathe Lescout.",
   url: 'https://www.osteopathie-animale-bordeaux.fr',
-  themeColor: '#c0823f',
+  themeColor: '#28533e',
   gtmId: 'GTM-KCM49LQ',
 } as const;
 

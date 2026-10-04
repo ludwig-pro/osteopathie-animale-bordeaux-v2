@@ -42,42 +42,6 @@ const logicalImageKeysByAlt = new Map([
   ],
 ]);
 
-const animals = [
-  {
-    desktopLabel: 'Le chat',
-    mobileCurrent: 'Le chien',
-    mobileNext: 'Le chat',
-    alt: 'un chat',
-  },
-  {
-    desktopLabel: 'Le cheval',
-    mobileCurrent: 'Le chat',
-    mobileNext: 'Le cheval',
-    alt: 'un cheval',
-  },
-  {
-    desktopLabel: 'La vache',
-    mobileCurrent: 'Le cheval',
-    mobileNext: 'La vache',
-    alt: 'une vache',
-  },
-  {
-    desktopLabel: 'N.A.C.',
-    mobileCurrent: 'La vache',
-    mobileNext: 'Les nouveaux animaux de compagnie',
-    alt: 'un lapin',
-  },
-  {
-    desktopLabel: 'Le chien',
-    mobileCurrent: 'Les nouveaux animaux de compagnie',
-    mobileNext: 'Le chien',
-    alt: 'deux chiens',
-  },
-];
-
-const animalImageSelector =
-  'img[alt="deux chiens"], img[alt="un chat"], img[alt="un cheval"], img[alt="une vache"], img[alt="un lapin"]';
-
 async function assertResponsiveImage(locator: Locator, page: Page) {
   await locator.scrollIntoViewIfNeeded();
   await expect
@@ -171,20 +135,10 @@ test.describe('Responsive content images', () => {
         expect(await page.evaluate(() => window.devicePixelRatio)).toBe(1);
 
         const contentImages = page.getByTestId('responsive-content-image');
-        await expect(contentImages).toHaveCount(9);
-
-        const animalIsland = page
-          .locator('astro-island')
-          .filter({ hasText: "L'ostéopathie pour qui ?" });
-        await expect(animalIsland).toHaveCount(1);
-        await expect
-          .poll(() =>
-            animalIsland.evaluate((island) => island.hasAttribute('ssr'))
-          )
-          .toBe(false);
+        await expect(contentImages).toHaveCount(12);
 
         const viewportKeys = new Set<string>();
-        for (let index = 0; index < 9; index += 1) {
+        for (let index = 0; index < 12; index += 1) {
           const logicalKey = await assertResponsiveImage(
             contentImages.nth(index),
             page
@@ -193,65 +147,12 @@ test.describe('Responsive content images', () => {
           aggregateKeys.add(`${viewport.key}/${logicalKey}`);
         }
 
-        const animalImage = page.locator(animalImageSelector);
-        await expect(animalImage).toHaveCount(1);
-
-        for (const animal of animals) {
-          const previous = await animalImage.evaluate(
-            (image: HTMLImageElement) => ({
-              src: image.src,
-              alt: image.alt,
-            })
-          );
-
-          if (viewport.width === 375) {
-            await page
-              .getByRole('button', {
-                name: animal.mobileCurrent,
-                exact: true,
-              })
-              .click();
-            await page
-              .getByRole('option', { name: animal.mobileNext, exact: true })
-              .click();
-          } else {
-            await page
-              .getByRole('menuitem', {
-                name: animal.desktopLabel,
-                exact: true,
-              })
-              .click();
-          }
-
-          await page.waitForFunction(
-            ({ selector, previousSrc, previousAlt, expectedAlt }) => {
-              const image = document.querySelector(selector);
-              return (
-                image instanceof HTMLImageElement &&
-                image.src !== previousSrc &&
-                image.alt !== previousAlt &&
-                image.alt === expectedAlt
-              );
-            },
-            {
-              selector: animalImageSelector,
-              previousSrc: previous.src,
-              previousAlt: previous.alt,
-              expectedAlt: animal.alt,
-            }
-          );
-
-          const logicalKey = await assertResponsiveImage(animalImage, page);
-          viewportKeys.add(logicalKey);
-          aggregateKeys.add(`${viewport.key}/${logicalKey}`);
-        }
-
-        expect(viewportKeys.size).toBe(13);
+        expect(viewportKeys.size).toBe(12);
       } finally {
         await context.close();
       }
     }
 
-    expect(aggregateKeys.size).toBe(65);
+    expect(aggregateKeys.size).toBe(60);
   });
 });

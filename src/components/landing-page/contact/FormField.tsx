@@ -1,3 +1,5 @@
+import { Input, Textarea } from '../../ui/input';
+
 type FormFieldProps = {
   name: string;
   placeholder: string;
@@ -21,59 +23,33 @@ export default function FormField({
   invalid = false,
   ariaDescribedBy,
 }: FormFieldProps) {
-  const baseClassName =
-    'block w-full shadow-xs py-3 px-4 placeholder-gray-500 focus:ring-gold-500 focus:border-gold-500 border-gray-300 rounded-md';
   const errorId = error ? `${name}-error` : undefined;
   const describedBy =
     [errorId, ariaDescribedBy].filter(Boolean).join(' ') || undefined;
-  const isInvalid = Boolean(error) || invalid;
-
-  if (type === 'textarea') {
-    return (
-      <>
-        <label htmlFor={name} className="sr-only">
-          {placeholder}
-        </label>
-        <textarea
-          id={name}
-          name={name}
-          rows={rows ?? 4}
-          className={baseClassName}
-          placeholder={placeholder}
-          required={required}
-          aria-invalid={isInvalid || undefined}
-          aria-describedby={describedBy}
-        />
-        {error && (
-          <p id={errorId} role="alert" className="mt-2 text-sm text-red-600">
-            {error}
-          </p>
-        )}
-      </>
-    );
-  }
-
+  const shared = {
+    id: name,
+    name,
+    placeholder,
+    required,
+    'aria-invalid': Boolean(error) || invalid || undefined,
+    'aria-describedby': describedBy,
+  };
   return (
-    <>
-      <label htmlFor={name} className="sr-only">
+    <div className="form-field">
+      <label htmlFor={name}>
         {placeholder}
+        {required && <span aria-hidden="true"> *</span>}
       </label>
-      <input
-        type={type}
-        name={name}
-        id={name}
-        autoComplete={autoComplete}
-        className={baseClassName}
-        placeholder={placeholder}
-        required={required}
-        aria-invalid={isInvalid || undefined}
-        aria-describedby={describedBy}
-      />
+      {type === 'textarea' ? (
+        <Textarea {...shared} rows={rows ?? 4} />
+      ) : (
+        <Input {...shared} type={type} autoComplete={autoComplete} />
+      )}
       {error && (
-        <p id={errorId} role="alert" className="mt-2 text-sm text-red-600">
+        <p id={errorId} role="alert" className="mt-2 text-xs text-destructive">
           {error}
         </p>
       )}
-    </>
+    </div>
   );
 }

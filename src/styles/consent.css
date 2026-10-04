@@ -1,19 +1,19 @@
 #cc-main {
   --cc-font-family: inherit;
-  --cc-primary-color: #143545;
-  --cc-bg: #fff;
-  --cc-btn-primary-bg: #143545;
-  --cc-btn-primary-color: #fff;
-  --cc-btn-primary-border-color: #143545;
-  --cc-btn-primary-hover-bg: #214f62;
-  --cc-btn-primary-hover-border-color: #214f62;
-  --cc-btn-secondary-bg: #143545;
-  --cc-btn-secondary-color: #fff;
-  --cc-btn-secondary-border-color: #143545;
-  --cc-btn-secondary-hover-bg: #214f62;
-  --cc-btn-secondary-hover-color: #fff;
-  --cc-btn-secondary-hover-border-color: #214f62;
-  --cc-toggle-on-bg: #143545;
-  --cc-cookie-category-block-bg: #f8f5ef;
-  --cc-cookie-category-block-hover-bg: #f0eadf;
+  --cc-primary-color: #28533e;
+  --cc-bg: #f8f7f0;
+  --cc-btn-primary-bg: #28533e;
+  --cc-btn-primary-color: #f8f7f0;
+  --cc-btn-primary-border-color: #28533e;
+  --cc-btn-primary-hover-bg: #183d2c;
+  --cc-btn-primary-hover-border-color: #183d2c;
+  --cc-btn-secondary-bg: #28533e;
+  --cc-btn-secondary-color: #f8f7f0;
+  --cc-btn-secondary-border-color: #28533e;
+  --cc-btn-secondary-hover-bg: #183d2c;
+  --cc-btn-secondary-hover-color: #f8f7f0;
+  --cc-btn-secondary-hover-border-color: #183d2c;
+  --cc-toggle-on-bg: #28533e;
+  --cc-cookie-category-block-bg: #eef0e7;
+  --cc-cookie-category-block-hover-bg: #e3e9da;
 }
