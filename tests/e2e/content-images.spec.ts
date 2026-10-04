@@ -9,11 +9,11 @@ const viewports = [
 ];
 
 const logicalImageKeysByAlt = new Map([
-  ['deux chiens', 'animal-dog'],
-  ['un chat', 'animal-chat'],
-  ['un cheval', 'animal-horse'],
+  ['Le chien', 'animal-dog'],
+  ['Le chat', 'animal-chat'],
+  ['Le cheval', 'animal-horse'],
   ['une vache', 'animal-cow'],
-  ['un lapin', 'animal-rabbit'],
+  ['Les NAC', 'animal-rabbit'],
   [
     'Chien et chat ensemble représentant les consultations pour ces animaux',
     'pricing-dog-cat',

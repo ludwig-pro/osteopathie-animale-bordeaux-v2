@@ -131,7 +131,7 @@ export default function ContactForm() {
   return (
     <div className="contact-form-panel">
       <div>
-        <h3>Me contacter</h3>
+        <h3>Un message suffit.</h3>
         <form
           id="contactForm"
           name="contact"

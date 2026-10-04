@@ -1,91 +1,90 @@
-import { ArrowDownIcon, MapPinIcon, PhoneIcon } from '@phosphor-icons/react';
+import {
+  ArrowRightIcon,
+  HeartIcon,
+  MapPinIcon,
+  PhoneIcon,
+} from '@phosphor-icons/react';
 import { pushDataLayerEvent } from '../../../lib/analytics';
+import type { ResponsiveImageData } from '../../../lib/responsiveImage';
 import BookingLink from '../../site/BookingLink';
 
-type HeroProps = {
-  backgroundSources?: {
-    webp?: { src: string; srcset: string };
-    fallback?: string;
-  };
-  backgroundAlt?: string;
-};
+type HeroProps = { careImage: ResponsiveImageData; portrait: string };
 
-export default function Hero({
-  backgroundSources,
-  backgroundAlt = '',
-}: HeroProps) {
-  const { webp, fallback } = backgroundSources ?? {};
+export default function Hero({ careImage, portrait }: HeroProps) {
   return (
     <section className="hero" aria-labelledby="hero-title">
-      <div className="hero-grid">
-        <div className="site-container hero-content">
-          <div className="hero-copy" data-reveal="intro">
-            <p className="eyebrow">
-              <MapPinIcon size={14} aria-hidden="true" /> Bordeaux · Bègles ·
-              Gironde
-            </p>
-            <h1 id="hero-title">
-              <span>Agathe Lescout,</span>
-              <span>ostéopathe</span>
-              <em>animalier.</em>
-            </h1>
-            <p className="hero-description">
-              Votre experte pour le bien-être de vos chiens, chats et N.A.C.
-            </p>
-            <div className="hero-actions">
-              <BookingLink
-                source="hero"
-                variant="accent"
-                label="Prendre rendez-vous en ligne"
-                testId="cta-booking-online"
-              />
-              <a
-                href="#contact"
-                data-testid="cta-booking-phone"
-                className="hero-phone"
-                onClick={() =>
-                  pushDataLayerEvent('contact_section_cta_clicked', {
-                    source: 'hero',
-                  })
-                }
-              >
-                <PhoneIcon size={15} aria-hidden="true" />
-                Prendre rendez-vous par téléphone
-              </a>
-            </div>
+      <div className="hero-grid site-container">
+        <div className="hero-copy" data-reveal="intro">
+          <p className="eyebrow">
+            <span className="status-dot" /> Ostéopathie animale · Bordeaux &
+            Gironde
+          </p>
+          <h1 id="hero-title">
+            Bien bouger.
+            <br />
+            <span>Bien vivre.</span>
+          </h1>
+          <p className="hero-description">
+            Parce que leur bien-être se joue aussi dans les petits mouvements du
+            quotidien.
+          </p>
+          <p className="hero-detail">
+            Un accompagnement manuel, attentif et adapté à votre animal. Au
+            cabinet à Bègles ou à domicile en Gironde.
+          </p>
+          <div className="hero-actions">
+            <BookingLink source="hero" testId="cta-booking-online" />
+            <a
+              href="#contact"
+              data-testid="cta-booking-phone"
+              className="hero-phone"
+              onClick={() =>
+                pushDataLayerEvent('contact_section_cta_clicked', {
+                  source: 'hero',
+                })
+              }
+            >
+              <PhoneIcon size={18} aria-hidden="true" /> Une question ?
+              Parlons-en
+            </a>
           </div>
-        </div>
-        <div className="hero-visual">
-          <picture>
-            {webp?.srcset && (
-              <source
-                srcSet={webp.srcset}
-                sizes="(min-width: 801px) 62vw, 100vw"
-                type="image/webp"
-              />
-            )}
-            <img
-              src={fallback ?? webp?.src}
-              alt={backgroundAlt}
-              width={1200}
-              height={804}
-              className="hero-photo"
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
-            />
-          </picture>
-        </div>
-      </div>
-      <div className="hero-baseline">
-        <div className="site-container hero-baseline-inner">
-          <p>Inscrite au Registre National d’Aptitude</p>
-          <p>En cabinet & à domicile</p>
-          <a href="#animaux" className="hero-discover">
-            Chiens, chats, chevaux & NAC
-            <ArrowDownIcon size={20} aria-hidden="true" />
+          <a href="#a-propos" className="hero-practitioner">
+            <img src={portrait} alt="" width={56} height={56} />
+            <span>
+              <strong>Agathe Lescout</strong>
+              <span>Ostéopathe animalier & enseignante</span>
+            </span>
+            <ArrowRightIcon size={20} aria-hidden="true" />
           </a>
         </div>
+        <div className="hero-visual">
+          <div className="hero-orbit" aria-hidden="true" />
+          <img
+            {...careImage}
+            alt="Une main accompagne doucement le mouvement de la patte d’un chat"
+            className="hero-photo"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+          />
+          <div className="hero-care-note">
+            <span className="care-note-icon">
+              <HeartIcon size={28} weight="light" aria-hidden="true" />
+            </span>
+            <span>
+              Du lien. De l’écoute.<strong>Du soin, à leur rythme.</strong>
+            </span>
+          </div>
+          <p className="hero-caption">
+            <MapPinIcon size={15} aria-hidden="true" /> Bègles, Bordeaux et
+            leurs alentours
+          </p>
+        </div>
+      </div>
+      <div className="trust-strip site-container">
+        <span>Une approche adaptée à chaque animal</span>
+        <span>Inscrite au Registre National d’Aptitude</span>
+        <span>En complément du suivi vétérinaire</span>
       </div>
     </section>
   );

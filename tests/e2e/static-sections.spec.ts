@@ -24,12 +24,12 @@ test.describe('Static content section boundaries', () => {
 
     await expectStaticBoundary(
       page.getByRole('heading', {
-        name: 'Quand consulter un ostéopathe ?',
+        name: 'Les petits signes comptent.',
       })
     );
     await expectStaticBoundary(
       page.getByRole('heading', {
-        name: "Qu'est ce que l'ostéopathie pour les animaux ?",
+        name: 'De l’attention, jusque dans le mouvement.',
       })
     );
     await expectStaticBoundary(
@@ -45,18 +45,18 @@ test.describe('Static content section boundaries', () => {
       page.locator('[data-testid="cta-booking-online"]')
     );
     await expectStaticBoundary(
-      page.getByRole('heading', { name: "L'ostéopathie pour qui ?" })
+      page.getByRole('heading', { name: 'À chacun son accompagnement.' })
     );
     await expectInteractiveBoundary(
       page.locator('[data-testid="map-load-trigger"]')
     );
     await expectInteractiveBoundary(
-      page.getByRole('heading', { name: 'Tarifs' })
+      page.getByRole('heading', { name: 'Des tarifs clairs.' })
     );
     await expectInteractiveBoundary(page.locator('#contactForm'));
     await expectStaticBoundary(page.locator('footer'));
     await expectInteractiveBoundary(
-      page.getByRole('button', { name: '01 Examen clinique' })
+      page.getByRole('button', { name: '01 Faire connaissance' })
     );
   });
 });

@@ -16,7 +16,7 @@ export function SheetContent({
 }: ComponentProps<typeof DialogPrimitive.Content>) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="sheet-overlay fixed inset-0 z-50 bg-forest-deep/35 backdrop-blur-sm" />
+      <DialogPrimitive.Overlay className="sheet-overlay fixed inset-0 z-50 bg-primary-deep/35 backdrop-blur-sm" />
       <DialogPrimitive.Content
         className={cn(
           'sheet-content fixed inset-y-0 right-0 z-50 w-[min(90vw,380px)] overflow-y-auto bg-background px-7 py-10 shadow-xl',

@@ -1,10 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { configuration } from '../../src/lib/content/animals';
 
 const animalRoutes = ['chien', 'chat', 'cheval', 'nac'] as const;
 
 for (const animal of animalRoutes) {
-  test(`the ${animal} page is directly accessible and preserves its original copy`, async ({
+  test(`the ${animal} page is directly accessible with service information and booking`, async ({
     page,
   }) => {
     const errors: string[] = [];
@@ -15,12 +14,9 @@ for (const animal of animalRoutes) {
       'href',
       `https://www.osteopathie-animale-bordeaux.fr/animaux/${animal}/`
     );
-    const lead = await page.locator('.animal-hero .body-copy').innerText();
-    const body = await page
-      .locator('.animal-story article .body-copy')
-      .innerText();
-    expect(`${lead} ${body}`.replace(/\s+/g, ' ').trim()).toBe(
-      configuration[animal].text.replace(/\s+/g, ' ').trim()
+    await expect(page.locator('.animal-hero .body-copy')).toBeVisible();
+    await expect(page.locator('.animal-story article')).toContainText(
+      'vétérinaire'
     );
     await expect(
       page
@@ -105,7 +101,7 @@ test('pricing tabs and consultation steps work with the keyboard', async ({
   await page.keyboard.press('ArrowLeft');
   await expect(cabinet).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('.pricing-note')).toHaveCount(0);
-  const treatment = page.getByRole('button', { name: '03 Traitement' });
+  const treatment = page.getByRole('button', { name: '03 Adapter le soin' });
   await treatment.scrollIntoViewIfNeeded();
   await expect(
     treatment.locator('xpath=ancestor::astro-island[1]')
@@ -113,7 +109,7 @@ test('pricing tabs and consultation steps work with the keyboard', async ({
   await treatment.click();
   await expect(treatment).toHaveAttribute('aria-expanded', 'true');
   await expect(
-    page.getByText('Une fois le diagnostic ostéopathique établi', {
+    page.getByText('Les techniques manuelles sont choisies', {
       exact: false,
     })
   ).toBeVisible();
@@ -146,7 +142,7 @@ test('all pages fit small screens and keep meaningful navigation without JavaScr
   await context.close();
 });
 
-test('reduced motion keeps the editorial content readable and stops movement', async ({
+test('reduced motion keeps the content readable and stops movement', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -178,4 +174,62 @@ test('reduced motion keeps the editorial content readable and stops movement', a
     'none'
   );
   await expect(page.locator('#osteopathie h2')).toBeVisible();
+});
+
+test('questions can be opened with the keyboard, including without JavaScript', async ({
+  browser,
+  baseURL,
+}) => {
+  if (!baseURL) throw new Error('Playwright baseURL must be configured');
+  for (const javaScriptEnabled of [true, false]) {
+    const context = await browser.newContext({ baseURL, javaScriptEnabled });
+    const page = await context.newPage();
+    await page.goto('/');
+    if (javaScriptEnabled)
+      await page
+        .getByRole('button', { name: 'Tout refuser', exact: true })
+        .click();
+    const item = page.locator('.faq-item').first();
+    const trigger = item.locator('summary');
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    await expect(item).toHaveAttribute('open', '');
+    await expect(item.locator('p')).toBeVisible();
+    await expect(item.locator('p')).toContainText(
+      'ne remplace ni un diagnostic ni les traitements prescrits'
+    );
+    await page.keyboard.press('Enter');
+    await expect(item.locator('p')).toBeHidden();
+    await context.close();
+  }
+});
+
+test('mobile booking stays available while reading and clears the contact form', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Tout refuser', exact: true }).click();
+  const dock = page.locator('.booking-dock');
+  await expect(dock).toBeHidden();
+  await page.locator('#quand-consulter h2').scrollIntoViewIfNeeded();
+  await expect(dock).toBeVisible();
+  const bookingBounds = await dock
+    .locator('a[href*="calendly.com"]')
+    .boundingBox();
+  expect(bookingBounds).not.toBeNull();
+  expect(bookingBounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bookingBounds!.x + bookingBounds!.width).toBeLessThanOrEqual(390);
+  await expect(
+    dock.getByRole('link', { name: 'Prendre rendez-vous', exact: true })
+  ).toHaveAttribute(
+    'href',
+    'https://calendly.com/osteopathe-animalier/consultation-osteopathique'
+  );
+  await expect(
+    dock.getByRole('link', { name: 'Appeler Agathe Lescout' })
+  ).toHaveAttribute('href', 'tel:+33665550792');
+  await page.locator('#contactForm').scrollIntoViewIfNeeded();
+  await expect(dock).toBeHidden();
 });

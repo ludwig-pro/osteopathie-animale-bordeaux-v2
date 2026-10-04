@@ -1,93 +1,72 @@
 import {
-  CalendarCheckIcon,
   FirstAidKitIcon,
-  BoneIcon,
-  PlantIcon,
-  HeartIcon,
-  HorseIcon,
   HeartbeatIcon,
-  InfoIcon,
+  LeafIcon,
+  ArrowUpRightIcon,
 } from '@phosphor-icons/react';
 import SectionHeading from '../../site/SectionHeading';
-
 const reasons = [
   {
-    title: 'Bilan annuel',
+    title: 'Quelque chose a changé',
     description:
-      "Une à deux consultations par an permet de prévenir des pathologies liées à la croissance, à l'activité et à l'âge",
-    icon: () => <CalendarCheckIcon weight="light" aria-hidden="true" />,
+      'Il se déplace différemment, hésite à sauter ou semble moins à l’aise dans ses mouvements.',
+    icon: HeartbeatIcon,
+    detail: 'Mobilité & confort',
   },
   {
-    title: 'Réeducation',
+    title: 'Une nouvelle étape de vie',
     description:
-      'Post-chirurgicale ou post-traumatique (fracture, tendinite, entorse etc.)',
-    icon: () => <FirstAidKitIcon weight="light" aria-hidden="true" />,
+      'Croissance, avancée en âge ou reprise d’activité : ses besoins évoluent, son accompagnement aussi.',
+    icon: LeafIcon,
+    detail: 'À chaque âge',
   },
   {
-    title: 'Troubles ostéo-articulaire',
+    title: 'Un suivi à construire',
     description:
-      "Boiterie, arthrose, contracture, irrégularité d'allure, dorsalgie etc.",
-    icon: () => <BoneIcon weight="light" aria-hidden="true" />,
-  },
-  {
-    title: 'Croissance',
-    description: "Défaut d'aplombs, malformation, dysplasie etc.",
-    icon: () => <PlantIcon weight="light" aria-hidden="true" />,
-  },
-  {
-    title: 'Troubles du comportement',
-    description: 'Craintes excessives, agressivité, tics etc.',
-    icon: () => <HeartIcon weight="light" aria-hidden="true" />,
-  },
-  {
-    title: 'Sport',
-    description:
-      'Baisse des performances, préparation à la compétition et récupération',
-    icon: () => <HorseIcon weight="light" aria-hidden="true" />,
-  },
-  {
-    title: 'Troubles fonctionnels',
-    description:
-      'Systèmes respiratoire, nerveux, digestif, vasculaire, reproducteur, urinaire et hormonal',
-    icon: () => <HeartbeatIcon weight="light" aria-hidden="true" />,
+      'Bilan régulier, activité sportive ou récupération après un traumatisme, en lien avec le suivi vétérinaire.',
+    icon: FirstAidKitIcon,
+    detail: 'Prévention & suivi',
   },
 ];
-
 export default function WhenToConsult({
   id = 'quand-consulter',
 }: {
   id?: string;
 }) {
   return (
-    <section id={id} className="section-space site-container">
+    <section id={id} className="section-space site-container reasons-section">
       <SectionHeading
-        eyebrow="Être attentif à son bien-être"
-        title="Quand consulter un ostéopathe ?"
+        eyebrow="Vous le connaissez mieux que personne"
+        title="Les petits signes comptent."
+        description="Vous avez remarqué un changement ? Commençons par en parler."
       />
       <div className="reasons-grid">
-        {reasons.map(({ title, description, icon }, index) => (
-          <div className="reason-item" key={title} data-reveal="text">
+        {reasons.map(({ title, description, icon: Icon, detail }) => (
+          <article className="reason-item" data-reveal="text" key={title}>
             <div className="reason-topline">
-              <span aria-hidden="true">0{index + 1}</span>
-              {icon()}
+              <Icon size={30} weight="light" aria-hidden="true" />
+              <span>{detail}</span>
             </div>
             <h3>{title}</h3>
             <p>{description}</p>
-          </div>
+          </article>
         ))}
       </div>
       <div className="contraindications">
-        <InfoIcon size={22} aria-hidden="true" />
-        <div>
-          <h3>Contre-indications</h3>
-          <p>
-            Attention, l'ostéopathie n'intervient jamais en 1ère intention, si
-            votre animal présente des signes fiévreux ou inflammatoires
-            (abattement, chaleur, douleur, gonflement) ou un changement brusque
-            de comportement, veuillez vous référer à votre vétérinaire.
-          </p>
-        </div>
+        <FirstAidKitIcon size={24} aria-hidden="true" />
+        <p>
+          <strong>
+            En cas de douleur importante, de fièvre ou de changement brutal, le
+            vétérinaire est votre premier interlocuteur.
+          </strong>{' '}
+          L’ostéopathie intervient en complément, lorsque l’état de votre animal
+          le permet.
+        </p>
       </div>
+      <a href="/#contact" className="text-link">
+        Parlons de votre animal{' '}
+        <ArrowUpRightIcon size={18} aria-hidden="true" />
+      </a>
     </section>
   );
 }

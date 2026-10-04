@@ -6,7 +6,6 @@ import {
   DogIcon,
   HorseIcon,
   ListIcon,
-  MapPinIcon,
   RabbitIcon,
 } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
@@ -33,10 +32,10 @@ const animals = [
   { label: 'Les NAC', slug: 'nac', icon: RabbitIcon },
 ];
 const navigation = [
-  { label: 'L’ostéopathie', href: '/#osteopathie' },
-  { label: 'La consultation', href: '/#consultation' },
+  { label: 'Mon approche', href: '/#osteopathie' },
+  { label: 'La séance', href: '/#consultation' },
   { label: 'Tarifs', href: '/#tarifs' },
-  { label: 'À propos', href: '/#a-propos' },
+  { label: 'Agathe', href: '/#a-propos' },
 ];
 
 export default function Header({
@@ -47,22 +46,14 @@ export default function Header({
   const [open, setOpen] = useState(false);
   return (
     <>
-      <div className="announcement">
-        <MapPinIcon size={13} aria-hidden="true" />
-        <span>Consultations en cabinet à Bègles et à domicile en Gironde</span>
-        <a href="/#cabinet">
-          Découvrir le cabinet <ArrowUpRightIcon size={12} aria-hidden="true" />
-        </a>
-      </div>
       <header className="site-header">
-        <div className="reading-progress" aria-hidden="true" />
         <div className="site-container header-inner">
           <a href="/" className="brand" aria-label="Agathe Lescout — Accueil">
             <span className="brand-mark">
-              <span aria-hidden="true">al.</span>
+              <span aria-hidden="true">a.</span>
             </span>
             <span>
-              Agathe Lescout<small>OSTÉOPATHE ANIMALIER</small>
+              Agathe Lescout<small>OSTÉOPATHIE ANIMALE</small>
             </span>
           </a>
           <nav className="desktop-nav" aria-label="Navigation principale">

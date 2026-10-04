@@ -17,13 +17,13 @@ export default function MapSection({ id = 'cabinet' }: { id?: string }) {
     <section id={id} className="section-space site-container cabinet-grid">
       <div className="cabinet-copy">
         <SectionHeading
-          eyebrow="Tout près de chez vous"
-          title="Consultations en Cabinet à Bègles"
+          eyebrow="Deux façons de se rencontrer"
+          title="Au cabinet.
+Ou chez vous."
         />
         <p className="body-copy">
-          Nous sommes ravis de vous accueillir dans notre cabinet situé à
-          Bègles. Profitez d'un environnement professionnel et adapté pour les
-          soins de vos animaux.
+          Un cadre dédié à Bègles, ou le confort de votre domicile en Gironde.
+          Choisissons le lieu qui convient à votre animal.
         </p>
         <div className="cabinet-address">
           <MapPinIcon size={23} weight="light" aria-hidden="true" />

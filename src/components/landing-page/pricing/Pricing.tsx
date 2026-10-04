@@ -32,7 +32,11 @@ export default function Pricing({
       <div className="site-container">
         <Tabs value={option} onValueChange={setOption}>
           <div className="pricing-topline">
-            <SectionHeading eyebrow="Les consultations" title="Tarifs" />
+            <SectionHeading
+              eyebrow="Tout simplement"
+              title="Des tarifs clairs."
+              description="Choisissez le lieu de consultation pour connaître les modalités."
+            />
             <TabsList aria-label="Lieu de consultation">
               <TabsTrigger
                 value="cabinet"
@@ -68,10 +72,7 @@ export default function Pricing({
                   domicilePrice,
                   variants,
                 }) => (
-                  <Card
-                    key={id}
-                    className="price-card rounded-none border-0 border-t bg-transparent"
-                  >
+                  <Card key={id} className="price-card">
                     <img
                       {...images[imageKey]}
                       alt={alt}
@@ -79,7 +80,7 @@ export default function Pricing({
                       decoding="async"
                       data-testid="responsive-content-image"
                     />
-                    <CardContent className="p-0">
+                    <CardContent className="price-card-body">
                       <div className="price-label">
                         <h3>{title}</h3>
                         {id === 'forfait' && (

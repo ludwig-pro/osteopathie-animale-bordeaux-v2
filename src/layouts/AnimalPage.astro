@@ -8,6 +8,7 @@ import {
 import BaseLayout from './BaseLayout.astro';
 import BookingLink from '../components/site/BookingLink';
 import AnimalsSection from '../components/site/AnimalsSection.astro';
+import Faq from '../components/site/Faq.astro';
 import Consultation from './wrappers/DeroulementConsultationWrapper.astro';
 import WhenToConsult from '../components/landing-page/when-to-consult/WhenToConsult';
 import {
@@ -71,7 +72,7 @@ const schema = {
             <div class="hero-actions">
               <BookingLink
                 source={`animal-${animal.slug}`}
-                variant="accent"
+                variant="default"
                 client:visible
               />
               <a href="/#contact" class="hero-phone"
@@ -84,7 +85,7 @@ const schema = {
             src={animal.image}
             alt={alt}
             widths={[480, 960, 1440]}
-            sizes="(min-width: 1416px) 550px, (min-width: 1101px) calc(41.667vw - 40px), (min-width: 801px) calc(41.667vw - 26.667px), calc(100vw - 40px)"
+            sizes="(min-width: 1408px) 533px, (min-width: 1101px) calc(41.667vw - 53.334px), (min-width: 901px) calc(41.667vw - 26.667px), (min-width: 701px) calc(100vw - 64px), calc(100vw - 40px)"
             width={960}
             format="webp"
             loading="eager"
@@ -104,7 +105,7 @@ const schema = {
     </nav>
     <section class="section-space site-container animal-story">
       <article>
-        <p class="eyebrow mb-4">Un accompagnement adapté</p>
+        <p class="eyebrow mb-4">Son histoire, ses besoins</p>
         <h2>{animal.specialty}</h2>
         <div class="body-copy">
           {paragraphs.map((paragraph) => <p>{paragraph}</p>)}
@@ -136,6 +137,7 @@ const schema = {
     </section>
     <Consultation />
     <WhenToConsult />
+    <Faq />
     <div class="border-t border-border"><AnimalsSection /></div>
   </main>
 </BaseLayout>

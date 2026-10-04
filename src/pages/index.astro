@@ -3,7 +3,8 @@ import ContactWrapper from '../components/landing-page/contact/ContactWrapper';
 import MapSection from '../components/landing-page/map/MapSection';
 import WhenToConsult from '../components/landing-page/when-to-consult/WhenToConsult';
 import agathePortrait from '../images/agathe.jpg';
-import heroImage from '../images/dog-homepage.jpg';
+import heroImage from '../images/yougncat.jpeg';
+import Faq from '../components/site/Faq.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AnimalsSection from '../components/site/AnimalsSection.astro';
 import DeroulementConsultationWrapper from '../layouts/wrappers/DeroulementConsultationWrapper.astro';
@@ -73,12 +74,13 @@ const homepageSchema = {
   <main id="root">
     <HeroWrapper />
     <AnimalsSection />
-    <OsteopathieAnimaleWrapper id="osteopathie" />
     <WhenToConsult id="quand-consulter" />
-    <PrixWrapper id="tarifs" />
-    <DeroulementConsultationWrapper />
+    <OsteopathieAnimaleWrapper id="osteopathie" />
     <QuiSuisJeWrapper />
+    <DeroulementConsultationWrapper />
+    <PrixWrapper id="tarifs" />
     <MapSection client:visible={{ rootMargin: '300px' }} />
+    <Faq />
     <ContactWrapper id="contact" client:visible={{ rootMargin: '300px' }} />
   </main>
 </BaseLayout>

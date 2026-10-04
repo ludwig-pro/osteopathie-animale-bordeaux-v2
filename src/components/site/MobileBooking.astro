@@ -1,0 +1,33 @@
+---
+import { PhoneIcon } from '@phosphor-icons/react';
+import BookingLink from './BookingLink';
+import { BUSINESS_CONFIG } from '../../lib/constants/site';
+---
+
+<nav class="booking-dock" aria-label="Prendre contact">
+  <a
+    href={`tel:${BUSINESS_CONFIG.telephone}`}
+    class="dock-phone"
+    aria-label="Appeler Agathe Lescout"
+    ><PhoneIcon size={21} aria-hidden="true"
+  /></a>
+  <BookingLink client:idle source="mobile-booking-dock" />
+</nav>
+<script>
+  const dock = document.querySelector<HTMLElement>('.booking-dock');
+  const hero = document.querySelector('.hero, .animal-hero');
+  const contact = document.querySelector('#contact');
+  if (dock && hero && 'IntersectionObserver' in window) {
+    let heroVisible = true;
+    let contactVisible = false;
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === hero) heroVisible = entry.isIntersecting;
+        if (entry.target === contact) contactVisible = entry.isIntersecting;
+      }
+      dock.dataset['visible'] = String(!heroVisible && !contactVisible);
+    });
+    observer.observe(hero);
+    if (contact) observer.observe(contact);
+  }
+</script>

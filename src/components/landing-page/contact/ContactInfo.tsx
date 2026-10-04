@@ -3,8 +3,12 @@ import { EnvelopeSimpleIcon, PhoneIcon } from '@phosphor-icons/react';
 export default function ContactInfo() {
   return (
     <div className="contact-info">
-      <p className="eyebrow">Restons en contact</p>
-      <h2>Horaires</h2>
+      <p className="eyebrow">Faisons le premier pas</p>
+      <h2>
+        Parlons de
+        <br />
+        votre compagnon.
+      </h2>
       <h3>À domicile</h3>
       <p>
         <strong>Sur rendez-vous, </strong>je m'adapte à votre emploi du temps du

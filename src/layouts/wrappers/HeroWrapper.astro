@@ -1,39 +1,15 @@
 ---
 import { getImage } from 'astro:assets';
 import Hero from '../../components/landing-page/hero/Hero';
-import dogHomepage from '../../images/dog-homepage.jpg';
-
-// Responsive widths: mobile, tablet, desktop
-const widths = [768, 1024, 1920];
-
-// Generate WebP images
-const webpImages = await Promise.all(
-  widths.map((width) =>
-    getImage({
-      src: dogHomepage,
-      width,
-      format: 'webp',
-      quality: 75,
-    })
-  )
+import { buildResponsiveImage } from '../../lib/responsiveImage';
+import care from '../../images/yougncat.jpeg';
+import agathe from '../../images/agathe.jpg';
+const careImage = await buildResponsiveImage(
+  care,
+  [480, 800, 1200],
+  '(min-width: 1408px) 560px, (min-width: 901px) calc(45vw - 66px), calc(100vw - 64px)'
 );
-
-// Construct srcset
-const webpSrcset = webpImages
-  .map((img, i) => `${img.src} ${widths[i]}w`)
-  .join(', ');
-
-// Use the largest image as default src
-const webpSrc = webpImages[webpImages.length - 1]?.src ?? '';
+const portrait = await getImage({ src: agathe, width: 112, format: 'webp' });
 ---
 
-<Hero
-  client:load
-  backgroundSources={{
-    webp: {
-      src: webpSrc,
-      srcset: webpSrcset,
-    },
-  }}
-  backgroundAlt="Deux chiens courant dans l’herbe"
-/>
+<Hero client:load careImage={careImage} portrait={portrait.src} />

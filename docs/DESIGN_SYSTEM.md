@@ -1,56 +1,38 @@
-# Système de design — Agathe Lescout, version éditoriale
+# V3 — Bien bouger. Bien vivre.
 
-Cette deuxième proposition conserve les photographies, les textes et la structure multi-page. Elle adopte une direction éditoriale : ouverture photographique pleine largeur sur fond forêt, grands titres Lora, accent vert lumineux, galeries décalées, tarifs en lignes et angles droits. DM Sans assure la lecture et les interfaces. Les polices sont hébergées avec le site.
+La V3 est une proposition indépendante : identité prune, abricot et ivoire, typographie Manrope pour les titres et DM Sans pour la lecture, photos de soins et formes arrondies. Le contenu est réécrit pour répondre aux questions d’un propriétaire avant une consultation. Les informations de la pratique — identité, qualifications, coordonnées, lieux et montants — proviennent du site existant.
 
-La première proposition reste dans la PR #26, branche `design/green-multipage-preview`. La variante éditoriale vit sur `design/editorial-motion-preview` et possède sa propre preview.
+La V2 reste dans la PR #27, sur `design/editorial-motion-preview`. La V3 vit sur `design/movement-care-v3` et dispose de sa propre preview. Ce sont des propositions alternatives, sans fusion en production.
 
-## Fondations
+## Parcours
 
-`src/styles/global.css` définit les tokens sémantiques compatibles shadcn/ui (`background`, `foreground`, `primary`, `secondary`, `border`, `input`, `ring`), les espacements des sections, les grilles et les adaptations responsive. Les composants consomment ces tokens, plutôt que de définir chacun leur palette.
+L’accueil présente la proposition d’accompagnement, les animaux concernés, les motifs de prise de contact, l’approche, la praticienne, le déroulement, les tarifs, les lieux de consultation, les questions fréquentes et le contact. Les quatre pages animales gardent des URL propres et développent leurs informations avec un modèle commun.
 
-`components.json` configure shadcn/ui pour React, Tailwind 4 et l’alias `@/`. Les primitives locales dans `src/components/ui` suivent la composition shadcn/ui : Radix pour le comportement accessible, `class-variance-authority` pour les variantes du bouton, `cn()` pour composer les classes.
+La FAQ utilise des éléments `details` natifs : elle fonctionne au clavier et sans JavaScript. Sur mobile, une barre de contact apparaît après l’introduction et se masque à l’approche du formulaire. Elle propose le téléphone et le lien Calendly existants, sans recouvrir le formulaire.
 
-- `Button` : variantes `default`, `accent`, `outline`, `secondary`, `ghost`, `link` ; tailles `sm`, `default`, `lg`, `icon` ; `asChild` pour les liens.
-- `Card` / `CardContent` : cartes de tarifs.
-- `Tabs` : changement du lieu de consultation, navigation au clavier.
-- `Accordion` : étapes de consultation, contrôles accessibles.
-- `Sheet` : menu mobile avec gestion du focus, fermeture par Échap et clic extérieur.
-- `DropdownMenu` : navigation desktop entre les animaux.
-- `Input` / `Textarea` : champs avec labels visibles et états d’erreur.
+## Fondations et composants
 
-## Composition
+Les tokens sémantiques dans `src/styles/global.css` définissent les couleurs, rayons, espacements, tailles et transitions. Corps de texte à 18 px, interfaces principales à 16 px. Les polices sont auto-hébergées. Les styles du consentement, le favicon et la couleur du navigateur suivent la nouvelle identité.
 
-`BaseLayout.astro` fournit les métadonnées, le consentement, le lien d’évitement, le header et le footer. `SectionHeading`, `BookingLink` et `AnimalsSection` sont partagés entre les pages. Les sections statiques restent sans hydratation ; seuls les menus, rendez-vous suivis, tarifs, accordéons, carte et formulaire utilisent des îlots React.
+Les primitives `Button`, `Card`, `Tabs`, `Accordion`, `Sheet`, `Input` et `DropdownMenu` restent composables avec Radix et les conventions shadcn/ui. `BookingLink` centralise le rendez-vous et son suivi analytique. `SectionHeading`, `AnimalsSection`, `Faq` et `AnimalPage` portent les compositions partagées.
 
-Les quatre routes sont générées à la compilation par `src/pages/animaux/[animal].astro` et utilisent toutes `AnimalPage.astro` :
-
-- `/animaux/chien/`
-- `/animaux/chat/`
-- `/animaux/cheval/`
-- `/animaux/nac/`
-
-Chaque page possède un titre, une description, une URL canonique et des données structurées propres. La navigation utilise des liens HTML, sans routeur client. Le sitemap et robots.txt sont générés avec les routes publiques.
+Les sections statiques restent rendues par Astro. Les menus, formulaire, tarifs et étapes de séance utilisent des îlots React. La carte Mapbox reste chargée uniquement sur demande. Les images ont des tailles responsive adaptées aux nouvelles grilles.
 
 ## Contenus
 
-`src/lib/content/animals.ts` conserve les textes d’origine par espèce ; le texte bovin reste accessible sur l’accueil et dans la section partagée. `animal-pages.ts` associe les quatre pages aux photos, intitulés et tarifs. `copy.ts` conserve la présentation, l’ostéopathie et les étapes de consultation. `pricing.ts` est la source commune des tarifs sur l’accueil et les pages animaux.
+- `src/lib/content/animal-pages.ts` : les espèces, photos et textes de leurs pages.
+- `src/lib/content/copy.ts` : déroulement et questions fréquentes.
+- `src/lib/content/pricing.ts` : tarifs existants, partagés entre accueil et pages animaux.
+- `src/lib/constants/site.ts` : informations de la pratique.
 
-Les textes métier et les montants ne sont pas réécrits dans cette refonte. Les nouveaux intitulés servent uniquement à la navigation et à la hiérarchie visuelle.
+Le discours présente l’ostéopathie comme un accompagnement complémentaire au vétérinaire. Aucune statistique de résultats, aucun avis client et aucune garantie d’efficacité n’ont été ajoutés.
 
-## Vérification
+## Mouvement et accessibilité
 
-Lancer `yarn check:static`, `yarn test:unit` et `yarn test:e2e`. Les tests couvrent aussi les accès directs aux nouvelles pages, les canoniques, la conservation des textes, les liens entre pages, le menu mobile, le clavier, les images responsive et la navigation sans JavaScript.
+Les révélations au défilement sont une amélioration progressive via IntersectionObserver et Web Animations. Les contenus restent visibles sans JavaScript. Les survols, accordéons et menu ont des transitions courtes ; `prefers-reduced-motion` désactive les mouvements et annule les animations en cours si la préférence change.
 
-La prise de rendez-vous conserve le lien Calendly existant. Le formulaire conserve Netlify Forms et ses validations ; la soumission locale est testée avec des réponses simulées, sans envoyer de message réel. La carte Mapbox reste chargée à la demande et propose un repli si son jeton manque.
+Le raccourci mobile utilise un observateur indépendant pour rester fonctionnel même en mode de réduction des animations. Les états de focus, libellés de champs, erreurs et interactions au clavier sont conservés.
 
-### Lisibilité
+## Validation
 
-Échelle partagée en rem : texte courant 18 px, interfaces 16 px, indications secondaires 14 px et légendes 13 px (base navigateur 16 px). Les textes mobiles conservent cette échelle. Le menu compact prend le relais sous 1200 px pour laisser respirer la navigation.
-
-## Mouvement
-
-`src/lib/motion.ts` apporte une amélioration progressive avec IntersectionObserver et Web Animations : entrée des titres, dévoilement des images et révélation des éléments au défilement. Chaque élément ne joue qu’une fois par chargement. Aucun contenu n’est masqué par défaut, et aucun défilement n’est intercepté.
-
-Les primitives partagées animent les flèches des boutons, les onglets, le menu mobile et les accordéons ; les photos de la galerie répondent au survol. Une fine ligne de progression utilise les scroll timelines CSS lorsqu’elles sont disponibles.
-
-La préférence `prefers-reduced-motion` désactive les effets, supprime le défilement doux et annule les animations Web Animations en cours si elle change pendant la visite. La durée et la courbe de transition sont centralisées ; aucune bibliothèque d’animation supplémentaire n’est nécessaire.
+`yarn build`, `yarn check:static`, `yarn test:unit` et `yarn test:e2e` sont les vérifications du projet. Les scénarios de la V3 couvrent aussi la FAQ sans JavaScript et au clavier, la disponibilité du raccourci mobile, son positionnement et son masquage devant le formulaire. Voir `design-qa.md` pour les résultats et captures.

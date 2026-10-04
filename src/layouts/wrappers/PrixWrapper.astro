@@ -7,7 +7,8 @@ import cheval from '../../images/sectionCheval.jpg';
 import forfait from '../../images/forfaitmensuel.jpeg';
 
 const widths = [320, 640, 800] as const;
-const sizes = '(min-width: 701px) 160px, 80px';
+const sizes =
+  '(min-width: 1408px) 302px, (min-width: 1101px) calc(25vw - 50px), (min-width: 701px) calc(50vw - 44px), calc(100vw - 40px)';
 
 const [chienetchatImg, furetImg, chevalImg, forfaitImg] = await Promise.all([
   buildResponsiveImage(chienetchat, widths, sizes),

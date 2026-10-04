@@ -1,0 +1,22 @@
+---
+import { PlusIcon } from '@phosphor-icons/react';
+import SectionHeading from './SectionHeading';
+import { faqs } from '../../lib/content/copy';
+---
+
+<section id="questions" class="faq-section section-space site-container">
+  <div class="faq-intro">
+    <SectionHeading
+      eyebrow="Avant de se rencontrer"
+      title="Les réponses à vos questions."
+    />
+    <p class="body-copy">Et pour tout le reste, je suis à votre écoute.</p>
+    <a class="text-link" href="/#contact">Me poser une question</a>
+  </div>
+  <div class="faq-list">
+    {faqs.map(({ question, answer }) => <details class="faq-item">
+      <summary>{question}<PlusIcon size={22} aria-hidden="true" /></summary>
+      <p>{answer}</p>
+    </details>)}
+  </div>
+</section>

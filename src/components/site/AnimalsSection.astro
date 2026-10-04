@@ -2,32 +2,29 @@
 import { Image } from 'astro:assets';
 import { ArrowUpRightIcon } from '@phosphor-icons/react';
 import SectionHeading from './SectionHeading';
-import { configuration } from '../../lib/content/animals';
 import { animalPages } from '../../lib/content/animal-pages';
-import cow from '../../images/sectionVache.jpg';
 ---
 
 <section id="animaux" class="section-space animals-section site-container">
   <div class="section-topline">
     <SectionHeading
-      eyebrow="À chaque animal, son accompagnement"
-      title="L'ostéopathie pour qui ?"
+      eyebrow="Petits et grands compagnons"
+      title="À chacun son accompagnement."
     />
-    <p class="animals-intro">
-      Chiens, chats, chevaux et nouveaux animaux de compagnie.
-    </p>
+    <p class="animals-intro">Des besoins différents.<br />La même attention.</p>
   </div>
   <div class="animal-grid">
-    {animalPages.map((animal, index) => <a
+    {animalPages.map((animal) => <a
       href={`/animaux/${animal.slug}/`}
       class="animal-card"
       data-animal={animal.slug}
-      ><div class="animal-card-image" data-reveal="image">
+    >
+      <div class="animal-card-image" data-reveal="image">
         <Image
           src={animal.image}
-          alt={configuration[animal.slug].alt}
+          alt={animal.label}
           widths={[320, 640, 960]}
-          sizes="(min-width: 1416px) 642px, (min-width: 1101px) calc(50vw - 66px), (min-width: 701px) calc(50vw - 50px), calc(100vw - 40px)"
+          sizes="(min-width: 1408px) 302px, (min-width: 1101px) calc(25vw - 50px), (min-width: 701px) calc(50vw - 44px), calc(50vw - 28px)"
           width={640}
           format="webp"
           loading="lazy"
@@ -35,37 +32,19 @@ import cow from '../../images/sectionVache.jpg';
         />
       </div>
       <div class="animal-card-content">
-        <span class="animal-index" aria-hidden="true">0{index + 1}</span>
         <div>
           <h3>{animal.label}</h3>
-          <p>
-            {animal.slug === 'nac'
-              ? 'Petits animaux de compagnie'
-              : animal.specialty}
-          </p>
+          <p>{animal.cardDescription}</p>
         </div>
-        <span class="round-arrow"
-          ><ArrowUpRightIcon size={16} aria-hidden="true"
-        /></span>
-      </div></a
-    >)}
-  </div>
-  <details class="animal-cow">
-    <summary>Et pour les animaux d’élevage ?</summary>
-    <div class="animal-cow-content">
-      <Image
-        src={cow}
-        alt={configuration.vache.alt}
-        width={480}
-        format="webp"
-        loading="lazy"
-      />
-      <div>
-        <h3 class="mb-3 font-display text-2xl text-primary">
-          {configuration.vache.name}
-        </h3>
-        <p class="body-copy">{configuration.vache.text}</p>
+        <ArrowUpRightIcon size={22} aria-hidden="true" />
       </div>
-    </div>
-  </details>
+    </a>)}
+  </div>
+  <p class="animal-cow">
+    Vous avez des animaux d’élevage ?
+    <a href="/#contact"
+      >Échangeons sur leurs besoins
+      <ArrowUpRightIcon size={16} aria-hidden="true"
+    /></a>
+  </p>
 </section>
