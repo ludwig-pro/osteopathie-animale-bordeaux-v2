@@ -20,4 +20,4 @@ Automated tests are not configured yet. For now, validate changes by running `ya
 Use short, imperative commit titles (e.g. "Update Hero.jsx"). Keep messages in present tense, ~72 characters max. In PRs, link to the relevant issue/task, explain functional changes, list manual verification steps, and include before/after screenshots for visual updates. Request review once formatting passes and preview builds look correct.
 
 ## Deployment Notes
-Deployment targets Netlify via `@astrojs/netlify`. Configure Mapbox, ReCAPTCHA, GTM, and other secrets in the Netlify dashboard rather than the repository. After merging to `main`, trigger a Netlify deploy preview to verify headers and offline behaviour.
+Deployment targets Netlify via `@astrojs/netlify`. Configure Mapbox, GTM, and other secrets in the Netlify dashboard rather than the repository. After merging to `main`, trigger a Netlify deploy preview to verify headers and offline behaviour.
