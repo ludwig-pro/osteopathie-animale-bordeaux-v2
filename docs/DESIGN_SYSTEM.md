@@ -8,7 +8,7 @@ La refonte conserve les photographies et les textes du site. La direction finale
 
 `components.json` configure shadcn/ui pour React, Tailwind 4 et l’alias `@/`. Les primitives locales dans `src/components/ui` suivent la composition shadcn/ui : Radix pour le comportement accessible, `class-variance-authority` pour les variantes du bouton, `cn()` pour composer les classes.
 
-- `Button` : variantes `default`, `outline`, `secondary`, `ghost`, `link` ; tailles `sm`, `default`, `lg`, `icon` ; `asChild` pour les liens.
+- `Button` : variantes `default`, `accent`, `outline`, `secondary`, `ghost`, `link` ; tailles `sm`, `default`, `lg`, `icon` ; `asChild` pour les liens. `BookingLink` transmet la variante au bouton partagé.
 - `Card` / `CardContent` : cartes de tarifs.
 - `Tabs` : changement du lieu de consultation, navigation au clavier.
 - `Accordion` : étapes de consultation, contrôles accessibles.
@@ -19,6 +19,8 @@ La refonte conserve les photographies et les textes du site. La direction finale
 ## Composition
 
 `BaseLayout.astro` fournit les métadonnées, le consentement, le lien d’évitement, le header et le footer. `SectionHeading`, `BookingLink` et `AnimalsSection` sont partagés entre les pages. Les sections statiques restent sans hydratation ; seuls les menus, rendez-vous suivis, tarifs, accordéons, carte et formulaire utilisent des îlots React.
+
+Le hero de l’accueil associe une photographie pleine largeur, un fond vert profond et un grand titre en Lora. Ses tokens de surface, d’accent et de focus sont limités à `.hero` : le bouton de rendez-vous utilise la variante `accent` avec des angles légèrement arrondis. Les autres sections et les pages animaux conservent la palette, les cartes et les boutons arrondis de la V1. Le cadrage et les dégradés s’adaptent au mobile ; le bandeau inférieur renvoie vers les quatre animaux.
 
 Les quatre routes sont générées à la compilation par `src/pages/animaux/[animal].astro` et utilisent toutes `AnimalPage.astro` :
 

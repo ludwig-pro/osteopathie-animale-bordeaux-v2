@@ -1,5 +1,6 @@
 import { ArrowUpRightIcon } from '@phosphor-icons/react';
-import { Button } from '../ui/button';
+import { Button, type buttonVariants } from '../ui/button';
+import type { VariantProps } from 'class-variance-authority';
 import { pushDataLayerEvent } from '../../lib/analytics';
 
 export const BOOKING_URL =
@@ -10,14 +11,16 @@ export default function BookingLink({
   label = 'Prendre rendez-vous',
   testId,
   className,
+  variant,
 }: {
   source: string;
   label?: string;
   testId?: string;
   className?: string;
+  variant?: VariantProps<typeof buttonVariants>['variant'];
 }) {
   return (
-    <Button asChild className={className}>
+    <Button asChild className={className} variant={variant}>
       <a
         href={BOOKING_URL}
         target="_blank"
