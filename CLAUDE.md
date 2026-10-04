@@ -51,7 +51,7 @@ The main page (`src/pages/index.astro`) is composed of multiple section componen
 7. DeroulementConsultation
 8. OsteopathieAnimale
 9. QuiSuisJe
-10. Contact (with ReCAPTCHA)
+10. Contact (Netlify Forms with a honeypot)
 11. Footer
 
 Each section is a self-contained React component in `src/components/sections/`.
@@ -65,7 +65,7 @@ src/components/
 │   ├── Banner/         # Banner component
 │   └── ResponsiveImage.tsx
 ├── contact/
-│   ├── Contact.tsx     # Contact form with ReCAPTCHA
+│   ├── Contact.tsx     # Contact form with a Netlify honeypot
 │   ├── ContactModal.tsx
 │   └── MapBox.tsx      # Mapbox integration
 ├── layout/
@@ -110,7 +110,6 @@ Uses flat config format (`eslint.config.js`):
 ### Environment Variables
 
 Required variables (see `.env`):
-- `PUBLIC_RECAPTCHA_KEY` - Google ReCAPTCHA v3 for contact form
 - `PUBLIC_MAPBOX_TOKEN` - Mapbox GL JS for map display
 - `PUBLIC_GTM_ID` - Google Tag Manager (already set to GTM-KCM49LQ)
 
@@ -120,8 +119,7 @@ All public env vars are prefixed with `PUBLIC_` per Astro conventions.
 
 1. **Mapbox GL JS** (v2.8.1) - Used in `CarteCabinet` component
    - CSS loaded in `BaseLayout.astro` head
-2. **Google ReCAPTCHA v3** - Used in `Contact` component
-   - Integrated via `react-google-recaptcha-v3`
+2. **Netlify Forms** - Contact form with a honeypot field
 3. **Google Tag Manager** - Inline script in `BaseLayout.astro`
 4. **React Calendly** - Appointment booking integration
 
