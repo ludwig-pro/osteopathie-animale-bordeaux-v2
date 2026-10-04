@@ -24,6 +24,10 @@ const logicalImageKeysByAlt = new Map([
   ],
   ['Illustration du forfait mensuel pour les éleveurs', 'pricing-package'],
   [
+    'Cheval représentant les consultations en ostéopathie équine',
+    'pricing-horse',
+  ],
+  [
     "Chaton tigré donnant la patte lors d'un examen ostéopathique",
     'consultation-kitten',
   ],
@@ -167,7 +171,7 @@ test.describe('Responsive content images', () => {
         expect(await page.evaluate(() => window.devicePixelRatio)).toBe(1);
 
         const contentImages = page.getByTestId('responsive-content-image');
-        await expect(contentImages).toHaveCount(8);
+        await expect(contentImages).toHaveCount(9);
 
         const animalIsland = page
           .locator('astro-island')
@@ -180,7 +184,7 @@ test.describe('Responsive content images', () => {
           .toBe(false);
 
         const viewportKeys = new Set<string>();
-        for (let index = 0; index < 8; index += 1) {
+        for (let index = 0; index < 9; index += 1) {
           const logicalKey = await assertResponsiveImage(
             contentImages.nth(index),
             page
@@ -242,12 +246,12 @@ test.describe('Responsive content images', () => {
           aggregateKeys.add(`${viewport.key}/${logicalKey}`);
         }
 
-        expect(viewportKeys.size).toBe(12);
+        expect(viewportKeys.size).toBe(13);
       } finally {
         await context.close();
       }
     }
 
-    expect(aggregateKeys.size).toBe(60);
+    expect(aggregateKeys.size).toBe(65);
   });
 });
