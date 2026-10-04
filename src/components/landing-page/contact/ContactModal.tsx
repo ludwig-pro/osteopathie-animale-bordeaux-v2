@@ -26,13 +26,13 @@ export default function ContactModal({
       style={customStyles}
       onRequestClose={onRequestClose}
       contentLabel="Example Modal"
-      overlayClassName="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+      overlayClassName="fixed inset-0 bg-gray-500/75 transition-opacity"
     >
       <div>
         <div className="hidden sm:block absolute top-0 right-0 pt-4 pr-4">
           <button
             type="button"
-            className="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             <span className="sr-only">Close</span>
             {/* <!-- Heroicon name: outline/x --> */}
@@ -56,7 +56,7 @@ export default function ContactModal({
         <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-white border-2 border-gold-500">
           {/* <!-- Heroicon name: outline/check --> */}
           <svg
-            className="flex-shrink-0 h-6 w-6 text-gold-500"
+            className="shrink-0 h-6 w-6 text-gold-500"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -94,7 +94,7 @@ export default function ContactModal({
       <div className="mt-5 sm:mt-6">
         <button
           type="button"
-          className="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm"
+          className="inline-flex justify-center w-full rounded-md border border-transparent shadow-xs px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm"
         >
           Go back to dashboard
         </button>

@@ -1,28 +1,65 @@
-@tailwind base;
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
 
-html,
-body {
-  scroll-behavior: smooth;
-}
-h1 {
-  @apply text-2xl;
-}
-h2 {
-  @apply text-xl;
-}
-h3 {
-  @apply text-lg;
-}
-a {
-  @apply text-blue-600;
+@theme {
+  --color-gold-x: #bd7f3d;
+  --color-gold-1000: #452e00;
+  --color-gold-900: #664a12;
+  --color-gold-800: #866523;
+  --color-gold-700: #a88135;
+  --color-gold-600: #c89d46;
+  --color-gold-500: #e9b857;
+  --color-gold-400: #eec675;
+  --color-gold-350: #f5ca7a;
+  --color-gold-300: #f3d393;
+  --color-gold-200: #f8e0b1;
+  --color-gold-100: #fdeecf;
+  --color-gold-80: #fef0d5;
+  --color-gold-50: #fff4de;
+  --color-gold: #c19400;
+  --color-canard: #143545;
+  --color-canard-light: #215772;
+
+  /* Preserve the existing site's colors across Tailwind's palette update. */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-900: #111827;
+  --color-green-50: #f0fdf4;
+  --color-green-400: #4ade80;
+  --color-green-800: #166534;
+  --color-indigo-500: #6366f1;
+  --color-indigo-600: #4f46e5;
+  --color-indigo-700: #4338ca;
+  --color-red-50: #fef2f2;
+  --color-red-400: #f87171;
+  --color-red-600: #dc2626;
+  --color-red-800: #991b1b;
+  --color-yellow-400: #facc15;
 }
 
-@tailwind components;
-@tailwind utilities;
+@layer base {
+  /* Keep the Tailwind 3 defaults used by existing borders and controls. */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
 
-@layer utilities {
-  .text-gradient {
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
   }
 }

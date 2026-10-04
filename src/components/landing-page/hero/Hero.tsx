@@ -1,5 +1,10 @@
-import { Popover, Transition } from '@headlessui/react';
-import { MenuIcon, XIcon } from '@heroicons/react/outline';
+import {
+  Popover,
+  PopoverButton,
+  PopoverPanel,
+  Transition,
+} from '@headlessui/react';
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Fragment, useCallback, type ReactNode } from 'react';
 import {
   pushDataLayerEvent,
@@ -59,7 +64,7 @@ export default function Hero({
   const { webp, fallback } = backgroundSources ?? {};
   const fallbackSrc = fallback ?? webp?.src;
   const calendlyCtaClassName =
-    'flex w-full items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-gold-500 bg-white hover:bg-opacity-70 sm:px-8';
+    'flex w-full items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-xs text-gold-500 bg-white hover:bg-white/70 sm:px-8';
 
   return (
     <div className="relative h-screen w-full bg-no-repeat bg-cover bg-center">
@@ -78,14 +83,11 @@ export default function Hero({
           />
         </picture>
       )}
-      <div
-        className="absolute inset-0 bg-black bg-opacity-30"
-        aria-hidden="true"
-      />
+      <div className="absolute inset-0 bg-black/30" aria-hidden="true" />
       <Popover className="relative pt-6 pb-16 sm:pb-24 ">
         {({ open }) => (
           <>
-            <div className="fixed top-0 z-40 flex md:justify-center justify-end py-4 md:py-0 w-full px-4 sm:px-6  md:bg-gradient-to-l to-canard from-canard-light">
+            <div className="fixed top-0 z-40 flex md:justify-center justify-end py-4 md:py-0 w-full px-4 sm:px-6  md:bg-linear-to-l/srgb to-canard from-canard-light">
               <nav
                 className="relative flex items-center justify-between sm:h-10 md:justify-center py-6"
                 aria-label="Global"
@@ -94,10 +96,10 @@ export default function Hero({
                   <div className="flex items-center justify-between w-full md:w-auto">
                     <div></div>
                     <div className="-mr-2 flex items-center md:hidden">
-                      <Popover.Button className="bg-gray-50 rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gold-500">
+                      <PopoverButton className="bg-gray-50 rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-hidden focus:ring-2 focus:ring-inset focus:ring-gold-500">
                         <span className="sr-only">Open main menu</span>
-                        <MenuIcon className="h-6 w-6" aria-hidden="true" />
-                      </Popover.Button>
+                        <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+                      </PopoverButton>
                     </div>
                   </div>
                 </div>
@@ -125,19 +127,19 @@ export default function Hero({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Popover.Panel
+              <PopoverPanel
                 focus
                 static
                 className="absolute z-50 top-0 inset-x-0 p-2 transition transform origin-top-right md:hidden"
               >
-                <div className="rounded-lg shadow-md bg-white ring-1 ring-black ring-opacity-5 overflow-hidden">
+                <div className="rounded-lg shadow-md bg-white ring-1 ring-black/5 overflow-hidden">
                   <div className="px-5 pt-4 flex items-center justify-between">
                     <div></div>
                     <div className="-mr-2">
-                      <Popover.Button className="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gold-500">
+                      <PopoverButton className="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-hidden focus:ring-2 focus:ring-inset focus:ring-gold-500">
                         <span className="sr-only">Close menu</span>
-                        <XIcon className="h-6 w-6" aria-hidden="true" />
-                      </Popover.Button>
+                        <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                      </PopoverButton>
                     </div>
                   </div>
                   <div className="px-2 pt-2 pb-3">
@@ -147,7 +149,7 @@ export default function Hero({
                         href={item.href}
                         className={`-m-3 p-3 flex flex-row items-center rounded-lg hover:bg-gold-300 text-gold-600 hover:text-white`}
                       >
-                        <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-md bg-gradient-to-r from-gold-400 to-gold-500 text-white">
+                        <div className="shrink-0 flex items-center justify-center h-10 w-10 rounded-md bg-linear-to-r/srgb from-gold-400 to-gold-500 text-white">
                           {
                             navigationSvg[
                               item.href as keyof typeof navigationSvg
@@ -161,7 +163,7 @@ export default function Hero({
                     ))}
                   </div>
                 </div>
-              </Popover.Panel>
+              </PopoverPanel>
             </Transition>
             <main className=" relative mt-16 mx-auto max-w-7xl px-4 sm:mt-24">
               <div className="text-center">
@@ -206,7 +208,7 @@ export default function Hero({
                           source: 'hero',
                         })
                       }
-                      className="flex items-center text-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gold-500 hover:bg-gold-1000 sm:px-8"
+                      className="flex items-center text-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-xs text-white bg-gold-500 hover:bg-gold-1000 sm:px-8"
                     >
                       Prendre rendez-vous par téléphone
                     </a>

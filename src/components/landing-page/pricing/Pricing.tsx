@@ -99,7 +99,7 @@ function Prix({
             <button
               type="button"
               className={classNames(
-                'relative w-1/2 rounded-md py-2 text-sm font-medium whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-gold-500 focus:z-10 sm:w-auto sm:px-8 shadow-sm border',
+                'relative w-1/2 rounded-md py-2 text-sm font-medium whitespace-nowrap focus:outline-hidden focus:ring-2 focus:ring-gold-500 focus:z-10 sm:w-auto sm:px-8 shadow-xs border',
                 option === 'cabinet'
                   ? 'bg-white border-gold-300 text-gray-900'
                   : 'border-transparent text-gray-700'
@@ -111,7 +111,7 @@ function Prix({
             <button
               type="button"
               className={classNames(
-                'relative w-1/2 rounded-md py-2 text-sm font-medium whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-gold-500 focus:z-10 sm:w-auto sm:px-8 shadow-sm border',
+                'relative w-1/2 rounded-md py-2 text-sm font-medium whitespace-nowrap focus:outline-hidden focus:ring-2 focus:ring-gold-500 focus:z-10 sm:w-auto sm:px-8 shadow-xs border',
                 option === 'domicile'
                   ? 'bg-white border border-gold-300 text-gray-900'
                   : ' border-transparent text-gray-700'
@@ -124,6 +124,7 @@ function Prix({
         </div>
         <div className="relative h-24">
           <Transition
+            as="div"
             show={option === 'domicile'}
             enter="transition-all duration-200 ease-in-out"
             enterFrom="opacity-0 transform -translate-y-1"
@@ -191,7 +192,7 @@ function Card({
 }: CardProps) {
   return (
     <div className="flex flex-col rounded-lg shadow-lg overflow-hidden">
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <img
           src={image.src}
           srcSet={image.srcSet}

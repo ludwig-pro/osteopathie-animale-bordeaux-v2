@@ -64,7 +64,7 @@ const reasons = [
 
 export default function QuandConsulter({ id }: QuandConsulterProps) {
   return (
-    <div id={id} className="bg-gradient-to-l from-canard to-canard-light">
+    <div id={id} className="bg-linear-to-l/srgb from-canard to-canard-light">
       <div className="max-w-4xl mx-auto px-4 py-16 sm:px-6 sm:pt-20 sm:pb-24 lg:max-w-7xl lg:pt-24 lg:px-8">
         <h2 className="text-3xl font-extrabold text-white tracking-tight">
           Quand consulter un ostéopathe ?
@@ -83,7 +83,7 @@ export default function QuandConsulter({ id }: QuandConsulterProps) {
       <div className="mx-auto max-w-md px-4 sm:max-w-3xl sm:px-6 lg:max-w-7xl lg:px-8 pb-16 sm:pb-24">
         <div className="rounded-md bg-gold-100 p-4">
           <div className="flex">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               {
                 <svg
                   className="h-5 w-5 text-yellow-400"
@@ -125,7 +125,7 @@ function Reason({ title, description, icon }: ReasonProps) {
   return (
     <div>
       <div>
-        <span className="flex items-center justify-center h-12 w-12 rounded-md bg-white bg-opacity-10">
+        <span className="flex items-center justify-center h-12 w-12 rounded-md bg-white/10">
           {icon()}
         </span>
       </div>

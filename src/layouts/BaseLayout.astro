@@ -1,4 +1,6 @@
 ---
+import '../styles/global.css';
+
 export interface Props {
   title: string;
   description?: string;
@@ -32,15 +34,13 @@ const {
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#c0823f" />
     <link rel="icon" type="image/png" href="/icon.png" />
-    {
-      schema && (
-        <script
-          is:inline
-          type="application/ld+json"
-          set:html={JSON.stringify(schema)}
-        />
-      )
-    }
+    {schema && (
+      <script
+        is:inline
+        type="application/ld+json"
+        set:html={JSON.stringify(schema)}
+      />
+    )}
 
     <script is:inline>
       // Available before any asynchronously loaded container or UI module.
@@ -52,7 +52,6 @@ const {
       };
       window.dataLayer = window.dataLayer || [];
     </script>
-
     <script is:inline>
       (function (w, d) {
         var RECOVERY_KEY_PREFIX = 'module-script-recovery:';
@@ -206,7 +205,6 @@ const {
         });
       })(window, document);
     </script>
-
     <script>
       import '../lib/consent';
     </script>

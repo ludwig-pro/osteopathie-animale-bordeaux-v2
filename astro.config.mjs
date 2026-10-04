@@ -1,6 +1,6 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
-import tailwind from '@astrojs/tailwind';
+import tailwindcss from '@tailwindcss/vite';
 import sentry from '@sentry/astro';
 
 const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN;
@@ -19,8 +19,12 @@ const sentryIntegration = sentry({
 });
 
 export default defineConfig({
-  integrations: [react(), tailwind(), sentryIntegration],
+  integrations: [react(), sentryIntegration],
+  vite: {
+    plugins: [tailwindcss()],
+  },
   output: 'static',
+  compressHTML: true,
   image: {
     responsiveStyles: true,
   },

@@ -1,7 +1,7 @@
 export default function Phone() {
   return (
     <svg
-      className="flex-shrink-0 h-6 w-6 text-gray-400"
+      className="shrink-0 h-6 w-6 text-gray-400"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"

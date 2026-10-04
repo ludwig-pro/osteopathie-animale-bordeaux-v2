@@ -46,7 +46,21 @@ function getScriptTagSnapshot() {
 Sentry.init({
   dsn: import.meta.env.PUBLIC_SENTRY_DSN,
   enabled: Boolean(import.meta.env.PUBLIC_SENTRY_DSN),
-  sendDefaultPii: false,
+  // Preserve the restricted collection used by sendDefaultPii: false in v10.
+  dataCollection: {
+    userInfo: false,
+    cookies: false,
+    httpHeaders: {
+      request: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] },
+      response: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] },
+    },
+    httpBodies: [],
+    urlQueryParams: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] },
+    genAI: { inputs: false, outputs: false },
+    databaseQueryData: false,
+    queues: false,
+    graphQL: { document: false, variables: false },
+  },
   tracesSampleRate: 1,
   beforeSend(event) {
     const message = event.message ?? event.exception?.values?.[0]?.value;
