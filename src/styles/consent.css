@@ -1,0 +1,19 @@
+#cc-main {
+  --cc-font-family: inherit;
+  --cc-primary-color: #143545;
+  --cc-bg: #fff;
+  --cc-btn-primary-bg: #143545;
+  --cc-btn-primary-color: #fff;
+  --cc-btn-primary-border-color: #143545;
+  --cc-btn-primary-hover-bg: #214f62;
+  --cc-btn-primary-hover-border-color: #214f62;
+  --cc-btn-secondary-bg: #143545;
+  --cc-btn-secondary-color: #fff;
+  --cc-btn-secondary-border-color: #143545;
+  --cc-btn-secondary-hover-bg: #214f62;
+  --cc-btn-secondary-hover-color: #fff;
+  --cc-btn-secondary-hover-border-color: #214f62;
+  --cc-toggle-on-bg: #143545;
+  --cc-cookie-category-block-bg: #f8f5ef;
+  --cc-cookie-category-block-hover-bg: #f0eadf;
+}

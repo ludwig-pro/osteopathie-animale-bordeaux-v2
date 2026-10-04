@@ -14,20 +14,6 @@ const {
   canonicalUrl = siteUrl,
   schema,
 } = Astro.props;
-const gtmId = import.meta.env.PUBLIC_GTM_ID;
-const isGtmEnabled = Boolean(gtmId);
-const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
-const posthogHost =
-  import.meta.env.PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com';
-const isPostHogEnabled = Boolean(posthogKey);
-const gtmDelayMs = Number.parseInt(
-  import.meta.env.PUBLIC_ANALYTICS_GTM_DELAY_MS ?? '3000',
-  10
-);
-const posthogDelayMs = Number.parseInt(
-  import.meta.env.PUBLIC_ANALYTICS_POSTHOG_DELAY_MS ?? '5000',
-  10
-);
 ---
 
 <!doctype html>
@@ -56,8 +42,16 @@ const posthogDelayMs = Number.parseInt(
       )
     }
 
-    <!-- Preconnect to third-party domains for faster loading -->
-    <link rel="preconnect" href="https://www.google.com" />
+    <script is:inline>
+      // Available before any asynchronously loaded container or UI module.
+      window.__cookieConsentManaged = true;
+      window.siteConsent = {
+        googleAnalytics: false,
+        googleAds: false,
+        posthog: false,
+      };
+      window.dataLayer = window.dataLayer || [];
+    </script>
 
     <script is:inline>
       (function (w, d) {
@@ -213,224 +207,11 @@ const posthogDelayMs = Number.parseInt(
       })(window, document);
     </script>
 
-    <script
-      is:inline
-      define:vars={{
-        isGtmEnabled,
-        gtmId,
-        gtmDelayMs,
-        isPostHogEnabled,
-        posthogKey,
-        posthogHost,
-        posthogDelayMs,
-      }}
-    >
-      (function (w, d) {
-        var GTM_LOAD_DELAY_MS = Math.max(0, Number(gtmDelayMs) || 0);
-        var POSTHOG_LOAD_DELAY_MS = Math.max(0, Number(posthogDelayMs) || 0);
-        var INTERACTION_EVENTS = ['pointerdown', 'keydown', 'touchstart'];
-
-        w.dataLayer = w.dataLayer || [];
-
-        var injectPreconnect = function (url) {
-          if (!url) {
-            return;
-          }
-
-          var link = d.createElement('link');
-          link.rel = 'preconnect';
-          link.href = url;
-          d.head.appendChild(link);
-        };
-
-        var runWhenIdle = function (callback) {
-          if ('requestIdleCallback' in w) {
-            w.requestIdleCallback(
-              function () {
-                callback();
-              },
-              { timeout: 2000 }
-            );
-            return;
-          }
-
-          w.setTimeout(callback, 0);
-        };
-
-        var loadGtm = function () {
-          if (!isGtmEnabled || w.__gtm_loaded__) {
-            return;
-          }
-
-          w.__gtm_loaded__ = true;
-          injectPreconnect('https://www.googletagmanager.com');
-          w.dataLayer.push({
-            'gtm.start': new Date().getTime(),
-            event: 'gtm.js',
-          });
-
-          var gtmScript = d.createElement('script');
-          gtmScript.async = true;
-          gtmScript.src = 'https://www.googletagmanager.com/gtm.js?id=' + gtmId;
-          d.head.appendChild(gtmScript);
-        };
-
-        var loadPosthog = function () {
-          if (!isPostHogEnabled || w.__posthog_initialized__) {
-            return;
-          }
-
-          var o;
-          var n;
-          var p;
-          var r;
-          var posthogAssetHost = posthogHost.replace(
-            '.i.posthog.com',
-            '-assets.i.posthog.com'
-          );
-
-          w.__posthog_initialized__ = true;
-          w.posthog = w.posthog || [];
-          w.posthog.__SV = 1;
-
-          injectPreconnect(posthogHost);
-          injectPreconnect(posthogAssetHost);
-
-          o = d.createElement('script');
-          o.type = 'text/javascript';
-          o.async = true;
-          o.src = posthogAssetHost + '/static/array.js';
-          n = d.getElementsByTagName('script')[0];
-          n.parentNode.insertBefore(o, n);
-
-          p = function (target, methodName) {
-            var parts = methodName.split('.');
-            if (parts.length === 2) {
-              target[parts[0]] = target[parts[0]] || [];
-              target = target[parts[0]];
-              methodName = parts[1];
-            }
-
-            target[methodName] = function () {
-              target.push(
-                [methodName].concat(Array.prototype.slice.call(arguments, 0))
-              );
-            };
-          };
-
-          r = w.posthog;
-          r.people = r.people || [];
-          [
-            'init',
-            'capture',
-            'identify',
-            'alias',
-            'people.set',
-            'set_config',
-          ].forEach(function (methodName) {
-            p(r, methodName);
-          });
-
-          var ignored = { 'gtm.js': true, 'gtm.dom': true, 'gtm.load': true };
-          var mirrorDataLayerItem = function (item) {
-            if (!item || typeof item !== 'object') {
-              return;
-            }
-
-            var eventName = item.event;
-            if (typeof eventName !== 'string' || ignored[eventName]) {
-              return;
-            }
-
-            var props = {};
-            for (var key in item) {
-              if (
-                Object.prototype.hasOwnProperty.call(item, key) &&
-                key !== 'event'
-              ) {
-                props[key] = item[key];
-              }
-            }
-            w.posthog.capture(eventName, props);
-          };
-
-          w.dataLayer.forEach(mirrorDataLayerItem);
-          var originalPush = w.dataLayer.push.bind(w.dataLayer);
-          w.dataLayer.push = function () {
-            var items = Array.prototype.slice.call(arguments, 0);
-            items.forEach(mirrorDataLayerItem);
-            return originalPush.apply(w.dataLayer, items);
-          };
-
-          w.posthog.init(posthogKey, {
-            api_host: posthogHost,
-            defaults: '2026-01-30',
-            autocapture: true,
-            capture_pageview: true,
-            capture_pageleave: true,
-            disable_session_recording: true,
-            capture_dead_clicks: false,
-            rageclick: false,
-          });
-        };
-
-        var loadAnalyticsOnInteraction = function () {
-          loadGtm();
-          loadPosthog();
-        };
-
-        INTERACTION_EVENTS.forEach(function (eventName) {
-          w.addEventListener(eventName, loadAnalyticsOnInteraction, {
-            once: true,
-            passive: true,
-          });
-        });
-
-        var scheduleDeferredAnalytics = function () {
-          w.setTimeout(function () {
-            runWhenIdle(loadGtm);
-          }, GTM_LOAD_DELAY_MS);
-
-          w.setTimeout(function () {
-            runWhenIdle(loadPosthog);
-          }, POSTHOG_LOAD_DELAY_MS);
-        };
-
-        var flushBeforeHidden = function () {
-          if (d.visibilityState !== 'hidden') {
-            return;
-          }
-
-          loadGtm();
-          loadPosthog();
-        };
-        d.addEventListener('visibilitychange', flushBeforeHidden);
-        w.addEventListener('pagehide', function () {
-          loadGtm();
-          loadPosthog();
-        });
-
-        if (d.readyState === 'complete') {
-          scheduleDeferredAnalytics();
-        } else {
-          w.addEventListener('load', scheduleDeferredAnalytics, { once: true });
-        }
-      })(window, document);
+    <script>
+      import '../lib/consent';
     </script>
   </head>
   <body>
-    {
-      isGtmEnabled && (
-        <noscript>
-          <iframe
-            src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
-            height="0"
-            width="0"
-            style="display:none;visibility:hidden"
-          />
-        </noscript>
-      )
-    }
     <slot />
   </body>
 </html>

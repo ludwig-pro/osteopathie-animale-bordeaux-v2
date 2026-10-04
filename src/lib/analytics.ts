@@ -15,9 +15,6 @@ export const pushDataLayerEvent = (
     return;
   }
 
-  window.dataLayer = window.dataLayer ?? [];
-  window.dataLayer.push({
-    event,
-    ...payload,
-  });
+  // Never queue actions taken before consent for later transmission.
+  window.trackSiteEvent?.(event, payload);
 };
