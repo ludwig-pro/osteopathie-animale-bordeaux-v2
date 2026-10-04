@@ -152,7 +152,7 @@ const MapBox = ({ lng, lat, label }: MapBoxProps) => {
               href={CABINET_DIRECTIONS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-flex justify-center rounded-md border border-transparent bg-gold-500 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-gold-600 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2"
+              className="mt-4 inline-flex justify-center rounded-md border border-transparent bg-gold-500 px-4 py-2 text-base font-medium text-white shadow-xs hover:bg-gold-600 focus:outline-hidden focus:ring-2 focus:ring-gold-500 focus:ring-offset-2"
             >
               Ouvrir l'itinéraire
             </a>

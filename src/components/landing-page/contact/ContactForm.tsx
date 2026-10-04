@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type SubmitEvent } from 'react';
 import { pushDataLayerEvent } from '../../../lib/analytics';
 import FormField from './FormField';
 
@@ -27,7 +27,7 @@ export default function ContactForm() {
     setHydrationReady(true);
   }, []);
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
     const formData = new FormData(form);
@@ -232,7 +232,7 @@ export default function ContactForm() {
           {success && (
             <div className="rounded-md bg-green-50 p-4">
               <div className="flex">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <svg
                     className="h-5 w-5 text-green-400"
                     xmlns="http://www.w3.org/2000/svg"
@@ -260,7 +260,7 @@ export default function ContactForm() {
           {submitError && (
             <div className="rounded-md bg-red-50 p-4">
               <div className="flex">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <svg
                     className="h-5 w-5 text-red-400"
                     xmlns="http://www.w3.org/2000/svg"
@@ -287,7 +287,7 @@ export default function ContactForm() {
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-gold-500 hover:bg-gold-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex justify-center py-3 px-6 border border-transparent shadow-xs text-base font-medium rounded-md text-white bg-gold-500 hover:bg-gold-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Envoi en cours...' : 'Envoyer'}
           </button>

@@ -1,9 +1,5 @@
 export type AnalyticsPayloadValue =
-  | string
-  | number
-  | boolean
-  | null
-  | undefined;
+  string | number | boolean | null | undefined;
 
 export type AnalyticsPayload = Record<string, AnalyticsPayloadValue>;
 

@@ -56,7 +56,7 @@ export default function OsteopathieAnimale({
                 loading="lazy"
                 decoding="async"
                 data-testid="responsive-content-image"
-                className="w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 lg:absolute lg:left-0 lg:h-full lg:w-auto lg:max-w-none object-cover"
+                className="w-full rounded-xl shadow-xl ring-1 ring-black/5 lg:absolute lg:left-0 lg:h-full lg:w-auto lg:max-w-none object-cover"
               />
             </div>
           </div>

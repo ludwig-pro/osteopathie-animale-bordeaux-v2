@@ -7,9 +7,10 @@ formulaire de contact et carte du cabinet.
 **[Voir le site](https://www.osteopathie-animale-bordeaux.fr)** ·
 **[Prendre rendez-vous](https://calendly.com/osteopathe-animalier/consultation-osteopathique)**
 
-Le site utilise **Astro 6, React 18, TypeScript et Tailwind CSS 3**. Astro génère
+Le site utilise **Astro 7, React 19, TypeScript 6 et Tailwind CSS 4**. Astro génère
 un site statique dans `dist/`, hébergé sur Netlify, avec des composants React
-pour les interactions.
+pour les interactions. Les styles Tailwind 4 ciblent Safari 16.4+, Chrome 111+
+et Firefox 128+.
 
 ## Liens et fournisseurs
 
@@ -36,7 +37,7 @@ dépôt. Leurs accès restent à renseigner une fois les comptes identifiés.
 
 ## Développement local
 
-Prérequis : **Node.js ≥ 22.13.0** et **Yarn 1.22.22**.
+Prérequis : **Node.js 24.21.0 (LTS, voir `.nvmrc`)** et **Yarn 1.22.22**.
 
 ```bash
 yarn install --frozen-lockfile
@@ -193,7 +194,7 @@ Sentry est configuré dans `sentry.client.config.ts` pour le navigateur.
 ## Déploiement
 
 `netlify.toml` définit le build `yarn build`, le dossier publié `dist/`,
-Node.js 22.13.0, les en-têtes de cache et la page 404. Le projet est en mode
+Node.js 24.21.0, les en-têtes de cache et la page 404. Le projet est en mode
 statique, sans adaptateur Netlify dans la configuration Astro actuelle.
 
 Chaque Deploy Preview liée à une PR est accessible depuis le commentaire du
@@ -207,6 +208,6 @@ La réception réelle des messages se vérifie sur Netlify.
 | -------------- | ----------------------------------------------------------------------------- |
 | Astro          | [Documentation](https://docs.astro.build/)                                    |
 | React          | [Documentation](https://react.dev/)                                           |
-| Tailwind CSS 3 | [Documentation v3](https://v3.tailwindcss.com/)                               |
+| Tailwind CSS 4 | [Documentation](https://tailwindcss.com/docs/)                                |
 | Netlify Forms  | [Configuration des formulaires](https://docs.netlify.com/manage/forms/setup/) |
 | Playwright     | [Tests navigateur](https://playwright.dev/docs/intro)                         |

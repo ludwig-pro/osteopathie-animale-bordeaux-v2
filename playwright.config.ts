@@ -17,7 +17,9 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'yarn build && yarn preview --host 127.0.0.1 --port 4321',
+    // Keep the server in the foreground when Astro detects an agent.
+    command:
+      'yarn build && yarn preview --ignore-lock --host 127.0.0.1 --port 4321',
     env: {
       PUBLIC_GTM_ID: 'GTM-TESTCONSENT',
       PUBLIC_POSTHOG_KEY: 'phc_test_consent',

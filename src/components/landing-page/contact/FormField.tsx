@@ -22,7 +22,7 @@ export default function FormField({
   ariaDescribedBy,
 }: FormFieldProps) {
   const baseClassName =
-    'block w-full shadow-sm py-3 px-4 placeholder-gray-500 focus:ring-gold-500 focus:border-gold-500 border-gray-300 rounded-md';
+    'block w-full shadow-xs py-3 px-4 placeholder-gray-500 focus:ring-gold-500 focus:border-gold-500 border-gray-300 rounded-md';
   const errorId = error ? `${name}-error` : undefined;
   const describedBy =
     [errorId, ariaDescribedBy].filter(Boolean).join(' ') || undefined;

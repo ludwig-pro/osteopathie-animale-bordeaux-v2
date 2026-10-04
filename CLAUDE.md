@@ -100,10 +100,10 @@ Uses flat config format (`eslint.config.js`):
 
 ### Styling
 
-**Tailwind CSS** with custom theme extensions:
+**Tailwind CSS 4** via `@tailwindcss/vite`, with the theme in `src/styles/global.css`:
 - Custom color palette: `gold-*` (50-1000), `canard`, `canard-light`
 - Forms plugin enabled (`@tailwindcss/forms`)
-- Background images configured in `tailwind.config.js`
+- Theme tokens use `@theme`; the forms plugin uses `@plugin`
 
 ## Third-Party Integrations
 

@@ -57,7 +57,9 @@ function isMapboxProvider(hostname: string): boolean {
 
 test('loads Mapbox JavaScript and CSS only after an explicit request', async ({
   page,
+  baseURL,
 }) => {
+  const siteOrigin = new URL('/', baseURL).origin;
   const mapboxJavaScriptPath = await findSingleAsset(
     '.js',
     MAPBOX_STYLE_MARKER
@@ -82,7 +84,7 @@ test('loads Mapbox JavaScript and CSS only after an explicit request', async ({
   page.on('request', (request) => {
     const requestUrl = new URL(request.url());
 
-    if (requestUrl.origin === 'http://127.0.0.1:4321') {
+    if (requestUrl.origin === siteOrigin) {
       sameOriginRequestPaths.add(requestUrl.pathname);
     }
 
