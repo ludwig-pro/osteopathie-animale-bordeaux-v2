@@ -80,6 +80,9 @@ async function prepareConsentPage(
                 }
                 if (window.siteConsent.googleAds) {
                   document.cookie = '_gcl_au=consent-test; Path=/';
+                  if (!window.localStorage.getItem('_gcl_ls')) {
+                    window.localStorage.setItem('_gcl_ls', 'consent-test');
+                  }
                 }
               `
             : '',
@@ -211,6 +214,7 @@ test.describe('Analytics consent', () => {
         'ph_phc_test_consent_posthog',
         'legacy-tracking'
       );
+      window.localStorage.setItem('_gcl_ls', 'legacy-attribution');
       window.localStorage.setItem('unrelated-preference', 'preserve-me');
     });
 
@@ -226,6 +230,9 @@ test.describe('Analytics consent', () => {
       await page.evaluate(() =>
         window.localStorage.getItem('ph_phc_test_consent_posthog')
       )
+    ).toBeNull();
+    expect(
+      await page.evaluate(() => window.localStorage.getItem('_gcl_ls'))
     ).toBeNull();
     expect(
       await page.evaluate(() =>
@@ -378,7 +385,7 @@ test.describe('Analytics consent', () => {
     expect(requests.filter(isPostHogRequest)).toHaveLength(0);
   });
 
-  test('allows Google Ads without granting audience measurement', async ({
+  test('allows Google Ads independently and clears attribution on withdrawal', async ({
     page,
     baseURL,
   }) => {
@@ -404,6 +411,42 @@ test.describe('Analytics consent', () => {
       consent_google_ads: 'granted',
       consent_posthog: 'denied',
     });
+    await expect
+      .poll(() => page.evaluate(() => window.localStorage.getItem('_gcl_ls')))
+      .toBe('consent-test');
+
+    await page.evaluate(() => {
+      window.localStorage.setItem('_gcl_ls', 'attribution-preserved');
+      window.localStorage.setItem('unrelated-preference', 'preserve-me');
+    });
+    await page.reload();
+    await expect
+      .poll(() => readConsent(page))
+      .toEqual({
+        ...deniedConsent,
+        googleAds: true,
+      });
+    expect(
+      await page.evaluate(() => window.localStorage.getItem('_gcl_ls'))
+    ).toBe('attribution-preserved');
+
+    await reopenPreferences(page);
+    await Promise.all([
+      page.waitForEvent('load'),
+      preferences(page).getByRole('button', { name: 'Tout refuser' }).click(),
+    ]);
+    await expect.poll(() => readConsent(page)).toEqual(deniedConsent);
+    expect(
+      (await page.context().cookies()).map(({ name }) => name)
+    ).not.toContain('_gcl_au');
+    expect(
+      await page.evaluate(() => window.localStorage.getItem('_gcl_ls'))
+    ).toBeNull();
+    expect(
+      await page.evaluate(() =>
+        window.localStorage.getItem('unrelated-preference')
+      )
+    ).toBe('preserve-me');
   });
 
   test('keeps every consent action usable on a narrow screen', async ({

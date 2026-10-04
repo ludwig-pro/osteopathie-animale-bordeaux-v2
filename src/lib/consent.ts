@@ -23,7 +23,14 @@ const stopPosthog = () => {
 const clearDeniedCookies = (consent: NonNullable<Window['siteConsent']>) => {
   const patterns: RegExp[] = [];
   if (!consent.googleAnalytics) patterns.push(/^_ga/);
-  if (!consent.googleAds) patterns.push(/^_gcl_/);
+  if (!consent.googleAds) {
+    patterns.push(/^_gcl_/);
+    try {
+      window.localStorage.removeItem('_gcl_ls');
+    } catch {
+      // Consent must keep working when browser storage is unavailable.
+    }
+  }
   if (!consent.posthog) {
     patterns.push(/^ph_/);
     if (posthogKey) {

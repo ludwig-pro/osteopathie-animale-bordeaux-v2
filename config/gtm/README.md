@@ -79,10 +79,22 @@ Ads is accepted.
 The migration is saved in the unpublished workspace
 [CookieConsent - consentement par service](https://tagmanager.google.com/#/container/accounts/6004973871/containers/52411835/workspaces/9)
 of `GTM-KCM49LQ`, based on published version 7. The existing Default Workspace
-was preserved. GTM's preview compiler accepted the configuration. The Tag
-Assistant connection to localhost could not be established in the Codex browser;
-live tag execution and production delivery remain to be verified. Publish the
-container and deploy the site together after that check.
+was preserved. GTM's preview compiler accepted the configuration. The PR 22
+Netlify preview was tested with the compiled workspace loaded through its GTM
+preview environment. The compiled script's managed marker and ready event were
+checked before testing. Analytics-only and Ads-only choices produced the
+expected four consent states, cookies, and provider requests; the three Ads
+conversion events generated their corresponding requests. Adding Analytics
+after Ads updated consent without reloading; withdrawing either service
+reloaded the page and retained the other choice. PostHog-only and refusal
+loaded no Google tags; PostHog withdrawal removed its cookies and storage.
+
+Tag Assistant's popup connection could not be established in the available
+browsers. These are runtime checks of the compiled workspace through the
+preview environment, rather than a connected Tag Assistant session. Provider
+collection endpoints were blocked during the checks to avoid test conversions,
+so dashboard receipt is not established. Publish the container and deploy the
+site together, then verify the production delivery.
 
 Before publishing a container version, verify a fresh browser context, refusal,
 Analytics only, Ads only, PostHog only, granting Analytics after Ads on the same
