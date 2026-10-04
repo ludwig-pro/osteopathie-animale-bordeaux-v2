@@ -6,6 +6,7 @@ type PrixProps = {
   id?: string;
   chienetchatImg: ResponsiveImageData;
   furetImg: ResponsiveImageData;
+  chevalImg: ResponsiveImageData;
   forfaitImg: ResponsiveImageData;
 };
 
@@ -49,6 +50,14 @@ const prestations = [
     domicilePrice: '50',
   },
   {
+    id: 'cheval',
+    title: 'Cheval',
+    alt: 'Cheval représentant les consultations en ostéopathie équine',
+    imageKey: 'cheval' as const,
+    basePrice: '90',
+    domicilePrice: '90',
+  },
+  {
     id: 'forfait',
     title: 'Forfait',
     alt: 'Illustration du forfait mensuel pour les éleveurs',
@@ -62,12 +71,19 @@ function classNames(...classes: (string | boolean | undefined | null)[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-function Prix({ id, chienetchatImg, furetImg, forfaitImg }: PrixProps) {
+function Prix({
+  id,
+  chienetchatImg,
+  furetImg,
+  chevalImg,
+  forfaitImg,
+}: PrixProps) {
   const [option, setOption] = useState('cabinet');
 
   const images = {
     chienetchat: chienetchatImg,
     furet: furetImg,
+    cheval: chevalImg,
     forfait: forfaitImg,
   };
 
@@ -129,7 +145,7 @@ function Prix({ id, chienetchatImg, furetImg, forfaitImg }: PrixProps) {
         </div>
         <div
           className={classNames(
-            'mt-12 space-y-4 sm:mt-16 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-6 lg:max-w-4xl lg:mx-auto xl:max-w-none xl:mx-0 xl:grid-cols-3'
+            'mt-12 space-y-4 sm:mt-16 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-6 lg:max-w-4xl lg:mx-auto xl:max-w-none xl:mx-0 xl:grid-cols-4'
           )}
         >
           {prestations.map(
