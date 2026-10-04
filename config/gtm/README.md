@@ -76,10 +76,12 @@ Ads is accepted.
 
 ## Verification
 
-The migration is saved in the unpublished workspace
+The migration was prepared in the isolated workspace
 [CookieConsent - consentement par service](https://tagmanager.google.com/#/container/accounts/6004973871/containers/52411835/workspaces/9)
-of `GTM-KCM49LQ`, based on published version 7. The existing Default Workspace
-was preserved. GTM's preview compiler accepted the configuration. The PR 22
+of `GTM-KCM49LQ`, based on published version 7, then published as
+[version 8](https://tagmanager.google.com/#/versions/accounts/6004973871/containers/52411835/versions/8)
+on 4 October 2026. The existing Default Workspace was preserved. GTM's preview
+compiler accepted the configuration. The PR 22
 Netlify preview was tested with the compiled workspace loaded through its GTM
 preview environment. The compiled script's managed marker and ready event were
 checked before testing. Analytics-only and Ads-only choices produced the
@@ -93,8 +95,8 @@ Tag Assistant's popup connection could not be established in the available
 browsers. These are runtime checks of the compiled workspace through the
 preview environment, rather than a connected Tag Assistant session. Provider
 collection endpoints were blocked during the checks to avoid test conversions,
-so dashboard receipt is not established. Publish the container and deploy the
-site together, then verify the production delivery.
+so dashboard receipt is not established. Deploy the compatible container before
+the site, then verify the production delivery after each coordinated release.
 
 Before publishing a container version, verify a fresh browser context, refusal,
 Analytics only, Ads only, PostHog only, granting Analytics after Ads on the same
