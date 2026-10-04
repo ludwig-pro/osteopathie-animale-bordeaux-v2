@@ -40,3 +40,7 @@ Les textes métier et les montants ne sont pas réécrits dans cette refonte. Le
 Lancer `yarn check:static`, `yarn test:unit` et `yarn test:e2e`. Les tests couvrent aussi les accès directs aux nouvelles pages, les canoniques, la conservation des textes, les liens entre pages, le menu mobile, le clavier, les images responsive et la navigation sans JavaScript.
 
 La prise de rendez-vous conserve le lien Calendly existant. Le formulaire conserve Netlify Forms et ses validations ; la soumission locale est testée avec des réponses simulées, sans envoyer de message réel. La carte Mapbox reste chargée à la demande et propose un repli si son jeton manque.
+
+### Lisibilité
+
+Échelle partagée en rem : texte courant 18 px, interfaces 16 px, indications secondaires 14 px et légendes 13 px (base navigateur 16 px). Les textes mobiles conservent cette échelle. Le menu compact prend le relais sous 1200 px pour laisser respirer la navigation.

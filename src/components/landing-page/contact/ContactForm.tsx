@@ -225,7 +225,7 @@ export default function ContactForm() {
           />
 
           {/* RGPD compliance text */}
-          <p className="contact-form-full text-[10px] leading-relaxed text-muted-foreground">
+          <p className="contact-form-full text-sm leading-relaxed text-muted-foreground">
             En soumettant ce formulaire, vous acceptez que vos données soient
             traitées pour vous contacter.
           </p>
