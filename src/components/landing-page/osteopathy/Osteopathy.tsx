@@ -14,7 +14,7 @@ export default function Osteopathy({
   return (
     <section id={id} className="osteopathy-section section-space">
       <div className="site-container split-section">
-        <div>
+        <div className="editorial-figure" data-reveal="image">
           <img
             {...bulldogImg}
             alt="Bulldog anglais recevant un soin ostéopathique"

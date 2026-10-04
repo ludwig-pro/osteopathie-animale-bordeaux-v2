@@ -65,9 +65,12 @@ export default function WhenToConsult({
         title="Quand consulter un ostéopathe ?"
       />
       <div className="reasons-grid">
-        {reasons.map(({ title, description, icon }) => (
-          <div className="reason-item" key={title}>
-            {icon()}
+        {reasons.map(({ title, description, icon }, index) => (
+          <div className="reason-item" key={title} data-reveal="text">
+            <div className="reason-topline">
+              <span aria-hidden="true">0{index + 1}</span>
+              {icon()}
+            </div>
             <h3>{title}</h3>
             <p>{description}</p>
           </div>

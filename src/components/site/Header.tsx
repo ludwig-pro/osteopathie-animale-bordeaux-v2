@@ -55,6 +55,7 @@ export default function Header({
         </a>
       </div>
       <header className="site-header">
+        <div className="reading-progress" aria-hidden="true" />
         <div className="site-container header-inner">
           <a href="/" className="brand" aria-label="Agathe Lescout — Accueil">
             <span className="brand-mark">
@@ -105,7 +106,7 @@ export default function Header({
               <Button
                 variant="ghost"
                 size="icon"
-                className="mobile-menu-trigger min-[961px]:hidden"
+                className="mobile-menu-trigger min-[1200px]:hidden"
                 aria-label="Ouvrir le menu"
               >
                 <ListIcon className="!size-6" />

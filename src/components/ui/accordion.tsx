@@ -47,10 +47,13 @@ export function AccordionContent({
   ...props
 }: ComponentProps<typeof AccordionPrimitive.Content>) {
   return (
-    <AccordionPrimitive.Content className="overflow-hidden" {...props}>
+    <AccordionPrimitive.Content
+      className="consultation-answer overflow-hidden"
+      {...props}
+    >
       <div
         className={cn(
-          'pb-6 text-sm leading-relaxed text-muted-foreground',
+          'pb-6 text-lg leading-relaxed text-muted-foreground',
           className
         )}
       >

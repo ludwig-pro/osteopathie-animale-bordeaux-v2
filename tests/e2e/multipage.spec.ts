@@ -145,3 +145,37 @@ test('all pages fit small screens and keep meaningful navigation without JavaScr
   }
   await context.close();
 });
+
+test('reduced motion keeps the editorial content readable and stops movement', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Tout refuser', exact: true }).click();
+  const photo = page.locator('.animal-card').first().locator('img');
+  await photo.scrollIntoViewIfNeeded();
+  await photo.hover();
+  await expect(photo).toBeVisible();
+  await expect(photo).toHaveCSS('transform', 'none');
+  await expect(page.locator('#animaux h2')).toBeVisible();
+  expect(
+    await page.evaluate(() =>
+      document
+        .getAnimations()
+        .some((animation) => animation.playState === 'running')
+    )
+  ).toBe(false);
+
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.locator('#osteopathie').scrollIntoViewIfNeeded();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(page.locator('#osteopathie .section-heading')).toHaveCSS(
+    'opacity',
+    '1'
+  );
+  await expect(page.locator('#osteopathie .editorial-figure')).toHaveCSS(
+    'transform',
+    'none'
+  );
+  await expect(page.locator('#osteopathie h2')).toBeVisible();
+});

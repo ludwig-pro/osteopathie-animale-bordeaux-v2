@@ -4,6 +4,9 @@ export default function Footer() {
   return (
     <footer className="site-footer">
       <div className="site-container">
+        <p className="footer-signature" aria-hidden="true" data-reveal="text">
+          Agathe <em>Lescout.</em>
+        </p>
         <div className="footer-top">
           <a href="/" className="brand" aria-label="Agathe Lescout — Accueil">
             <span className="brand-mark">

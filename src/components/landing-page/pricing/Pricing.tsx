@@ -68,7 +68,10 @@ export default function Pricing({
                   domicilePrice,
                   variants,
                 }) => (
-                  <Card key={id} className="price-card">
+                  <Card
+                    key={id}
+                    className="price-card rounded-none border-0 border-t bg-transparent"
+                  >
                     <img
                       {...images[imageKey]}
                       alt={alt}
@@ -76,36 +79,40 @@ export default function Pricing({
                       decoding="async"
                       data-testid="responsive-content-image"
                     />
-                    <CardContent>
-                      <h3>{title}</h3>
-                      {id === 'forfait' && (
-                        <div className="price-package">
-                          <p>Éleveurs à partir de 3 animaux</p>
-                          <p>Visite mensuelle</p>
-                          <p>Rééducation</p>
-                        </div>
-                      )}
-                      {variants ? (
-                        variants.map((variant) => (
-                          <p className="price-line" key={variant.description}>
-                            <span>{variant.description}</span>
+                    <CardContent className="p-0">
+                      <div className="price-label">
+                        <h3>{title}</h3>
+                        {id === 'forfait' && (
+                          <div className="price-package">
+                            <p>Éleveurs à partir de 3 animaux</p>
+                            <p>Visite mensuelle</p>
+                            <p>Rééducation</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="price-values">
+                        {variants ? (
+                          variants.map((variant) => (
+                            <p className="price-line" key={variant.description}>
+                              <span>{variant.description}</span>
+                              <strong>
+                                {option === 'cabinet'
+                                  ? variant.basePrice
+                                  : variant.domicilePrice}
+                                <small> €{option === 'domicile' && '*'}</small>
+                              </strong>
+                            </p>
+                          ))
+                        ) : (
+                          <p className="price-line">
+                            <span>La consultation</span>
                             <strong>
-                              {option === 'cabinet'
-                                ? variant.basePrice
-                                : variant.domicilePrice}
+                              {option === 'cabinet' ? basePrice : domicilePrice}
                               <small> €{option === 'domicile' && '*'}</small>
                             </strong>
                           </p>
-                        ))
-                      ) : (
-                        <p className="price-line">
-                          <span>La consultation</span>
-                          <strong>
-                            {option === 'cabinet' ? basePrice : domicilePrice}
-                            <small> €{option === 'domicile' && '*'}</small>
-                          </strong>
-                        </p>
-                      )}
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 )

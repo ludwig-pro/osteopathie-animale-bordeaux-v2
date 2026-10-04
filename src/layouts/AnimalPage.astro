@@ -52,40 +52,47 @@ const schema = {
   socialImage={animal.image.src}
 >
   <main id="root" class="animal-page">
-    <section class="animal-hero site-container">
-      <nav class="breadcrumbs" aria-label="Fil d’Ariane">
-        <a href="/">Accueil</a
-        ><CaretRightIcon size={12} aria-hidden="true" /><a href="/#animaux"
-          >Vos animaux</a
-        ><CaretRightIcon size={12} aria-hidden="true" /><span
-          aria-current="page"
-          >{animal.label}</span
-        >
-      </nav>
-      <div class="animal-hero-grid">
-        <div>
-          <p class="eyebrow">{animal.specialty} · Bordeaux & Gironde</p>
-          <h1>L’ostéopathie <em>pour {animal.subject}.</em></h1>
-          <p class="body-copy">{lead}</p>
-          <div class="hero-actions">
-            <BookingLink source={`animal-${animal.slug}`} client:visible />
-            <a href="/#contact" class="hero-phone"
-              ><PhoneIcon size={15} aria-hidden="true" />Prendre rendez-vous par
-              téléphone</a
-            >
+    <section class="animal-hero">
+      <div class="site-container">
+        <nav class="breadcrumbs" aria-label="Fil d’Ariane">
+          <a href="/">Accueil</a
+          ><CaretRightIcon size={12} aria-hidden="true" /><a href="/#animaux"
+            >Vos animaux</a
+          ><CaretRightIcon size={12} aria-hidden="true" /><span
+            aria-current="page"
+            >{animal.label}</span
+          >
+        </nav>
+        <div class="animal-hero-grid">
+          <div class="animal-hero-copy" data-reveal="intro">
+            <p class="eyebrow">{animal.specialty} · Bordeaux & Gironde</p>
+            <h1>L’ostéopathie <em>pour {animal.subject}.</em></h1>
+            <p class="body-copy">{lead}</p>
+            <div class="hero-actions">
+              <BookingLink
+                source={`animal-${animal.slug}`}
+                variant="accent"
+                client:visible
+              />
+              <a href="/#contact" class="hero-phone"
+                ><PhoneIcon size={15} aria-hidden="true" />Prendre rendez-vous
+                par téléphone</a
+              >
+            </div>
           </div>
+          <Image
+            src={animal.image}
+            alt={alt}
+            widths={[480, 960, 1440]}
+            sizes="(min-width: 1416px) 550px, (min-width: 1101px) calc(41.667vw - 40px), (min-width: 801px) calc(41.667vw - 26.667px), calc(100vw - 40px)"
+            width={960}
+            format="webp"
+            loading="eager"
+            fetchpriority="high"
+            class="animal-hero-photo"
+            data-reveal="image"
+          />
         </div>
-        <Image
-          src={animal.image}
-          alt={alt}
-          widths={[480, 960, 1440]}
-          sizes="(min-width: 1352px) 580px, (min-width: 641px) 45vw, calc(100vw - 40px)"
-          width={960}
-          format="webp"
-          loading="eager"
-          fetchpriority="high"
-          class="animal-hero-photo"
-        />
       </div>
     </section>
     <nav class="animal-subnav" aria-label="Choisir un animal">

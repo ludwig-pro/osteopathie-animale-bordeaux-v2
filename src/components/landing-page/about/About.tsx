@@ -19,6 +19,7 @@ export default function About({
           decoding="async"
           data-testid="responsive-content-image"
           className="about-photo"
+          data-reveal="image"
         />
         <div className="about-copy">
           <p className="eyebrow">Faisons connaissance</p>

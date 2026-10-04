@@ -18,15 +18,16 @@ import cow from '../../images/sectionVache.jpg';
     </p>
   </div>
   <div class="animal-grid">
-    {animalPages.map((animal) => <a
+    {animalPages.map((animal, index) => <a
       href={`/animaux/${animal.slug}/`}
       class="animal-card"
-      ><div class="animal-card-image">
+      data-animal={animal.slug}
+      ><div class="animal-card-image" data-reveal="image">
         <Image
           src={animal.image}
           alt={configuration[animal.slug].alt}
           widths={[320, 640, 960]}
-          sizes="(min-width: 1352px) 295px, (min-width: 961px) 23vw, (min-width: 641px) 44vw, calc(50vw - 27px)"
+          sizes="(min-width: 1416px) 642px, (min-width: 1101px) calc(50vw - 66px), (min-width: 701px) calc(50vw - 50px), calc(100vw - 40px)"
           width={640}
           format="webp"
           loading="lazy"
@@ -34,6 +35,7 @@ import cow from '../../images/sectionVache.jpg';
         />
       </div>
       <div class="animal-card-content">
+        <span class="animal-index" aria-hidden="true">0{index + 1}</span>
         <div>
           <h3>{animal.label}</h3>
           <p>

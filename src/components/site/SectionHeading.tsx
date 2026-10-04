@@ -13,7 +13,7 @@ export default function SectionHeading({
   className?: string;
 }) {
   return (
-    <div className={cn('section-heading', className)}>
+    <div className={cn('section-heading', className)} data-reveal="text">
       <p className="eyebrow">{eyebrow}</p>
       <h2>{title}</h2>
       {description && <p className="section-description">{description}</p>}

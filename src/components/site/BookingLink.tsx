@@ -10,14 +10,16 @@ export default function BookingLink({
   label = 'Prendre rendez-vous',
   testId,
   className,
+  variant = 'default',
 }: {
   source: string;
   label?: string;
   testId?: string;
   className?: string;
+  variant?: 'default' | 'accent';
 }) {
   return (
-    <Button asChild className={className}>
+    <Button asChild className={className} variant={variant}>
       <a
         href={BOOKING_URL}
         target="_blank"

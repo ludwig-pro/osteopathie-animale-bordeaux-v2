@@ -1,6 +1,8 @@
-# Système de design — Agathe Lescout
+# Système de design — Agathe Lescout, version éditoriale
 
-La refonte conserve les photographies et les textes du site. La direction finale est professionnelle et photographique, sans illustrations : vert forêt, sauge, crème, typographie Lora pour les titres et DM Sans pour l’interface. Les polices sont hébergées avec le site.
+Cette deuxième proposition conserve les photographies, les textes et la structure multi-page. Elle adopte une direction éditoriale : ouverture photographique pleine largeur sur fond forêt, grands titres Lora, accent vert lumineux, galeries décalées, tarifs en lignes et angles droits. DM Sans assure la lecture et les interfaces. Les polices sont hébergées avec le site.
+
+La première proposition reste dans la PR #26, branche `design/green-multipage-preview`. La variante éditoriale vit sur `design/editorial-motion-preview` et possède sa propre preview.
 
 ## Fondations
 
@@ -8,7 +10,7 @@ La refonte conserve les photographies et les textes du site. La direction finale
 
 `components.json` configure shadcn/ui pour React, Tailwind 4 et l’alias `@/`. Les primitives locales dans `src/components/ui` suivent la composition shadcn/ui : Radix pour le comportement accessible, `class-variance-authority` pour les variantes du bouton, `cn()` pour composer les classes.
 
-- `Button` : variantes `default`, `outline`, `secondary`, `ghost`, `link` ; tailles `sm`, `default`, `lg`, `icon` ; `asChild` pour les liens.
+- `Button` : variantes `default`, `accent`, `outline`, `secondary`, `ghost`, `link` ; tailles `sm`, `default`, `lg`, `icon` ; `asChild` pour les liens.
 - `Card` / `CardContent` : cartes de tarifs.
 - `Tabs` : changement du lieu de consultation, navigation au clavier.
 - `Accordion` : étapes de consultation, contrôles accessibles.
@@ -44,3 +46,11 @@ La prise de rendez-vous conserve le lien Calendly existant. Le formulaire conser
 ### Lisibilité
 
 Échelle partagée en rem : texte courant 18 px, interfaces 16 px, indications secondaires 14 px et légendes 13 px (base navigateur 16 px). Les textes mobiles conservent cette échelle. Le menu compact prend le relais sous 1200 px pour laisser respirer la navigation.
+
+## Mouvement
+
+`src/lib/motion.ts` apporte une amélioration progressive avec IntersectionObserver et Web Animations : entrée des titres, dévoilement des images et révélation des éléments au défilement. Chaque élément ne joue qu’une fois par chargement. Aucun contenu n’est masqué par défaut, et aucun défilement n’est intercepté.
+
+Les primitives partagées animent les flèches des boutons, les onglets, le menu mobile et les accordéons ; les photos de la galerie répondent au survol. Une fine ligne de progression utilise les scroll timelines CSS lorsqu’elles sont disponibles.
+
+La préférence `prefers-reduced-motion` désactive les effets, supprime le défilement doux et annule les animations Web Animations en cours si elle change pendant la visite. La durée et la courbe de transition sont centralisées ; aucune bibliothèque d’animation supplémentaire n’est nécessaire.
