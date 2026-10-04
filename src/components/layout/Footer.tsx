@@ -30,10 +30,7 @@ export default function Footer() {
             réservés.`}
             <span>
               <button
-                onClick={() => {
-                  window.openAxeptioCookie?.();
-                  window.openAxeptioCookies?.();
-                }}
+                data-cc="show-preferencesModal"
                 className="text-gray-400 hover:text-gray-400"
               >
                 {' '}

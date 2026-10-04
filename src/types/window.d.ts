@@ -1,27 +1,15 @@
-declare global {
-  type PostHogPayload = Record<string, unknown>;
+import type { AnalyticsPayload } from '../lib/analytics';
 
+declare global {
   interface Window {
     dataLayer?: Array<Record<string, unknown>>;
-    __posthog_initialized__?: boolean;
-    posthog?: {
-      __SV?: number;
-      init: (
-        apiKey: string,
-        options?: Record<string, unknown>,
-        name?: string
-      ) => void;
-      capture: (event: string, properties?: PostHogPayload) => void;
-      identify: (distinctId?: string, properties?: PostHogPayload) => void;
-      alias: (alias: string, original?: string) => void;
-      set_config: (config: Record<string, unknown>) => void;
-      people?: {
-        set: (properties: PostHogPayload) => void;
-      };
-      push: (args: unknown[]) => number;
+    __cookieConsentManaged?: boolean;
+    siteConsent?: {
+      googleAnalytics: boolean;
+      googleAds: boolean;
+      posthog: boolean;
     };
-    openAxeptioCookie?: () => void;
-    openAxeptioCookies?: () => void;
+    trackSiteEvent?: (event: string, payload: AnalyticsPayload) => void;
   }
 }
 

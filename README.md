@@ -26,7 +26,7 @@ sont indiqués lorsque l'identifiant du projet n'est pas documenté dans le dép
 | Mapbox                 | Carte interactive, chargée à la demande           | [Console](https://console.mapbox.com/) · [Documentation](https://docs.mapbox.com/mapbox-gl-js/)                                                                                                                                                                                                                              | `PUBLIC_MAPBOX_TOKEN` ; style `mapbox/standard`                                             |
 | Google Maps            | Itinéraire vers le cabinet et parking             | [Itinéraire](https://www.google.fr/maps/dir/?api=1&destination=44.805434%2C-0.550281&travelmode=driving) · [Parking](https://maps.app.goo.gl/bZdtom3PSSN1TjZE9)                                                                                                                                                              | Destination dans `src/lib/directions.ts`                                                    |
 | Sentry                 | Erreurs navigateur et sourcemaps                  | [Console](https://sentry.io/) · [Documentation Astro](https://docs.sentry.io/platforms/javascript/guides/astro/)                                                                                                                                                                                                             | `PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`                    |
-| Google Tag Manager     | Conteneur de tags et événements métier            | [Console GTM](https://tagmanager.google.com/)                                                                                                                                                                                                                                                                                | `PUBLIC_GTM_ID` ; chargement dans `src/layouts/BaseLayout.astro`                            |
+| Google Tag Manager     | Conteneur de tags et événements métier            | [Console GTM](https://tagmanager.google.com/)                                                                                                                                                                                                                                                                                | `PUBLIC_GTM_ID` ; chargement dans `src/lib/consent.ts`                                      |
 | PostHog                | Analyse des parcours de réservation et de contact | [Console US](https://us.posthog.com/) · [Console EU](https://eu.posthog.com/)                                                                                                                                                                                                                                                | `PUBLIC_POSTHOG_KEY`, `PUBLIC_POSTHOG_HOST` ; région selon le projet                        |
 | Google reCAPTCHA       | Configuration historique anti-spam                | [Administration](https://www.google.com/recaptcha/admin)                                                                                                                                                                                                                                                                     | `PUBLIC_RECAPTCHA_KEY` encore référencée ; le formulaire actuel utilise le honeypot Netlify |
 | Facebook               | Page publique de la praticienne                   | [Agathe Lescout](https://www.facebook.com/AgatheLescout/)                                                                                                                                                                                                                                                                    | Footer et données structurées                                                               |
@@ -58,19 +58,17 @@ Configurer les valeurs locales dans un fichier `.env.local` non versionné et
 les valeurs de déploiement dans la configuration Netlify. Les variables
 `PUBLIC_*` sont intégrées au code navigateur lors du build.
 
-| Variable                            | Utilisation                              | Valeur par défaut / comportement                                                   |
-| ----------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------- |
-| `PUBLIC_MAPBOX_TOKEN`               | Jeton public Mapbox                      | Nécessaire à la carte interactive                                                  |
-| `PUBLIC_GTM_ID`                     | Identifiant du conteneur GTM             | Chargement activé si renseigné                                                     |
-| `PUBLIC_POSTHOG_KEY`                | Clé publique du projet PostHog           | Chargement activé si renseignée                                                    |
-| `PUBLIC_POSTHOG_HOST`               | Endpoint d'ingestion PostHog             | `https://us.i.posthog.com` ; utiliser `https://eu.i.posthog.com` pour un projet EU |
-| `PUBLIC_ANALYTICS_GTM_DELAY_MS`     | Délai de chargement GTM après `load`     | `3000` ms                                                                          |
-| `PUBLIC_ANALYTICS_POSTHOG_DELAY_MS` | Délai de chargement PostHog après `load` | `5000` ms                                                                          |
-| `PUBLIC_SENTRY_DSN`                 | DSN public Sentry                        | Monitoring navigateur activé si renseigné                                          |
-| `SENTRY_AUTH_TOKEN`                 | Upload des sourcemaps                    | Secret réservé au build / à la CI                                                  |
-| `SENTRY_ORG`                        | Organisation Sentry                      | À renseigner avec le token et le projet pour l'upload                              |
-| `SENTRY_PROJECT`                    | Projet Sentry                            | À renseigner avec le token et l'organisation pour l'upload                         |
-| `PUBLIC_RECAPTCHA_KEY`              | Ancienne configuration reCAPTCHA         | Pas utilisée dans la soumission actuelle du formulaire                             |
+| Variable               | Utilisation                      | Valeur par défaut / comportement                                                   |
+| ---------------------- | -------------------------------- | ---------------------------------------------------------------------------------- |
+| `PUBLIC_MAPBOX_TOKEN`  | Jeton public Mapbox              | Nécessaire à la carte interactive                                                  |
+| `PUBLIC_GTM_ID`        | Identifiant du conteneur GTM     | Chargement après accord Analytics ou Ads si renseigné                              |
+| `PUBLIC_POSTHOG_KEY`   | Clé publique du projet PostHog   | Chargement après accord PostHog si renseignée                                      |
+| `PUBLIC_POSTHOG_HOST`  | Endpoint d'ingestion PostHog     | `https://eu.i.posthog.com` ; utiliser `https://us.i.posthog.com` pour un projet US |
+| `PUBLIC_SENTRY_DSN`    | DSN public Sentry                | Monitoring navigateur activé si renseigné                                          |
+| `SENTRY_AUTH_TOKEN`    | Upload des sourcemaps            | Secret réservé au build / à la CI                                                  |
+| `SENTRY_ORG`           | Organisation Sentry              | À renseigner avec le token et le projet pour l'upload                              |
+| `SENTRY_PROJECT`       | Projet Sentry                    | À renseigner avec le token et l'organisation pour l'upload                         |
+| `PUBLIC_RECAPTCHA_KEY` | Ancienne configuration reCAPTCHA | Pas utilisée dans la soumission actuelle du formulaire                             |
 
 Les variables destinées aux Deploy Previews doivent être disponibles dans ce
 contexte Netlify, puis prises en compte par un nouveau build.
@@ -134,24 +132,65 @@ Les coordonnées du cabinet, les informations de la praticienne et l'URL du
 site sont centralisées dans `src/lib/constants/site.ts`. La configuration des
 services publics est dans `src/lib/constants/api.ts`.
 
-## Analytics et monitoring
+## Cookies et suivi
 
-GTM et PostHog sont chargés à la première interaction ou de façon différée
-après `load`, avec des déclencheurs supplémentaires sur `visibilitychange`
-et `pagehide`.
+CookieConsent 3 est servi avec le site, sans compte ni abonnement. La bannière
+propose Accepter, Refuser et Personnaliser. Le pied de page rouvre les préférences
+avec `data-cc="show-preferencesModal"`. Les choix sont indépendants pour Google
+Analytics, Google Ads et PostHog ; ils sont conservés six mois dans
+`site_cookie_consent`. Les anciens choix Axeptio ne sont pas réutilisés.
 
-Événements métier :
+Variables d'environnement :
 
-- `calendly_*` : clics de réservation, affichage de l'événement et planification.
-- `contact_section_cta_clicked` : accès à la section contact.
-- `contact_phone_clicked` / `contact_email_clicked` : contact direct.
-- `contact_form_submit_started` / `contact_form_submit_succeeded` /
-  `contact_form_submit_failed` : suivi des soumissions du formulaire.
+- `PUBLIC_GTM_ID` : conteneur Google Tag Manager.
+- `PUBLIC_POSTHOG_KEY` : clé publique du projet PostHog.
+- `PUBLIC_POSTHOG_HOST` : ingestion PostHog, par défaut `https://eu.i.posthog.com`.
+
+Sans choix accepté, aucun script GTM ou PostHog n'est chargé. Les délais,
+interactions et sorties de page ne déclenchent plus le suivi. Les événements
+antérieurs au consentement sont abandonnés. PostHog est chargé depuis le site,
+sans enregistrement des sessions ni profils personnels ; les textes et
+attributs des éléments sont masqués dans la capture automatique.
+
+Le conteneur doit appliquer le contrat `window.__cookieConsentManaged` et
+`window.siteConsent`, puis traiter `site_consent_update` avec les API natives de
+consentement GTM. Les balises Analytics et Ads doivent avoir des contrôles de
+consentement supplémentaires et des déclencheurs distincts. Axeptio ne doit plus
+se charger sur les pages gérées par CookieConsent. Voir
+[la configuration GTM](./config/gtm/README.md) avant publication.
+
+Événements suivis après consentement :
+
+- `calendly_external_link_clicked` : clic vers Calendly (ne prouve pas une réservation).
+- `contact_section_cta_clicked` : clic vers la section contact.
+- `contact_phone_clicked` / `contact_email_clicked` : clics de contact.
+- `contact_form_submit_started` / `contact_form_submit_succeeded` / `contact_form_submit_failed` : étapes du formulaire.
+
+Le retrait du consentement désactive PostHog et nettoie les cookies ainsi que
+le stockage d'attribution Google Ads (`_gcl_ls`) et le stockage PostHog concernés.
+Le retrait d'un service déjà chargé recharge la page pour arrêter ses
+écouteurs ; les autres choix sont conservés. Le SDK PostHog est épinglé à
+`1.435.8` : des contrôles à ses points de dispatch bloquent aussi les requêtes déjà
+en file après retrait, car son API publique d'opt-out ne les abandonne pas.
+Les tests réseau de retrait doivent passer avant toute mise à jour du SDK.
+
+Validation locale : Playwright construit le site avec des clés fictives. Les
+tests de consentement interceptent toutes les requêtes externes :
+
+```sh
+yarn test:e2e tests/e2e/analytics-consent.spec.ts --workers=1 --retries=0
+```
+
+Si un serveur occupe déjà le port 4321, utiliser un build avec
+`PUBLIC_GTM_ID=GTM-TESTCONSENT` et `PUBLIC_POSTHOG_KEY=phc_test_consent`, ou arrêter
+ce serveur pour laisser Playwright construire son aperçu. Ces tests valident le
+site avec des réponses simulées. La PR 22 a également été vérifiée sur Netlify
+avec le brouillon GTM chargé via son environnement de preview : états de
+consentement, requêtes Analytics / Ads, choix indépendants et retrait. Les
+collecteurs étaient bloqués pendant ce test pour ne pas créer de fausses
+conversions ; la réception dans les consoles n'est donc pas établie.
 
 Sentry est configuré dans `sentry.client.config.ts` pour le navigateur.
-Les hooks historiques Axeptio du footer ne suffisent pas à documenter un
-fournisseur de consentement actif : vérifier le conteneur GTM et la version
-déployée pour connaître la configuration effective.
 
 ## Déploiement
 

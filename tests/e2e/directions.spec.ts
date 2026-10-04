@@ -66,6 +66,12 @@ test('directions link works without geolocation or a scripted popup', async ({
   });
 
   await page.goto('/');
+  const consentDialog = page.getByRole('dialog', {
+    name: 'Vos préférences de cookies',
+    exact: true,
+  });
+  await consentDialog.getByRole('button', { name: 'Tout refuser' }).click();
+  await expect(consentDialog).toBeHidden();
 
   const directionsLink = page.getByRole('link', {
     name: "Obtenir l'itinéraire",

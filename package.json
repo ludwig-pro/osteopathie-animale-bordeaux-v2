@@ -43,11 +43,13 @@
     "@sentry/astro": "^10.51.0",
     "@tailwindcss/forms": "^0.5.11",
     "mapbox-gl": "^3.23.1",
+    "posthog-js": "1.435.8",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-google-recaptcha-v3": "^1.11.0",
     "react-modal": "^3.16.3",
-    "smoothscroll-polyfill": "0.4.4"
+    "smoothscroll-polyfill": "0.4.4",
+    "vanilla-cookieconsent": "3.1.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",

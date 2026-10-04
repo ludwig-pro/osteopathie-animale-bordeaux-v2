@@ -18,6 +18,12 @@ export default defineConfig({
   },
   webServer: {
     command: 'yarn build && yarn preview --host 127.0.0.1 --port 4321',
+    env: {
+      PUBLIC_GTM_ID: 'GTM-TESTCONSENT',
+      PUBLIC_POSTHOG_KEY: 'phc_test_consent',
+      PUBLIC_POSTHOG_HOST: 'https://eu.i.posthog.com',
+      PUBLIC_SENTRY_DSN: '',
+    },
     url: 'http://127.0.0.1:4321',
     reuseExistingServer: !isCI,
     timeout: 360000,

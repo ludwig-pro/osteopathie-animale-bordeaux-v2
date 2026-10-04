@@ -199,7 +199,7 @@ test.describe('Contact form validation', () => {
       );
     });
 
-    expect(startedEvents).toHaveLength(1);
+    expect(startedEvents).toHaveLength(0);
   });
 
   test('submits with a normalized phone when email is empty', async ({
