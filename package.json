@@ -36,6 +36,7 @@
   },
   "resolutions": {
     "baseline-browser-mapping": "2.11.27",
-    "protocol-buffers-schema": "3.6.1"
+    "protocol-buffers-schema": "3.6.1",
+    "sharp": "0.35.4"
   }
 }

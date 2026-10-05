@@ -32,3 +32,5 @@ La CI vérifie le site, Playwright et Lighthouse, ainsi que le Worker avec des d
 Les plans historiques sous `plans/` décrivent les chemins avant la migration : leurs chemins site sont désormais relatifs à `apps/website/`.
 
 Avec Yarn 1, `check` est aussi une commande native : utiliser `yarn run check` pour lancer les contrôles du monorepo.
+
+Sharp est aligné sur `0.35.4` via `resolutions`, version commune acceptée par Astro et exigée par Miniflare. Cela évite que Yarn 1 sépare deux versions du module natif et de libvips lors d’une installation neuve. Réévaluer cet alignement lors des mises à jour de Wrangler/Astro.
