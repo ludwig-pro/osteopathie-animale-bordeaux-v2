@@ -8,7 +8,7 @@ import forfait from '../../images/forfaitmensuel.jpeg';
 
 const widths = [320, 640, 800] as const;
 const sizes =
-  '(min-width: 1280px) 288px, (min-width: 1024px) 436px, (min-width: 640px) calc(50vw - 2.25rem), calc(100vw - 2rem)';
+  '(min-width: 1352px) 295px, (min-width: 961px) 23vw, (min-width: 641px) 44vw, calc(50vw - 27px)';
 
 const [chienetchatImg, furetImg, chevalImg, forfaitImg] = await Promise.all([
   buildResponsiveImage(chienetchat, widths, sizes),
@@ -19,7 +19,7 @@ const [chienetchatImg, furetImg, chevalImg, forfaitImg] = await Promise.all([
 ---
 
 <Pricing
-  client:visible
+  client:visible={{ rootMargin: '300px' }}
   id={Astro.props['id']}
   chienetchatImg={chienetchatImg}
   furetImg={furetImg}

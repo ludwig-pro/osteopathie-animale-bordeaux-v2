@@ -1,0 +1,14 @@
+---
+import { animalPages } from '../../lib/content/animal-pages';
+import AnimalPage from '../../layouts/AnimalPage.astro';
+
+export function getStaticPaths() {
+  return animalPages.map((animal) => ({
+    params: { animal: animal.slug },
+    props: { animal },
+  }));
+}
+const { animal } = Astro.props;
+---
+
+<AnimalPage animal={animal} />

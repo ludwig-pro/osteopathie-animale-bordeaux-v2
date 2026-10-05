@@ -1,6 +1,7 @@
 import { useEffect, useState, type SubmitEvent } from 'react';
 import { pushDataLayerEvent } from '../../../lib/analytics';
 import FormField from './FormField';
+import { Button } from '../../ui/button';
 
 type ValidationErrors = {
   name?: string;
@@ -128,8 +129,9 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="bg-white py-16 px-4 sm:px-6 lg:col-span-3 lg:py-24 lg:px-8 xl:pl-12">
-      <div className="max-w-lg mx-auto lg:max-w-none">
+    <div className="contact-form-panel">
+      <div>
+        <h3>Me contacter</h3>
         <form
           id="contactForm"
           name="contact"
@@ -138,7 +140,7 @@ export default function ContactForm() {
           data-netlify-honeypot="bot-field"
           onSubmit={handleSubmit}
           noValidate={hydrationReady}
-          className="grid grid-cols-1 gap-y-6"
+          className="contact-form-grid"
         >
           {/* Honeypot field for spam protection */}
           <div
@@ -207,7 +209,7 @@ export default function ContactForm() {
             <p
               id="contact-method-error"
               role="alert"
-              className="mt-2 text-sm text-red-600"
+              className="contact-form-full text-xs text-destructive"
             >
               {validationErrors.contactMethod}
             </p>
@@ -223,14 +225,14 @@ export default function ContactForm() {
           />
 
           {/* RGPD compliance text */}
-          <p className="text-sm text-gray-500">
+          <p className="contact-form-full text-sm leading-relaxed text-muted-foreground">
             En soumettant ce formulaire, vous acceptez que vos données soient
             traitées pour vous contacter.
           </p>
 
           {/* Success message */}
           {success && (
-            <div className="rounded-md bg-green-50 p-4">
+            <div className="contact-form-full rounded-xl bg-green-50 p-4">
               <div className="flex">
                 <div className="shrink-0">
                   <svg
@@ -258,7 +260,7 @@ export default function ContactForm() {
 
           {/* Error message */}
           {submitError && (
-            <div className="rounded-md bg-red-50 p-4">
+            <div className="contact-form-full rounded-xl bg-red-50 p-4">
               <div className="flex">
                 <div className="shrink-0">
                   <svg
@@ -284,13 +286,13 @@ export default function ContactForm() {
             </div>
           )}
 
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            className="inline-flex justify-center py-3 px-6 border border-transparent shadow-xs text-base font-medium rounded-md text-white bg-gold-500 hover:bg-gold-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="contact-form-full"
           >
             {loading ? 'Envoi en cours...' : 'Envoyer'}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

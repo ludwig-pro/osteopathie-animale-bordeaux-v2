@@ -1,188 +1,213 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 
-type AnalyticsWindow = Window & {
-  __gtm_loaded__?: boolean;
-  __posthog_initialized__?: boolean;
-  dataLayer?: Array<Record<string, unknown>>;
-};
-
-const MAPBOX_STYLE_MARKER = 'mapbox://styles/mapbox/standard';
-const MAPBOX_CSS_MARKER = '.mapboxgl-map';
-
-async function findSingleAsset(
-  extension: '.js' | '.css',
-  marker: string
-): Promise<string> {
-  const assetNames = (await readdir('dist/_astro')).filter((assetName) =>
-    assetName.endsWith(extension)
+async function findAsset(extension: '.js' | '.css', marker: string) {
+  const names = (await readdir('dist/_astro')).filter((name) =>
+    name.endsWith(extension)
   );
-  const matchingAssets: string[] = [];
-
-  for (const assetName of assetNames) {
-    const contents = await readFile(`dist/_astro/${assetName}`, 'utf8');
-
-    if (contents.includes(marker)) {
-      matchingAssets.push(assetName);
-    }
+  const matches = [];
+  for (const name of names) {
+    if ((await readFile(`dist/_astro/${name}`, 'utf8')).includes(marker))
+      matches.push(name);
   }
-
-  expect(
-    matchingAssets,
-    `expected exactly one generated ${extension} asset containing ${marker}`
-  ).toHaveLength(1);
-
-  return `/_astro/${matchingAssets[0]}`;
+  expect(matches).toHaveLength(1);
+  return `/_astro/${matches[0]}`;
 }
 
-function isAnalyticsProvider(requestUrl: URL): boolean {
-  const { hostname, pathname } = requestUrl;
+const getAssets = async () => ({
+  js: await findAsset('.js', 'Unable to load the interactive map stylesheet'),
+  css: await findAsset('.css', '.leaflet-pane'),
+});
 
-  return (
-    /(^|\.)googletagmanager\.com$/i.test(hostname) ||
-    /(^|\.)google-analytics\.com$/i.test(hostname) ||
-    /(^|\.)analytics\.google\.com$/i.test(hostname) ||
-    /(^|\.)googleadservices\.com$/i.test(hostname) ||
-    /(^|\.)adservice\.google\.com$/i.test(hostname) ||
-    /(^|\.)googlesyndication\.com$/i.test(hostname) ||
-    /(^|\.)doubleclick\.net$/i.test(hostname) ||
-    /(^|\.)posthog\.com$/i.test(hostname) ||
-    (/(^|\.)google\.com$/i.test(hostname) && pathname.startsWith('/pagead/'))
-  );
+for (const activation of ['click', 'hover', 'keyboard'] as const) {
+  test(`keeps the static map until interactive tiles are ready on ${activation}`, async ({
+    page,
+  }) => {
+    const assets = await getAssets();
+    const requests = new Set<string>();
+    page.on('request', (request) =>
+      requests.add(new URL(request.url()).pathname)
+    );
+    // A local fixture stands in for network tiles; no paid API or real analytics.
+    const tile = await readFile('public/images/icon.png');
+    await page.route(
+      /https:\/\/(tile\.openstreetmap\.org|api\.mapbox\.com)\//,
+      (route) => route.fulfill({ body: tile, contentType: 'image/png' })
+    );
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Tout refuser' }).click();
+    await page.locator('#cc-main .cm').waitFor({ state: 'hidden' });
+    const trigger = page.getByTestId('map-load-trigger');
+    await trigger.scrollIntoViewIfNeeded();
+    await expect(
+      trigger.locator('xpath=ancestor::astro-island[1]')
+    ).not.toHaveAttribute('ssr');
+    const panel = page.locator('.map-panel');
+    await expect(panel).toHaveAttribute('data-map-provider', 'mapbox');
+    const staticMap = page.locator('.map-static');
+    await expect(staticMap.locator('img').first()).toBeVisible();
+    expect(requests.has(assets.js)).toBe(false);
+    expect(requests.has(assets.css)).toBe(false);
+    await expect(panel).toHaveAttribute('data-interactive', 'false');
+    await expect(page.locator('.map-interactive')).toHaveCSS('opacity', '0');
+    await expect(page.locator('.map-interactive')).toHaveAttribute('inert', '');
+
+    // Pause the lazy module: the existing static view must remain visible.
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(`**${assets.js}`, async (route) => {
+      await gate;
+      await route.continue();
+    });
+    if (activation === 'hover') await panel.hover();
+    else if (activation === 'keyboard') {
+      await trigger.focus();
+      await page.keyboard.press('Enter');
+    } else await trigger.click();
+    await expect.poll(() => requests.has(assets.js)).toBe(true);
+    await expect(panel).toHaveAttribute('data-interactive', 'false');
+    await expect(staticMap).toBeVisible();
+    release();
+    await expect(panel).toHaveAttribute('data-interactive', 'true');
+    await expect(page.locator('.map-interactive')).toHaveCSS('opacity', '1');
+    await expect(page.locator('.map-interactive')).not.toHaveAttribute('inert');
+    await expect(trigger).toHaveCount(0);
+    expect(requests.has(assets.css)).toBe(true);
+    await expect(page.locator('link[data-map-styles="true"]')).toHaveCount(1);
+    if (activation === 'keyboard')
+      await expect(page.locator('.cabinet-live-map')).toBeFocused();
+
+    const staticMarker = await staticMap
+      .locator('.cabinet-map-marker')
+      .boundingBox();
+    const interactiveMarker = await page
+      .locator('.cabinet-live-map .cabinet-map-marker')
+      .boundingBox();
+    expect(staticMarker).not.toBeNull();
+    expect(interactiveMarker).not.toBeNull();
+    expect(
+      Math.abs(staticMarker!.x - interactiveMarker!.x)
+    ).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(staticMarker!.y - interactiveMarker!.y)
+    ).toBeLessThanOrEqual(1);
+    // Tiles are positioned from the same pixel origin, not an approximate drawing.
+    const staticTile = staticMap.locator('img').first();
+    const src = await staticTile.getAttribute('src');
+    const liveTile = page.locator('.leaflet-tile').filter({ visible: true });
+    const staticBounds = await staticTile.boundingBox();
+    const matchingLiveBounds = await liveTile.evaluateAll((images, url) => {
+      const image = images.find(
+        (element) => (element as HTMLImageElement).src === url
+      );
+      if (!image) return null;
+      const rect = image.getBoundingClientRect();
+      return { x: rect.x, y: rect.y };
+    }, src);
+    expect(matchingLiveBounds).not.toBeNull();
+    expect(
+      Math.abs(staticBounds!.x - matchingLiveBounds!.x)
+    ).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(staticBounds!.y - matchingLiveBounds!.y)
+    ).toBeLessThanOrEqual(1);
+    await panel.hover();
+    await expect(page.locator('link[data-map-styles="true"]')).toHaveCount(1);
+  });
 }
 
-function isMapboxProvider(hostname: string): boolean {
-  return /(^|\.)mapbox\.com$/i.test(hostname);
-}
-
-test('loads Mapbox JavaScript and CSS only after an explicit request', async ({
+test('preserves the static view and directions when interactive loading fails', async ({
   page,
+}) => {
+  const assets = await getAssets();
+  const tile = await readFile('public/images/icon.png');
+  await page.route(
+    /https:\/\/(tile\.openstreetmap\.org|api\.mapbox\.com)\//,
+    (route) => route.fulfill({ body: tile, contentType: 'image/png' })
+  );
+  await page.route(`**${assets.css}`, (route) => route.abort());
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Tout refuser' }).click();
+  await page.locator('#cc-main .cm').waitFor({ state: 'hidden' });
+  const trigger = page.getByTestId('map-load-trigger');
+  await trigger.scrollIntoViewIfNeeded();
+  await expect(
+    trigger.locator('xpath=ancestor::astro-island[1]')
+  ).not.toHaveAttribute('ssr');
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await expect(
+    page.getByText('La carte est temporairement indisponible.')
+  ).toBeVisible();
+  await expect(page.locator('.map-static')).toBeVisible();
+  await expect(page.locator('.map-panel')).toHaveAttribute(
+    'data-interactive',
+    'false'
+  );
+  await expect(
+    page.getByRole('link', { name: "Obtenir l'itinéraire" })
+  ).toBeVisible();
+});
+
+test('does not animate map activation when reduced motion is requested', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await expect(page.locator('.map-interactive')).toHaveCSS(
+    'transition-property',
+    'none'
+  );
+});
+
+test('keeps the mobile preview static during scrolling and activates it on tap', async ({
+  browser,
   baseURL,
 }) => {
-  const siteOrigin = new URL('/', baseURL).origin;
-  const mapboxJavaScriptPath = await findSingleAsset(
-    '.js',
-    MAPBOX_STYLE_MARKER
-  );
-  const mapboxStylesheetPath = await findSingleAsset('.css', MAPBOX_CSS_MARKER);
-  const initialHtml = await readFile('dist/index.html', 'utf8');
-
-  expect(initialHtml).not.toContain(mapboxStylesheetPath);
-
-  let analyticsInterceptionCount = 0;
-  let mapboxInterceptionCount = 0;
-  let observedMapboxRequestCount = 0;
-  const sameOriginRequestPaths = new Set<string>();
-
-  await page.addInitScript(() => {
-    const analyticsWindow = window as AnalyticsWindow;
-    analyticsWindow.__gtm_loaded__ = true;
-    analyticsWindow.__posthog_initialized__ = true;
-    analyticsWindow.dataLayer = [];
+  const context = await browser.newContext({
+    baseURL: baseURL ?? 'http://127.0.0.1:4321',
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
   });
-
-  page.on('request', (request) => {
-    const requestUrl = new URL(request.url());
-
-    if (requestUrl.origin === siteOrigin) {
-      sameOriginRequestPaths.add(requestUrl.pathname);
-    }
-
-    if (isMapboxProvider(requestUrl.hostname)) {
-      observedMapboxRequestCount += 1;
-    }
-  });
-
-  await page.route('**/*', async (route) => {
-    const requestUrl = new URL(route.request().url());
-
-    if (isAnalyticsProvider(requestUrl)) {
-      analyticsInterceptionCount += 1;
-      await route.abort();
-      return;
-    }
-
-    if (isMapboxProvider(requestUrl.hostname)) {
-      mapboxInterceptionCount += 1;
-      await route.abort();
-      return;
-    }
-
-    await route.continue();
-  });
-
-  await page.goto('/');
-
-  const loadMapButton = page.getByTestId('map-load-trigger');
-  await loadMapButton.scrollIntoViewIfNeeded();
-  await expect(loadMapButton).toBeVisible();
-
-  const mapIsland = loadMapButton.locator('xpath=ancestor::astro-island[1]');
-  await expect(mapIsland).toHaveCount(1);
-  await expect
-    .poll(() => mapIsland.getAttribute('ssr'), {
-      message: 'map section should be hydrated before requesting Mapbox',
-    })
-    .toBeNull();
-
-  expect(sameOriginRequestPaths).not.toContain(mapboxJavaScriptPath);
-  expect(sameOriginRequestPaths).not.toContain(mapboxStylesheetPath);
-  await expect(page.locator('link[data-mapbox-styles="true"]')).toHaveCount(0);
-  expect(mapboxInterceptionCount).toBe(0);
-  expect(analyticsInterceptionCount).toBe(0);
-
-  await loadMapButton.click();
-
-  await expect
-    .poll(() => sameOriginRequestPaths.has(mapboxJavaScriptPath), {
-      message: 'Mapbox JavaScript should be requested after the click',
-    })
-    .toBe(true);
-  await expect
-    .poll(() => sameOriginRequestPaths.has(mapboxStylesheetPath), {
-      message: 'Mapbox CSS should be requested after the click',
-    })
-    .toBe(true);
-
-  const dynamicStylesheet = page.locator(
-    'link[rel="stylesheet"][data-mapbox-styles="true"]'
-  );
-  await expect(dynamicStylesheet).toHaveCount(1);
-  await expect
-    .poll(
-      () =>
-        dynamicStylesheet.evaluate((link) => {
-          const stylesheetLink = link as HTMLLinkElement;
-
-          return {
-            pathname: new URL(stylesheetLink.href).pathname,
-            loaded: stylesheetLink.sheet !== null,
-          };
-        }),
-      { message: 'the singleton Mapbox stylesheet should finish loading' }
-    )
-    .toEqual({
-      pathname: mapboxStylesheetPath,
-      loaded: true,
-    });
-
-  await expect(loadMapButton).toHaveCount(0);
-
-  const renderedMapOrFallback = page
-    .locator('.mapboxgl-map')
-    .or(page.getByText('La carte est temporairement indisponible.'))
-    .first();
-  await expect(renderedMapOrFallback).toBeVisible();
-
-  const renderedMap = page.locator('.mapboxgl-map');
-  if ((await renderedMap.count()) > 0) {
-    await expect(renderedMap).toHaveCSS('position', 'relative');
-    await expect(renderedMap).toHaveCSS('overflow', 'hidden');
+  try {
+    const page = await context.newPage();
+    const assets = await getAssets();
+    const requests = new Set<string>();
+    page.on('request', (request) =>
+      requests.add(new URL(request.url()).pathname)
+    );
+    const tile = await readFile('public/images/icon.png');
+    await page.route(
+      /https:\/\/(tile\.openstreetmap\.org|api\.mapbox\.com)\//,
+      (route) => route.fulfill({ body: tile, contentType: 'image/png' })
+    );
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Tout refuser' }).tap();
+    await page.locator('#cc-main .cm').waitFor({ state: 'hidden' });
+    const trigger = page.getByTestId('map-load-trigger');
+    await trigger.scrollIntoViewIfNeeded();
+    await expect(
+      trigger.locator('xpath=ancestor::astro-island[1]')
+    ).not.toHaveAttribute('ssr');
+    await page
+      .locator('.map-panel')
+      .dispatchEvent('pointerenter', { pointerType: 'touch' });
+    expect(requests.has(assets.js)).toBe(false);
+    await trigger.tap({ position: { x: 40, y: 40 } });
+    await expect(page.locator('.map-panel')).toHaveAttribute(
+      'data-interactive',
+      'true'
+    );
+    await expect(page.locator('.map-interactive')).toHaveCSS('opacity', '1');
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > window.innerWidth
+      )
+    ).toBe(false);
+  } finally {
+    await context.close();
   }
-
-  await page.waitForTimeout(250);
-
-  await expect(dynamicStylesheet).toHaveCount(1);
-  expect(analyticsInterceptionCount).toBe(0);
-  expect(mapboxInterceptionCount).toBe(observedMapboxRequestCount);
 });

@@ -1,12 +1,11 @@
 ---
-import Footer from '../components/layout/Footer';
 import ContactWrapper from '../components/landing-page/contact/ContactWrapper';
 import MapSection from '../components/landing-page/map/MapSection';
 import WhenToConsult from '../components/landing-page/when-to-consult/WhenToConsult';
 import agathePortrait from '../images/agathe.jpg';
 import heroImage from '../images/dog-homepage.jpg';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import AnimalSectionWrapper from '../layouts/wrappers/AnimalSectionWrapper.astro';
+import AnimalsSection from '../components/site/AnimalsSection.astro';
 import DeroulementConsultationWrapper from '../layouts/wrappers/DeroulementConsultationWrapper.astro';
 import HeroWrapper from '../layouts/wrappers/HeroWrapper.astro';
 import OsteopathieAnimaleWrapper from '../layouts/wrappers/OsteopathieAnimaleWrapper.astro';
@@ -71,20 +70,15 @@ const homepageSchema = {
   canonicalUrl={siteUrl}
   schema={homepageSchema}
 >
-  <div>
-    <main id="root">
-      <HeroWrapper />
-      <div id="animaux">
-        <AnimalSectionWrapper />
-      </div>
-      <MapSection client:visible />
-      <WhenToConsult id="quand-consulter" />
-      <PrixWrapper id="tarifs" />
-      <DeroulementConsultationWrapper />
-      <OsteopathieAnimaleWrapper id="osteopathie" />
-      <QuiSuisJeWrapper />
-      <ContactWrapper id="contact" client:visible />
-    </main>
-    <Footer client:visible />
-  </div>
+  <main id="root">
+    <HeroWrapper />
+    <AnimalsSection />
+    <OsteopathieAnimaleWrapper id="osteopathie" />
+    <WhenToConsult id="quand-consulter" />
+    <PrixWrapper id="tarifs" />
+    <DeroulementConsultationWrapper />
+    <QuiSuisJeWrapper />
+    <MapSection client:visible={{ rootMargin: '300px' }} />
+    <ContactWrapper id="contact" client:visible={{ rootMargin: '300px' }} />
+  </main>
 </BaseLayout>

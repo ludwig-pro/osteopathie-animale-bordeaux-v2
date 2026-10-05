@@ -1,5 +1,8 @@
 ---
 import '../styles/global.css';
+import Header from '../components/site/Header';
+import Footer from '../components/layout/Footer';
+import heroImage from '../images/dog-homepage.jpg';
 
 export interface Props {
   title: string;
@@ -7,6 +10,8 @@ export interface Props {
   siteUrl?: string;
   canonicalUrl?: string;
   schema?: unknown;
+  socialImage?: string;
+  noindex?: boolean;
 }
 
 const {
@@ -15,7 +20,11 @@ const {
   siteUrl = 'https://www.osteopathie-animale-bordeaux.fr',
   canonicalUrl = siteUrl,
   schema,
+  socialImage = heroImage.src,
+  noindex = false,
 } = Astro.props;
+
+const socialImageUrl = new URL(socialImage, siteUrl).toString();
 ---
 
 <!doctype html>
@@ -25,14 +34,17 @@ const {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
     <link rel="canonical" href={canonicalUrl} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:locale" content="fr_FR" />
+    <meta property="og:image" content={socialImageUrl} />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#c0823f" />
+    <meta name="twitter:image" content={socialImageUrl} />
+    <meta name="theme-color" content="#28533e" />
     <link rel="icon" type="image/png" href="/icon.png" />
     {schema && (
       <script
@@ -210,6 +222,9 @@ const {
     </script>
   </head>
   <body>
+    <a href="#root" class="skip-link">Aller au contenu</a>
+    <Header client:load currentPath={Astro.url.pathname} />
     <slot />
+    <Footer />
   </body>
 </html>

@@ -1,0 +1,69 @@
+---
+import { Image } from 'astro:assets';
+import { ArrowUpRightIcon } from '@phosphor-icons/react';
+import SectionHeading from './SectionHeading';
+import { configuration } from '../../lib/content/animals';
+import { animalPages } from '../../lib/content/animal-pages';
+import cow from '../../images/sectionVache.jpg';
+---
+
+<section id="animaux" class="section-space animals-section site-container">
+  <div class="section-topline">
+    <SectionHeading
+      eyebrow="À chaque animal, son accompagnement"
+      title="L'ostéopathie pour qui ?"
+    />
+    <p class="animals-intro">
+      Chiens, chats, chevaux et nouveaux animaux de compagnie.
+    </p>
+  </div>
+  <div class="animal-grid">
+    {animalPages.map((animal) => <a
+      href={`/animaux/${animal.slug}/`}
+      class="animal-card"
+      ><div class="animal-card-image">
+        <Image
+          src={animal.image}
+          alt={configuration[animal.slug].alt}
+          widths={[320, 640, 960]}
+          sizes="(min-width: 1352px) 295px, (min-width: 961px) 23vw, (min-width: 641px) 44vw, calc(50vw - 27px)"
+          width={640}
+          format="webp"
+          loading="lazy"
+          data-testid="responsive-content-image"
+        />
+      </div>
+      <div class="animal-card-content">
+        <div>
+          <h3>{animal.label}</h3>
+          <p>
+            {animal.slug === 'nac'
+              ? 'Petits animaux de compagnie'
+              : animal.specialty}
+          </p>
+        </div>
+        <span class="round-arrow"
+          ><ArrowUpRightIcon size={16} aria-hidden="true"
+        /></span>
+      </div></a
+    >)}
+  </div>
+  <details class="animal-cow">
+    <summary>Et pour les animaux d’élevage ?</summary>
+    <div class="animal-cow-content">
+      <Image
+        src={cow}
+        alt={configuration.vache.alt}
+        width={480}
+        format="webp"
+        loading="lazy"
+      />
+      <div>
+        <h3 class="mb-3 font-display text-2xl text-primary">
+          {configuration.vache.name}
+        </h3>
+        <p class="body-copy">{configuration.vache.text}</p>
+      </div>
+    </div>
+  </details>
+</section>

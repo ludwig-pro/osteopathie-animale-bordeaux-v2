@@ -46,6 +46,8 @@ async function prepareHydratedContactForm(page: Page) {
   });
 
   await page.goto('/');
+  // Complete the modal consent choice before asserting form focus.
+  await page.getByRole('button', { name: 'Tout refuser', exact: true }).click();
 
   const form = page.locator('#contactForm');
   await form.scrollIntoViewIfNeeded();

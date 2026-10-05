@@ -1,17 +1,43 @@
 ---
-import ConsultationProcess from '../../components/landing-page/consultation/ConsultationProcess';
-import { buildResponsiveImage } from '../../lib/responsiveImage';
+import { Image } from 'astro:assets';
+import SectionHeading from '../../components/site/SectionHeading';
+import ConsultationSteps from '../../components/site/ConsultationSteps';
+import { consultationIntro } from '../../lib/content/copy';
 import youngcat from '../../images/yougncat.jpeg';
 import correction from '../../images/correction.jpg';
-
-const widths = [480, 768, 1200] as const;
-const sizes =
-  '(min-width: 1280px) 624px, (min-width: 1024px) calc(50vw - 1rem), (min-width: 640px) 560px, (min-width: 576px) 576px, 100vw';
-
-const [youngcatImg, correctionImg] = await Promise.all([
-  buildResponsiveImage(youngcat, widths, sizes),
-  buildResponsiveImage(correction, widths, sizes),
-]);
 ---
 
-<ConsultationProcess youngcatImg={youngcatImg} correctionImg={correctionImg} />
+<section
+  id="consultation"
+  class="section-space site-container consultation-grid"
+>
+  <div>
+    <SectionHeading
+      eyebrow="Pas à pas, en confiance"
+      title="Déroulement d'une consultation"
+      description={consultationIntro}
+    />
+    <div class="consultation-images">
+      <Image
+        src={youngcat}
+        alt="Chaton tigré donnant la patte lors d'un examen ostéopathique"
+        widths={[320, 640, 960]}
+        width={640}
+        sizes="(min-width: 1352px) 282px, (min-width: 641px) 22vw, calc(50vw - 27px)"
+        format="webp"
+        loading="lazy"
+        data-testid="responsive-content-image"
+      /><Image
+        src={correction}
+        alt="Ostéopathe pratiquant une manipulation vertébrale sur un cheval"
+        widths={[320, 640, 960]}
+        width={640}
+        sizes="(min-width: 1352px) 282px, (min-width: 641px) 22vw, calc(50vw - 27px)"
+        format="webp"
+        loading="lazy"
+        data-testid="responsive-content-image"
+      />
+    </div>
+  </div>
+  <ConsultationSteps client:visible={{ rootMargin: '300px' }} />
+</section>
