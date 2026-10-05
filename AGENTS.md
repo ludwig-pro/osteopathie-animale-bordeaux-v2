@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-The Astro project keeps application code under `src/`. Page routes live in `src/pages` as `.astro` files, reusable UI stays in `src/components` (mostly React islands), domain utilities in `src/lib`, and browser hooks in `src/hooks`. Images are colocated in `src/images`; store very large binaries outside the repo. Astro configuration resides in `astro.config.mjs`; Tailwind 4 uses the Vite plugin and `src/styles/global.css`. Environment-specific secrets go in `.env.*` files consumed via Astro/Vite environment variables.
+This is a Yarn 1 monorepo. The Astro workspace is `apps/website/`; all site paths below are relative to that workspace. Run installation and root convenience commands from the repository root. The Astro project keeps application code under `src/`. Page routes live in `src/pages` as `.astro` files, reusable UI stays in `src/components` (mostly React islands), domain utilities in `src/lib`, and browser hooks in `src/hooks`. Images are colocated in `src/images`; store very large binaries outside the repo. Astro configuration resides in `astro.config.mjs`; Tailwind 4 uses the Vite plugin and `src/styles/global.css`. Environment-specific secrets go in `.env.*` files consumed via Astro/Vite environment variables.
 
 ## Build, Test, and Development Commands
 - `yarn install`: install dependencies; run after each pull.

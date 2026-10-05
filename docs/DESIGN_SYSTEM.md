@@ -1,5 +1,7 @@
 # Système de design — Agathe Lescout
 
+Les chemins du site dans ce document sont relatifs au workspace `apps/website/`.
+
 La refonte conserve les photographies et les textes du site. La direction finale est professionnelle et photographique, sans illustrations : vert forêt, sauge, crème, typographie Lora pour les titres et DM Sans pour l’interface. Les polices sont hébergées avec le site.
 
 ## Fondations
