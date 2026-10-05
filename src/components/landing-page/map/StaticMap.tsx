@@ -35,13 +35,22 @@ export default function StaticMap({ lng, lat }: { lng: number; lat: number }) {
             alt=""
             width={CABINET_MAP.tileSize}
             height={CABINET_MAP.tileSize}
-            style={{ left: tile.left, top: tile.top }}
+            style={{
+              left: tile.left,
+              top: tile.top,
+              width: CABINET_MAP.tileSize,
+              height: CABINET_MAP.tileSize,
+            }}
             loading="lazy"
             decoding="async"
             onError={() => setFailed(true)}
           />
         ))}
-        <span className="cabinet-map-marker" aria-hidden="true" />
+        <span
+          className="cabinet-map-marker"
+          aria-hidden="true"
+          dangerouslySetInnerHTML={{ __html: CABINET_MAP.markerHtml }}
+        />
       </div>
       {failed && (
         <div className="map-placeholder map-static-error">
@@ -52,14 +61,10 @@ export default function StaticMap({ lng, lat }: { lng: number; lat: number }) {
           </p>
         </div>
       )}
-      <a
+      <div
         className="map-attribution"
-        href="https://www.openstreetmap.org/copyright"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        © OpenStreetMap
-      </a>
+        dangerouslySetInnerHTML={{ __html: CABINET_MAP.attribution }}
+      />
     </div>
   );
 }

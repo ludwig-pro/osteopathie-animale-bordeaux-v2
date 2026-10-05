@@ -16,7 +16,7 @@ async function findAsset(extension: '.js' | '.css', marker: string) {
 
 const getAssets = async () => ({
   js: await findAsset('.js', 'Unable to load the interactive map stylesheet'),
-  css: await findAsset('.css', '.leaflet-container'),
+  css: await findAsset('.css', '.leaflet-pane'),
 });
 
 for (const activation of ['click', 'hover', 'keyboard'] as const) {
@@ -30,8 +30,9 @@ for (const activation of ['click', 'hover', 'keyboard'] as const) {
     );
     // A local fixture stands in for network tiles; no paid API or real analytics.
     const tile = await readFile('public/images/icon.png');
-    await page.route('https://tile.openstreetmap.org/**', (route) =>
-      route.fulfill({ body: tile, contentType: 'image/png' })
+    await page.route(
+      /https:\/\/(tile\.openstreetmap\.org|api\.mapbox\.com)\//,
+      (route) => route.fulfill({ body: tile, contentType: 'image/png' })
     );
     await page.goto('/');
     await page.getByRole('button', { name: 'Tout refuser' }).click();
@@ -42,6 +43,7 @@ for (const activation of ['click', 'hover', 'keyboard'] as const) {
       trigger.locator('xpath=ancestor::astro-island[1]')
     ).not.toHaveAttribute('ssr');
     const panel = page.locator('.map-panel');
+    await expect(panel).toHaveAttribute('data-map-provider', 'mapbox');
     const staticMap = page.locator('.map-static');
     await expect(staticMap.locator('img').first()).toBeVisible();
     expect(requests.has(assets.js)).toBe(false);
@@ -121,8 +123,9 @@ test('preserves the static view and directions when interactive loading fails', 
 }) => {
   const assets = await getAssets();
   const tile = await readFile('public/images/icon.png');
-  await page.route('https://tile.openstreetmap.org/**', (route) =>
-    route.fulfill({ body: tile, contentType: 'image/png' })
+  await page.route(
+    /https:\/\/(tile\.openstreetmap\.org|api\.mapbox\.com)\//,
+    (route) => route.fulfill({ body: tile, contentType: 'image/png' })
   );
   await page.route(`**${assets.css}`, (route) => route.abort());
   await page.goto('/');
@@ -177,8 +180,9 @@ test('keeps the mobile preview static during scrolling and activates it on tap',
       requests.add(new URL(request.url()).pathname)
     );
     const tile = await readFile('public/images/icon.png');
-    await page.route('https://tile.openstreetmap.org/**', (route) =>
-      route.fulfill({ body: tile, contentType: 'image/png' })
+    await page.route(
+      /https:\/\/(tile\.openstreetmap\.org|api\.mapbox\.com)\//,
+      (route) => route.fulfill({ body: tile, contentType: 'image/png' })
     );
     await page.goto('/');
     await page.getByRole('button', { name: 'Tout refuser' }).tap();

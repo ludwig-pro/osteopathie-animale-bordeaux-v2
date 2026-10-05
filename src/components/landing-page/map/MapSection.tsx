@@ -5,6 +5,7 @@ import { CABINET_DIRECTIONS_URL } from '../../../lib/directions';
 import SectionHeading from '../../site/SectionHeading';
 import { Button } from '../../ui/button';
 import StaticMap from './StaticMap';
+import { CABINET_MAP } from '../../../lib/map';
 
 const InteractiveMap = lazy(() => import('./InteractiveMap'));
 
@@ -81,6 +82,7 @@ export default function MapSection({ id = 'cabinet' }: { id?: string }) {
         ref={panel}
         className="map-panel"
         data-interactive={isMapReady}
+        data-map-provider={CABINET_MAP.provider}
         onClick={(event) => {
           if (!isMapReady && !(event.target as HTMLElement).closest('a'))
             requestMap();
@@ -111,6 +113,15 @@ export default function MapSection({ id = 'cabinet' }: { id?: string }) {
             </Suspense>
           )}
         </div>
+        {CABINET_MAP.provider === 'mapbox' && (
+          <a
+            className="map-wordmark"
+            href="https://www.mapbox.com/"
+            aria-label="Mapbox"
+            target="_blank"
+            rel="noopener noreferrer"
+          />
+        )}
         {!isMapReady && (
           <div className="map-activation">
             {mapFailed ? (

@@ -22,6 +22,7 @@ export default defineConfig({
       'yarn build && yarn preview --ignore-lock --host 127.0.0.1 --port 4321',
     env: {
       PUBLIC_GTM_ID: 'GTM-TESTCONSENT',
+      PUBLIC_MAPBOX_TOKEN: 'pk.test-map-style',
       PUBLIC_POSTHOG_KEY: 'phc_test_consent',
       PUBLIC_POSTHOG_HOST: 'https://eu.i.posthog.com',
       PUBLIC_SENTRY_DSN: '',

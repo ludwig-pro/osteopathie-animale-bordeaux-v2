@@ -63,10 +63,20 @@ export default function InteractiveMap({
           zoomAnimation: !window.matchMedia('(prefers-reduced-motion: reduce)')
             .matches,
           attributionControl: false,
+          zoomControl: false,
         });
         L.control.attribution({ prefix: false }).addTo(map);
+        L.control
+          .zoom({
+            position: 'bottomright',
+            zoomInTitle: 'Agrandir la carte',
+            zoomOutTitle: 'Réduire la carte',
+          })
+          .addTo(map);
         const tiles = L.tileLayer(CABINET_MAP.tileUrl, {
           attribution: CABINET_MAP.attribution,
+          tileSize: CABINET_MAP.tileSize,
+          zoomOffset: CABINET_MAP.zoomOffset,
           maxZoom: 19,
         });
         tiles.on('tileerror', fail);
@@ -77,8 +87,12 @@ export default function InteractiveMap({
         const marker = L.marker([lat, lng], {
           icon: L.divIcon({
             className: 'cabinet-map-marker',
-            iconSize: [22, 22],
-            iconAnchor: [11, 11],
+            iconSize: [CABINET_MAP.markerSize, CABINET_MAP.markerSize],
+            iconAnchor: [
+              CABINET_MAP.markerSize / 2,
+              CABINET_MAP.markerSize / 2,
+            ],
+            html: CABINET_MAP.markerHtml,
           }),
           title: label,
           alt: label,

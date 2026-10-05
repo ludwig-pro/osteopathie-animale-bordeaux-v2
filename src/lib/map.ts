@@ -1,10 +1,22 @@
-// Shared projection, tiles and camera keep the static and interactive views aligned.
+import { API_CONFIG } from './constants/api';
+
+const mapboxToken = API_CONFIG.mapbox.token;
+const mapboxEnabled = Boolean(mapboxToken);
+const tileUrl = mapboxEnabled
+  ? `https://api.mapbox.com/styles/v1/mapbox/light-v11/tiles/512/{z}/{x}/{y}@2x?access_token=${encodeURIComponent(mapboxToken ?? '')}`
+  : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+// Both views share the camera, raster style and pixel origin.
 export const CABINET_MAP = {
   zoom: 15,
-  tileSize: 256,
-  tileUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  attribution:
-    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  tileSize: mapboxEnabled ? 512 : 256,
+  zoomOffset: mapboxEnabled ? -1 : 0,
+  provider: mapboxEnabled ? 'mapbox' : 'openstreetmap',
+  tileUrl,
+  attribution: `${mapboxEnabled ? '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> · ' : ''}&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>${mapboxEnabled ? ' · <a href="https://apps.mapbox.com/feedback/">Améliorer cette carte</a>' : ''}`,
+  markerSize: 48,
+  markerHtml:
+    '<span class="cabinet-marker-monogram">OA</span><span class="cabinet-marker-label">Le cabinet</span>',
 } as const;
 
 export function getStaticMapTiles(
@@ -13,7 +25,8 @@ export function getStaticMapTiles(
   width: number,
   height: number
 ) {
-  const scale = 2 ** CABINET_MAP.zoom;
+  const zoom = CABINET_MAP.zoom + CABINET_MAP.zoomOffset;
+  const scale = 2 ** zoom;
   const radians = (lat * Math.PI) / 180;
   const centerX = ((lng + 180) / 360) * scale * CABINET_MAP.tileSize;
   const centerY =
@@ -36,7 +49,10 @@ export function getStaticMapTiles(
     ) {
       tiles.push({
         key: `${x}-${y}`,
-        src: `https://tile.openstreetmap.org/${CABINET_MAP.zoom}/${x}/${y}.png`,
+        src: CABINET_MAP.tileUrl
+          .replace('{z}', String(zoom))
+          .replace('{x}', String(x))
+          .replace('{y}', String(y)),
         left: x * CABINET_MAP.tileSize - left,
         top: y * CABINET_MAP.tileSize - top,
       });
