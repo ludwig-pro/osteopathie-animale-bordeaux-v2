@@ -1,0 +1,23 @@
+{
+  "name": "@osteo/contacts-sync",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler d1 migrations apply DB --local && wrangler dev --test-scheduled",
+    "build": "wrangler deploy --dry-run --outdir dist",
+    "typecheck": "tsc --noEmit",
+    "format:check": "prettier --check 'src/**/*.ts' 'tests/**/*.ts' 'scripts/*.mjs' '*.{json,jsonc,md}'",
+    "check": "yarn format:check && yarn typecheck",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "admin": "node scripts/admin.mjs",
+    "authorize": "node scripts/authorize-google.mjs",
+    "subscribe": "node scripts/subscribe-calendly.mjs"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261005.1",
+    "@types/node": "^24.19.1",
+    "typescript": "6.0.3",
+    "wrangler": "4.147.0"
+  }
+}

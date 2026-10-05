@@ -1,0 +1,63 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "osteo-contacts-sync-local",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": false },
+  "vars": {
+    "ENVIRONMENT": "local",
+    "EXPECTED_GOOGLE_EMAIL": "configure-before-use",
+    "CALENDLY_USER_URI": "configure-before-use",
+    "CALENDLY_ORGANIZATION_URI": "configure-before-use",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "osteo-contacts-sync-local",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "env": {
+    "staging": {
+      "name": "osteo-contacts-sync-staging",
+      "workers_dev": true,
+      "vars": {
+        "ENVIRONMENT": "staging",
+        "EXPECTED_GOOGLE_EMAIL": "configure-test-account",
+        "CALENDLY_USER_URI": "configure-test-user",
+        "CALENDLY_ORGANIZATION_URI": "configure-test-organization",
+      },
+      "triggers": { "crons": ["* * * * *"] },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "osteo-contacts-sync-staging",
+          "database_id": "00000000-0000-0000-0000-000000000001",
+          "migrations_dir": "migrations",
+        },
+      ],
+    },
+    "production": {
+      "name": "osteo-contacts-sync",
+      "workers_dev": true,
+      "vars": {
+        "ENVIRONMENT": "production",
+        "EXPECTED_GOOGLE_EMAIL": "configure-before-use",
+        "CALENDLY_USER_URI": "configure-before-use",
+        "CALENDLY_ORGANIZATION_URI": "configure-before-use",
+      },
+      "triggers": { "crons": ["* * * * *"] },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "osteo-contacts-sync",
+          "database_id": "00000000-0000-0000-0000-000000000002",
+          "migrations_dir": "migrations",
+        },
+      ],
+    },
+  },
+}

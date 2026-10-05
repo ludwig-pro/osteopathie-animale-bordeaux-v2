@@ -21,11 +21,14 @@
     "test:e2e:netlify": "yarn workspace @osteo/website test:e2e:netlify",
     "lighthouse:remote": "yarn workspace @osteo/website lighthouse:remote",
     "ci:lighthouse:regression": "yarn workspace @osteo/website ci:lighthouse:regression",
-    "check": "yarn format:check && yarn lint && yarn typecheck",
+    "check": "yarn format:check && yarn lint && yarn typecheck && yarn workspace @osteo/contacts-sync run check",
     "check:static": "yarn run check",
-    "test": "yarn workspace @osteo/website test",
+    "test": "yarn workspace @osteo/website test && yarn workspace @osteo/contacts-sync test",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,jsonc,md,mjs,css,astro,yml,yaml}\" .prettierrc",
-    "format:check": "prettier --check package.json .prettierrc \".github/**/*.{yml,yaml}\" README.md && yarn workspace @osteo/website format:check"
+    "format:check": "prettier --check package.json .prettierrc \".github/**/*.{yml,yaml}\" README.md && yarn workspace @osteo/website format:check",
+    "dev:sync": "yarn workspace @osteo/contacts-sync dev",
+    "build:sync": "yarn workspace @osteo/contacts-sync build",
+    "sync:admin": "yarn workspace @osteo/contacts-sync admin"
   },
   "devDependencies": {
     "prettier": "^3.9.9",
@@ -33,6 +36,7 @@
   },
   "resolutions": {
     "baseline-browser-mapping": "2.11.27",
-    "protocol-buffers-schema": "3.6.1"
+    "protocol-buffers-schema": "3.6.1",
+    "sharp": "0.35.4"
   }
 }
