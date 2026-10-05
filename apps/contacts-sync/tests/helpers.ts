@@ -1,5 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { URL as NodeURL } from 'node:url';
 import type {
   Booking,
@@ -12,12 +12,11 @@ import type {
 
 export function database() {
   const sqlite = new DatabaseSync(':memory:');
-  sqlite.exec(
-    readFileSync(
-      new NodeURL('../migrations/0001_sync.sql', import.meta.url),
-      'utf8'
-    )
-  );
+  const migrations = new NodeURL('../migrations/', import.meta.url);
+  for (const file of readdirSync(migrations)
+    .filter((f) => f.endsWith('.sql'))
+    .sort())
+    sqlite.exec(readFileSync(new NodeURL(file, migrations), 'utf8'));
   const db = {
     prepare(sql: string) {
       let args: (string | number | null)[] = [];
@@ -183,12 +182,14 @@ export function upstream() {
       );
     if (url.pathname === '/v1/people/me/connections') {
       const offset = Number(url.searchParams.get('pageToken') ?? 0),
-        count = 100,
+        count = Number(url.searchParams.get('pageSize')),
         rows = [...people.values()];
       return Response.json({
         connections: rows.slice(offset, offset + count),
         nextPageToken:
           offset + count < rows.length ? String(offset + count) : undefined,
+        nextSyncToken:
+          offset + count < rows.length ? undefined : 'test-sync-token',
       });
     }
     if (url.pathname === '/v1/contactGroups') {

@@ -13,20 +13,26 @@ export class Clients {
   readonly fetcher: Fetcher;
   private googleToken?: string;
   private calendlyChecked = false;
+  private calendlyIdentity?: Promise<void>;
+  requests = 0;
   constructor(env: Env, fetcher: Fetcher = fetch) {
     this.env = env;
-    this.fetcher = fetcher;
+    this.fetcher = (input, init) => fetcher(input, init);
   }
   private async request<T>(
     url: string,
     init: RequestInit,
     service: string
   ): Promise<T> {
+    // A Free Worker allows 50 external subrequests. Leave headroom and stop
+    // before sending anything when a batch has exhausted its budget.
+    if (this.requests >= 45) throw new SyncError('request_budget', true);
+    this.requests++;
     let response: Response;
     try {
       response = await this.fetcher(url, {
         ...init,
-        redirect: 'error',
+        redirect: 'manual',
         signal: AbortSignal.timeout(8000),
       });
     } catch {
@@ -133,21 +139,25 @@ export class Clients {
       throw new SyncError('invalid_calendly_uri');
     const headers = { Authorization: `Bearer ${this.env.CALENDLY_TOKEN}` };
     if (!this.calendlyChecked) {
-      const { resource } = await this.request<{
-        resource: { uri: string; current_organization: string };
-      }>('https://api.calendly.com/users/me', { headers }, 'calendly');
-      if (
-        resource.uri !== this.env.CALENDLY_USER_URI ||
-        resource.current_organization !== this.env.CALENDLY_ORGANIZATION_URI
-      )
-        throw new SyncError('calendly_account_mismatch');
-      this.calendlyChecked = true;
+      this.calendlyIdentity ??= this.checkCalendlyIdentity(headers);
+      await this.calendlyIdentity;
     }
     return this.request<T>(
       `https://api.calendly.com${path}`,
       { headers },
       'calendly'
     );
+  }
+  private async checkCalendlyIdentity(headers: Record<string, string>) {
+    const { resource } = await this.request<{
+      resource: { uri: string; current_organization: string };
+    }>('https://api.calendly.com/users/me', { headers }, 'calendly');
+    if (
+      resource.uri !== this.env.CALENDLY_USER_URI ||
+      resource.current_organization !== this.env.CALENDLY_ORGANIZATION_URI
+    )
+      throw new SyncError('calendly_account_mismatch');
+    this.calendlyChecked = true;
   }
   async event(uri: string) {
     const { resource } = await this.calendly<{ resource: ScheduledEvent }>(

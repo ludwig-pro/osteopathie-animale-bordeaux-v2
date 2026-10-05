@@ -23,6 +23,9 @@ export interface Settings {
   index_complete: number;
   index_active: number;
   google_group: string | null;
+  google_sync_token: string | null;
+  lease_owner: string | null;
+  lease_until: number;
 }
 export interface Job {
   id: number;

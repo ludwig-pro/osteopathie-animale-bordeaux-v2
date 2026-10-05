@@ -1,3 +1,4 @@
+import { publicPage } from './public-pages.ts';
 import { webhook } from './webhook.ts';
 import { run } from './runner.ts';
 import type { Env } from './types.ts';
@@ -5,6 +6,10 @@ import type { Env } from './types.ts';
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    if (request.method === 'GET') {
+      const page = publicPage(url.pathname);
+      if (page) return page;
+    }
     if (url.pathname === '/health' && request.method === 'GET')
       return Response.json({ service: 'contacts-sync' });
     if (url.pathname !== '/webhooks/calendly')
@@ -21,6 +26,6 @@ export default {
     }
   },
   async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
-    await run(env);
+    await run(env, fetch, 30);
   },
 } satisfies ExportedHandler<Env>;

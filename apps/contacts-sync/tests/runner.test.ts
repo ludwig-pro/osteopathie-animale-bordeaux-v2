@@ -229,7 +229,7 @@ test('Google 429 backs off without creating contacts', async () => {
 test('event and invitee pagination resumes and reconciles cancellation authoritatively', async () => {
   const t = setup();
   t.sqlite.exec('UPDATE settings SET next_scan=0');
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 101; i++) {
     const uri = `https://api.calendly.com/scheduled_events/event-${i}`;
     t.events.set(uri, {
       uri,
@@ -253,12 +253,12 @@ test('event and invitee pagination resumes and reconciles cancellation authorita
   await t.tick();
   assert.equal(
     t.sqlite.prepare('SELECT scan_cursor FROM settings').get()!.scan_cursor,
-    '5'
+    '100'
   );
-  for (let i = 0; i < 45; i++) await t.tick();
+  for (let i = 0; i < 350; i++) await t.tick();
   assert.equal(
     t.sqlite.prepare('SELECT count(*) n FROM bookings').get()!.n,
-    11
+    106
   );
   const invitee = [...t.invitees.values()][0]!;
   invitee.status = 'canceled';
@@ -425,11 +425,11 @@ test('a previous interrupted invocation resumes only when its durable lease expi
 });
 test('Google contact index resumes more than one page without creating an existing contact', async () => {
   const t = setup('live');
-  for (let i = 0; i < 101; i++)
+  for (let i = 0; i < 1001; i++)
     t.people.set(`people/p${i}`, {
       resourceName: `people/p${i}`,
       emailAddresses: [
-        { value: i === 100 ? 'person@example.com' : `other${i}@example.com` },
+        { value: i === 1000 ? 'person@example.com' : `other${i}@example.com` },
       ],
       metadata: { sources: [{ type: 'CONTACT', etag: '1' }] },
     });
@@ -437,14 +437,14 @@ test('Google contact index resumes more than one page without creating an existi
   await t.tick();
   assert.equal(
     t.sqlite.prepare('SELECT index_cursor FROM settings').get()!.index_cursor,
-    '100'
+    '1000'
   );
   await t.tick();
   await t.tick();
   assert.equal(t.behavior.createCalls, 0);
   assert.equal(
     t.sqlite.prepare('SELECT resource_name FROM contacts').get()!.resource_name,
-    'people/p100'
+    'people/p1000'
   );
 });
 

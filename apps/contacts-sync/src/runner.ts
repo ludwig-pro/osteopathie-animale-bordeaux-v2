@@ -8,6 +8,7 @@ import {
   normalizeEmail,
 } from './model.ts';
 import { enqueue, saveBooking, settings } from './store.ts';
+import { notesReview, type NotesAction } from './notes-review.ts';
 import type {
   Booking,
   Contact,
@@ -29,6 +30,7 @@ function definitelyRejected(error: unknown): boolean {
       /^(oauth|google_identity)_/.test(error.code) ||
       error.code === 'google_reauthorize' ||
       error.code === 'google_update_reauthorize' ||
+      error.code === 'request_budget' ||
       error.code === 'google_account_mismatch')
   );
 }
@@ -36,7 +38,7 @@ function definitelyRejected(error: unknown): boolean {
 async function scan(db: D1Database, api: Clients, env: Env, state: Settings) {
   const query = new URLSearchParams({
     user: env.CALENDLY_USER_URI,
-    count: '5',
+    count: '100',
     sort: 'start_time:asc',
   });
   if (state.scan_cursor) query.set('page_token', state.scan_cursor);
@@ -59,9 +61,11 @@ async function scan(db: D1Database, api: Clients, env: Env, state: Settings) {
   await db.batch(statements);
 }
 async function indexGoogle(db: D1Database, api: Clients, state: Settings) {
-  const generation = state.index_active
-    ? state.index_generation!
-    : crypto.randomUUID();
+  const incremental = Boolean(state.google_sync_token);
+  const generation =
+    state.index_active || incremental
+      ? state.index_generation!
+      : crypto.randomUUID();
   if (!state.index_active)
     await db
       .prepare(
@@ -71,15 +75,37 @@ async function indexGoogle(db: D1Database, api: Clients, state: Settings) {
       .run();
   const query = new URLSearchParams({
     personFields: 'emailAddresses,userDefined,metadata',
-    pageSize: '100',
+    pageSize: '1000',
     sources: 'READ_SOURCE_TYPE_CONTACT',
+    requestSyncToken: 'true',
   });
+  if (state.google_sync_token) query.set('syncToken', state.google_sync_token);
   if (state.index_active && state.index_cursor)
     query.set('pageToken', state.index_cursor);
-  const page = await api.google<{
+  let page: {
     connections?: Person[];
     nextPageToken?: string;
-  }>(`/people/me/connections?${query}`);
+    nextSyncToken?: string;
+  };
+  try {
+    page = await api.google(`/people/me/connections?${query}`);
+  } catch (error) {
+    if (
+      incremental &&
+      error instanceof SyncError &&
+      error.code === 'google_http_410'
+    ) {
+      await db
+        .prepare(
+          'UPDATE settings SET google_sync_token=NULL,index_active=0,index_cursor=NULL,index_complete=0 WHERE id=1'
+        )
+        .run();
+      return;
+    }
+    throw error;
+  }
+  if (!page.nextPageToken && !page.nextSyncToken)
+    throw new SyncError('google_sync_token_missing', true);
   const entries = (page.connections ?? []).flatMap((p) => {
     if (!p.resourceName || p.metadata?.deleted) return [];
     const marker = p.userDefined?.find((f) => f.key === MARKER)?.value ?? null;
@@ -93,6 +119,17 @@ async function indexGoogle(db: D1Database, api: Clients, state: Settings) {
     );
   });
   const statements = [
+    // Changes include deletions and removed e-mail addresses. Replace all index
+    // rows for changed resources; leave unchanged contacts intact in delta mode.
+    db
+      .prepare(
+        'DELETE FROM google_index WHERE resource_name IN (SELECT value FROM json_each(?))'
+      )
+      .bind(
+        JSON.stringify(
+          (page.connections ?? []).map((p) => p.resourceName).filter(Boolean)
+        )
+      ),
     db
       .prepare(
         `INSERT INTO google_index(resource_name,email,marker,generation)
@@ -107,17 +144,21 @@ async function indexGoogle(db: D1Database, api: Clients, state: Settings) {
         .prepare('UPDATE settings SET index_cursor=? WHERE id=1')
         .bind(page.nextPageToken)
     );
-  else
+  else {
+    if (!incremental)
+      statements.push(
+        db
+          .prepare('DELETE FROM google_index WHERE generation<>?')
+          .bind(generation)
+      );
     statements.push(
       db
-        .prepare('DELETE FROM google_index WHERE generation<>?')
-        .bind(generation),
-      db
         .prepare(
-          'UPDATE settings SET index_active=0,index_cursor=NULL,index_complete=? WHERE id=1'
+          'UPDATE settings SET index_active=0,index_cursor=NULL,index_complete=?,google_sync_token=? WHERE id=1'
         )
-        .bind(Date.now())
+        .bind(Date.now(), page.nextSyncToken!)
     );
+  }
   await db.batch(statements);
 }
 async function group(
@@ -166,7 +207,8 @@ export async function syncContact(
   api: Clients,
   state: Settings,
   email: string,
-  assertWrite: () => Promise<void>
+  assertWrite: () => Promise<void>,
+  notesAction?: NotesAction
 ) {
   const contact = await db
     .prepare('SELECT * FROM contacts WHERE email=?')
@@ -230,15 +272,27 @@ export async function syncContact(
       person = {};
     }
   }
+  let mergeContact = contact;
+  if (notesAction) {
+    const review = notesReview(person, contact);
+    await db
+      .prepare('UPDATE contacts SET notes_review=? WHERE email=?')
+      .bind(JSON.stringify(review), email)
+      .run();
+    if (notesAction === 'inspect') return true;
+    if (!review.can_recover_unconfirmed)
+      throw new SyncError('notes_resolution_requires_review');
+    mergeContact = { ...contact, pending_block: null };
+  }
   // Validate merge before creating even a label during a conflict.
   mergePerson(
     person,
-    contact,
+    mergeContact,
     bookings,
     state.google_group ?? 'contactGroups/simulation'
   );
   const label = await group(db, api, state, assertWrite);
-  const merged = mergePerson(person, contact, bookings, label);
+  const merged = mergePerson(person, mergeContact, bookings, label);
   if (state.mode === 'simulate') {
     await db
       .prepare('UPDATE contacts SET outcome=? WHERE email=?')
@@ -256,23 +310,35 @@ export async function syncContact(
     return;
   }
   // Persist the intended block BEFORE the API call, allowing a retry after a successful write + lost response.
+  const sources = person.metadata?.sources?.filter((s) => s.type === 'CONTACT');
+  if (contact.resource_name && (!sources?.length || !sources[0]?.etag))
+    throw new SyncError('google_contact_etag_missing');
   await db
     .prepare(
       'UPDATE contacts SET pending_block=?,creation_attempted=CASE WHEN resource_name IS NULL THEN ? ELSE creation_attempted END WHERE email=?'
     )
     .bind(merged.block, Date.now(), email)
     .run();
-  await assertWrite();
+  const restorePreviousIntent = () =>
+    db
+      .prepare(
+        'UPDATE contacts SET pending_block=?,creation_attempted=? WHERE email=?'
+      )
+      .bind(contact.pending_block, contact.creation_attempted, email)
+      .run();
+  try {
+    await assertWrite();
+  } catch (error) {
+    // No Google request was sent. A pause/deadline must not be mistaken for
+    // an uncertain write, including when there was an older pending intent.
+    await restorePreviousIntent();
+    throw error;
+  }
   let saved: Person;
   const fields = Object.fromEntries(
     merged.fields.map((f) => [f, merged.person[f as keyof Person]])
   );
   if (contact.resource_name) {
-    const sources = person.metadata?.sources?.filter(
-      (s) => s.type === 'CONTACT'
-    );
-    if (!sources?.length || !sources[0]?.etag)
-      throw new SyncError('google_contact_etag_missing');
     try {
       saved = await api.google<Person>(
         `${api.personPath(contact.resource_name)}:updateContact?updatePersonFields=${merged.fields.join(',')}&personFields=${PERSON_FIELDS}`,
@@ -282,11 +348,7 @@ export async function syncContact(
     } catch (error) {
       // A definite rejection means the update did not apply. Do not mistake a first-write
       // etag conflict for manual removal of a block that was never installed.
-      if (definitelyRejected(error))
-        await db
-          .prepare('UPDATE contacts SET pending_block=NULL WHERE email=?')
-          .bind(email)
-          .run();
+      if (definitelyRejected(error)) await restorePreviousIntent();
       throw error;
     }
   } else {
@@ -299,13 +361,7 @@ export async function syncContact(
     } catch (error) {
       // A definite refusal (including 429) cannot have created a contact.
       // Timeouts, network errors and 5xx remain uncertain and must use marker recovery.
-      if (definitelyRejected(error))
-        await db
-          .prepare(
-            'UPDATE contacts SET pending_block=NULL,creation_attempted=0 WHERE email=?'
-          )
-          .bind(email)
-          .run();
+      if (definitelyRejected(error)) await restorePreviousIntent();
       throw error;
     }
   }
@@ -340,18 +396,26 @@ async function processJob(
     uri?: string;
     email?: string;
     pageToken?: string;
+    notesAction?: NotesAction;
   };
   if (job.kind === 'invitee') {
     const invitee = await api.invitee(payload.uri!);
     const event = await api.event(invitee.event);
     await saveBooking(db, bookingFrom(invitee, event));
   } else if (job.kind === 'event') {
-    const event = await api.event(payload.uri!);
     const query = new URLSearchParams({ count: '5' });
     if (payload.pageToken) query.set('page_token', payload.pageToken);
-    const page = await api.calendly<Page<Invitee>>(
-      `${new URL(event.uri).pathname}/invitees?${query}`
-    );
+    const path = new URL(calendlyUri(payload.uri, 'event')).pathname;
+    // These two reads are independent. Wait for both even when one fails, so
+    // no network operation outlives the execution's lock.
+    const [eventResult, pageResult] = await Promise.allSettled([
+      api.event(payload.uri!),
+      api.calendly<Page<Invitee>>(`${path}/invitees?${query}`),
+    ]);
+    if (eventResult.status === 'rejected') throw eventResult.reason;
+    if (pageResult.status === 'rejected') throw pageResult.reason;
+    const event = eventResult.value,
+      page = pageResult.value;
     for (const invitee of page.collection)
       await saveBooking(db, bookingFrom(invitee, event));
     if (page.pagination.next_page_token)
@@ -359,15 +423,24 @@ async function processJob(
         uri: event.uri,
         pageToken: page.pagination.next_page_token,
       }).run();
-  } else await syncContact(db, api, state, payload.email!, assertWrite);
-  await db
-    .prepare(
-      "UPDATE jobs SET state='done',error_code=NULL,attempts=0 WHERE id=? AND version=?"
-    )
-    .bind(job.id, job.version)
-    .run();
+  } else {
+    const inspected = await syncContact(
+      db,
+      api,
+      state,
+      payload.email!,
+      assertWrite,
+      payload.notesAction
+    );
+    if (inspected) return 'review';
+  }
+  return 'done';
 }
-export async function run(env: Env, fetcher: Fetcher = fetch): Promise<void> {
+export async function run(
+  env: Env,
+  fetcher: Fetcher = fetch,
+  maxUnits = 1
+): Promise<void> {
   const db = env.DB;
   const initial = await settings(db);
   if (initial.mode === 'paused' || initial.retry_at > Date.now()) return;
@@ -382,78 +455,98 @@ export async function run(env: Env, fetcher: Fetcher = fetch): Promise<void> {
   if (!acquired.meta.changes) return;
   let job: Job | null = null;
   try {
-    const state = await settings(db);
-    if (state.mode === 'paused') return;
+    // Authentication lives only as long as this invocation, never in global state.
     const api = new Clients(env, fetcher);
-    const assertWrite = async () => {
-      if (Date.now() - started > 45000)
-        throw new SyncError('execution_deadline', true);
-      const current = await db
+    for (let unit = 0; unit < Math.min(maxUnits, 30); unit++) {
+      job = null;
+      if (Date.now() - started >= 50000 || api.requests > 37) break;
+      const now = Date.now();
+      // Check the lease/mode and advance the scheduler in one round trip.
+      const state = await db
         .prepare(
-          "SELECT id FROM settings WHERE id=1 AND lease_owner=? AND lease_until>? AND mode=? AND mode IN ('pilot','live')"
+          "UPDATE settings SET turn=turn+1 WHERE id=1 AND lease_owner=? AND lease_until>? AND mode<>'paused' AND retry_at<=? RETURNING *"
         )
-        .bind(owner, Date.now() + 15000, state.mode)
-        .first();
-      if (!current) throw new SyncError('writes_paused', true);
-    };
-    await db.prepare('UPDATE settings SET turn=turn+1 WHERE id=1').run();
-    const priority = await db
-      .prepare(
-        "SELECT * FROM jobs WHERE state='pending' AND kind='invitee' AND due_at<=? ORDER BY id LIMIT 1"
-      )
-      .bind(Date.now())
-      .first<Job>();
-    if (
-      !priority &&
-      (state.scan_active || state.next_scan <= Date.now()) &&
-      state.turn % 2 === 0
-    ) {
-      if (!state.scan_active)
-        await db
+        .bind(owner, now, now)
+        .first<Settings>();
+      if (!state) break;
+      state.turn--; // Scheduling uses the turn before this atomic increment.
+      const assertWrite = async () => {
+        if (Date.now() - started > 50000)
+          throw new SyncError('execution_deadline', true);
+        const current = await db
           .prepare(
-            'UPDATE settings SET scan_active=1,scan_cursor=NULL WHERE id=1'
+            "SELECT id FROM settings WHERE id=1 AND lease_owner=? AND lease_until>? AND mode=? AND mode IN ('pilot','live')"
           )
-          .run();
-      await scan(db, api, env, {
-        ...state,
-        scan_cursor: state.scan_active ? state.scan_cursor : null,
-      });
-      return;
-    }
-    job =
-      priority ??
-      (await db
+          .bind(owner, Date.now() + 15000, state.mode)
+          .first();
+        if (!current) throw new SyncError('writes_paused', true);
+      };
+      job = await db
         .prepare(
-          "SELECT * FROM jobs WHERE state='pending' AND due_at<=? ORDER BY CASE WHEN kind=? THEN 0 ELSE 1 END,id LIMIT 1"
+          "SELECT * FROM jobs WHERE state='pending' AND due_at<=? ORDER BY CASE WHEN kind='invitee' THEN 0 WHEN kind=? THEN 1 ELSE 2 END,id LIMIT 1"
         )
         .bind(Date.now(), state.turn % 3 === 0 ? 'contact' : 'event')
-        .first<Job>());
-    if (!job) return;
-    if (job.kind === 'contact') {
-      const pendingCreation = await db
-        .prepare(
-          'SELECT max(creation_attempted) AS latest FROM contacts WHERE resource_name IS NULL'
-        )
-        .first<{ latest: number | null }>();
+        .first<Job>();
       if (
-        state.index_active ||
-        !state.index_complete ||
-        Date.now() - state.index_complete > 300000 ||
-        (pendingCreation?.latest ?? 0) >= state.index_complete
+        job?.kind !== 'invitee' &&
+        (state.scan_active || state.next_scan <= Date.now()) &&
+        state.turn % 2 === 0
       ) {
-        // This is infrastructure work, not a failed contact attempt.
         job = null;
-        await indexGoogle(db, api, state);
-        return;
+        if (!state.scan_active)
+          await db
+            .prepare(
+              'UPDATE settings SET scan_active=1,scan_cursor=NULL WHERE id=1'
+            )
+            .run();
+        await scan(db, api, env, {
+          ...state,
+          scan_cursor: state.scan_active ? state.scan_cursor : null,
+        });
+        continue;
       }
+      if (!job) break;
+      if (job.kind === 'contact') {
+        const contact = await db
+          .prepare(
+            'SELECT resource_name,creation_attempted FROM contacts WHERE email=?'
+          )
+          .bind((JSON.parse(job.payload) as { email: string }).email)
+          .first<Pick<Contact, 'resource_name' | 'creation_attempted'>>();
+        // A mapped contact is always read by its resourceName before writing.
+        // Only an unresolved identity needs the paginated e-mail/marker index.
+        if (
+          !contact?.resource_name &&
+          (state.index_active ||
+            !state.index_complete ||
+            Date.now() - state.index_complete > 300000 ||
+            (contact?.creation_attempted ?? 0) >= state.index_complete)
+        ) {
+          // This is infrastructure work, not a failed contact attempt.
+          job = null;
+          await indexGoogle(db, api, state);
+          continue;
+        }
+      }
+      const completion = await processJob(db, api, job, state, assertWrite);
+      await db.batch([
+        db
+          .prepare(
+            "UPDATE jobs SET state=?,error_code=?,attempts=0,payload=json_remove(payload,'$.notesAction') WHERE id=? AND version=?"
+          )
+          .bind(
+            completion === 'review' ? 'conflict' : 'done',
+            completion === 'review' ? 'notes_review_required' : null,
+            job.id,
+            job.version
+          ),
+        db
+          .prepare(
+            'UPDATE settings SET last_success=?,last_error=NULL,retry_at=0 WHERE id=1'
+          )
+          .bind(Date.now()),
+      ]);
     }
-    await processJob(db, api, job, state, assertWrite);
-    await db
-      .prepare(
-        'UPDATE settings SET last_success=?,last_error=NULL,retry_at=0 WHERE id=1'
-      )
-      .bind(Date.now())
-      .run();
   } catch (error) {
     const safe = safeError(error);
     if (job) {
@@ -462,6 +555,7 @@ export async function run(env: Env, fetcher: Fetcher = fetch): Promise<void> {
         'pilot_limit',
         'writes_paused',
         'execution_deadline',
+        'request_budget',
       ].includes(safe.code);
       const retry = safe.retryable && (attempts < 8 || special);
       await db

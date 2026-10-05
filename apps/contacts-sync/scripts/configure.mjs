@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import ts from 'typescript';
 const env = process.argv[2];
 if (!['staging', 'production'].includes(env))
   throw new Error('Préciser staging ou production.');
@@ -13,14 +14,15 @@ if (required.some((k) => !process.env[k]))
   throw new Error(
     'Configuration incomplète. Consulter le guide d’installation.'
   );
-const config = JSON.parse(
-  readFileSync(
-    existsSync('wrangler.local.json')
-      ? 'wrangler.local.json'
-      : 'wrangler.jsonc',
-    'utf8'
-  )
+const source = existsSync('wrangler.local.json')
+  ? 'wrangler.local.json'
+  : 'wrangler.jsonc';
+const parsed = ts.parseConfigFileTextToJson(
+  source,
+  readFileSync(source, 'utf8')
 );
+if (parsed.error) throw new Error('Configuration Wrangler invalide.');
+const config = parsed.config;
 config.account_id = process.env.CLOUDFLARE_ACCOUNT_ID;
 config.env[env].d1_databases[0].database_id = process.env.CONTACTS_SYNC_D1_ID;
 for (const key of required.slice(2))
