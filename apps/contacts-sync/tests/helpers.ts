@@ -141,6 +141,10 @@ export function upstream() {
           },
         });
       if (url.pathname === '/scheduled_events') {
+        // A regular member can read personal history with user alone; adding
+        // organization would require administrator rights in Calendly.
+        if (url.searchParams.has('organization'))
+          return Response.json({}, { status: 403 });
         const rows = [...events.values()],
           offset = Number(url.searchParams.get('page_token') ?? 0),
           count = Number(url.searchParams.get('count'));

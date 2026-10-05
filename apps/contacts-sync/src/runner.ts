@@ -36,7 +36,6 @@ function definitelyRejected(error: unknown): boolean {
 async function scan(db: D1Database, api: Clients, env: Env, state: Settings) {
   const query = new URLSearchParams({
     user: env.CALENDLY_USER_URI,
-    organization: env.CALENDLY_ORGANIZATION_URI,
     count: '5',
     sort: 'start_time:asc',
   });
