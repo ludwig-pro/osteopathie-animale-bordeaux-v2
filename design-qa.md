@@ -33,7 +33,7 @@ Captures :
 - Navigation : accès direct, rechargement, retour navigateur, liens entre pages, ancres depuis une autre page et menu mobile.
 - Accessibilité fonctionnelle : focus du formulaire, Échap et retour du focus dans le menu, clavier sur les onglets, accordéons, liens d’évitement et un seul titre H1 par page.
 - Consentement : refus, préférences, chargement conditionnel des services conservés.
-- Carte : fond Mapbox Light configuré par `PUBLIC_MAPBOX_TOKEN`, repli OpenStreetMap désaturé, code et styles Leaflet chargés au survol ou après activation explicite.
+- Carte : fond Mapbox Streets configuré par `PUBLIC_MAPBOX_TOKEN`, repli OpenStreetMap standard, code et styles Leaflet chargés au survol ou après activation explicite.
 - Lighthouse mobile, accueil avec le nouveau hero, mesure locale unique : performance 93, accessibilité 100, bonnes pratiques 100, SEO 100.
 
 ## Retours sur la preview — 5 octobre
@@ -49,7 +49,11 @@ Captures :
 
 ## Raffinement de la carte — 5 octobre
 
-Fond Mapbox Light, tuiles haute définition, repère OA et étiquette « Le cabinet », boutons de zoom arrondis en français. Le même fond et le même filtre de couleur sont utilisés avant et après activation. Les tests utilisent un jeton factice et des tuiles simulées, et contrôlent explicitement le chemin Mapbox ainsi que l’alignement géographique des deux vues. Le jeton réel n’est ni lu ni copié : le build utilise `PUBLIC_MAPBOX_TOKEN` lorsqu’elle est configurée sur Netlify. Interface vérifiée à 320, 390, 1182 et 1456 px. Captures des contrôles sur fond neutre de test (sans géographie simulée) : [mobile](docs/screenshots/feedback/map-controls-mobile.png) et [desktop](docs/screenshots/feedback/map-controls-desktop.png). La présence et la validité de la clé sur Netlify ne sont pas vérifiées depuis cet environnement.
+Fond Mapbox Streets v12, tuiles haute définition, repère OA et étiquette « Le cabinet », boutons de zoom arrondis en français. Le même fond, sans filtre de couleur, est utilisé avant et après activation. Les tests utilisent un jeton factice et des tuiles simulées, et contrôlent explicitement le chemin Mapbox ainsi que l’alignement géographique des deux vues. Le jeton réel n’est ni lu ni copié : le build utilise `PUBLIC_MAPBOX_TOKEN` lorsqu’elle est configurée sur Netlify. Interface vérifiée à 320, 390, 1182 et 1456 px. Captures des contrôles sur fond neutre de test (sans géographie simulée) : [mobile](docs/screenshots/feedback/map-controls-mobile.png) et [desktop](docs/screenshots/feedback/map-controls-desktop.png). La capture fournie par l’utilisateur confirme l’activation de Mapbox sur Netlify.
+
+## Lisibilité de la carte — 5 octobre
+
+La capture de la preview fournie par l’utilisateur confirme que Mapbox est actif mais que le fond Light manque de contraste. Le fond passe à Mapbox Streets v12, sans filtres CSS sur les tuiles statiques ou interactives. Le repère OA, les contrôles et la transition sont conservés. Contrôle navigateur à 320 et 1106 px : URLs Streets v12 et filtre calculé `none` sur les deux vues. Build, contrôle statique, 26 cas unitaires et 42 tests E2E réussis. La vérification précédente de la présence de la clé n’est donc plus nécessaire ; sa valeur n’a pas été consultée.
 
 ## Limites de vérification
 

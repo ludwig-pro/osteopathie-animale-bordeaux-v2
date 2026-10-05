@@ -3,7 +3,7 @@ import { API_CONFIG } from './constants/api';
 const mapboxToken = API_CONFIG.mapbox.token;
 const mapboxEnabled = Boolean(mapboxToken);
 const tileUrl = mapboxEnabled
-  ? `https://api.mapbox.com/styles/v1/mapbox/light-v11/tiles/512/{z}/{x}/{y}@2x?access_token=${encodeURIComponent(mapboxToken ?? '')}`
+  ? `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/512/{z}/{x}/{y}@2x?access_token=${encodeURIComponent(mapboxToken ?? '')}`
   : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 // Both views share the camera, raster style and pixel origin.

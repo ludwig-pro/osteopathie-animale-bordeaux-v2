@@ -849,14 +849,6 @@
     height: 256px;
     max-width: none;
   }
-  .map-static-layer img,
-  .cabinet-live-map .leaflet-tile-pane {
-    filter: grayscale(0.3) sepia(0.18) saturate(0.65);
-  }
-  .map-panel[data-map-provider='openstreetmap'] .map-static-layer img,
-  .map-panel[data-map-provider='openstreetmap'] .leaflet-tile-pane {
-    filter: grayscale(1) sepia(0.15) contrast(0.7) brightness(1.15);
-  }
   .map-static-layer {
     position: absolute;
     left: 50%;
