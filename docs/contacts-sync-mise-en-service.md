@@ -60,3 +60,9 @@ La configuration privée `apps/contacts-sync/wrangler.local.json` a été copié
 ## Contrôle pendant la livraison du code
 
 Le contrôle du 5 octobre 2026, après sauvegarde de la configuration, confirme le mode `live`, aucune erreur globale ni reconnexion Google nécessaire : 751 événements historiques traités sur 2 482, 753 réservations enregistrées et 203 tâches de contacts terminées. L’import continue. Un nouveau conflit `google_contact_shared_by_emails` (tâche 2898) concerne une correspondance ambiguë ; la fiche est conservée sans fusion automatique et ce conflit est distinct du conflit de notes résolu précédemment.
+
+## État final observé avant fusion
+
+Le dernier contrôle de production confirme 2 482 tâches événement terminées, 2 483 réservations enregistrées, 1 451 tâches contact terminées et aucune tâche en attente. Treize correspondances ambiguës restent en conflit `google_contact_shared_by_emails`, sans fusion automatique. Le mode est `live`, aucune erreur globale et aucune reconnexion Google ne sont signalées. L’historique accessible a été parcouru entièrement ; la résolution de ces treize cas et le contrôle après 24 heures restent à effectuer.
+
+Les vérifications locales passent (46 tests Worker, 26 tests unitaires du site et 42 tests Playwright). La CI du même code a validé le Worker et les parcours du site avant le commit de relance de preview ; sa vérification Lighthouse avait alors échoué faute de preview. La preview finale est désormais publiée et vérifiée. Les nouveaux contrôles GitHub sont en file d’attente pendant un incident Actions annoncé le 5 octobre 2026 à 19:11 UTC : [état officiel GitHub](https://www.githubstatus.com/). La fusion demandée utilise les règles normales du dépôt, sans désactiver de protection ni forcer une approbation.
