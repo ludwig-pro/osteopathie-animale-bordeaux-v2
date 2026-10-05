@@ -56,3 +56,7 @@ Résultat réel : tâche terminée, écriture Google confirmée, bloc Calendly e
 ## Conservation de la configuration locale
 
 La configuration privée `apps/contacts-sync/wrangler.local.json` a été copiée dans le checkout durable de `local_sources`, avec vérification de contenu identique et permissions `0600`. Ce fichier reste ignoré et non suivi par Git ; les secrets restent dans Cloudflare. L’archivage du worktree de développement ne suspend pas le Worker ni le traitement D1.
+
+## Contrôle pendant la livraison du code
+
+Le contrôle du 5 octobre 2026, après sauvegarde de la configuration, confirme le mode `live`, aucune erreur globale ni reconnexion Google nécessaire : 751 événements historiques traités sur 2 482, 753 réservations enregistrées et 203 tâches de contacts terminées. L’import continue. Un nouveau conflit `google_contact_shared_by_emails` (tâche 2898) concerne une correspondance ambiguë ; la fiche est conservée sans fusion automatique et ce conflit est distinct du conflit de notes résolu précédemment.
