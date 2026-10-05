@@ -84,3 +84,9 @@ light-mobile.html
 .gitignore
 performance.md
 LIGHTHOUSE.json
+
+# Worker local state and credentials
+.wrangler/
+.dev.vars*
+wrangler.local.json*
+.credentials/

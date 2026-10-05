@@ -3,7 +3,7 @@
 Deux applications déployées indépendamment :
 
 - `apps/website/` : site Astro, publié sur Netlify. [Documentation du site](apps/website/README.md).
-- `apps/contacts-sync/` : emplacement prévu pour le Worker Calendly → Google Contacts.
+- `apps/contacts-sync/` : Worker Calendly → Google Contacts, D1, tests et outils privés. [Installation et exploitation](docs/calendly-google-contacts.md).
 
 ## Développement
 
@@ -15,6 +15,8 @@ yarn dev
 yarn run check
 yarn test
 yarn build
+yarn dev:sync
+yarn build:sync
 ```
 
 Une seule installation et un seul `yarn.lock`. Chaque application déclare ses propres dépendances et possède ses configurations et tests. Les commandes historiques du site restent disponibles à la racine.
@@ -25,7 +27,7 @@ Copier `apps/website/env.example` vers `apps/website/.env` pour la configuration
 
 Netlify installe depuis la racine, exécute `yarn workspace @osteo/website build` et publie `apps/website/dist`. Conserver le projet Netlify et ses variables existants, avec le répertoire de base à la racine. `netlify.toml` reste à la racine pour conserver les en-têtes et redirections.
 
-La CI vérifie le site, Playwright et Lighthouse. Les ressources Cloudflare et secrets de synchronisation seront distincts de ceux du site.
+La CI vérifie le site, Playwright et Lighthouse, ainsi que le Worker avec des données fictives et une base locale. Le workflow Cloudflare est manuel et utilise des environnements staging/production distincts ; les secrets du service restent dans Cloudflare. Le site conserve son déploiement Netlify indépendant.
 
 Les plans historiques sous `plans/` décrivent les chemins avant la migration : leurs chemins site sont désormais relatifs à `apps/website/`.
 

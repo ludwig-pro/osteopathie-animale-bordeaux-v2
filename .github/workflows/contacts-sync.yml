@@ -1,0 +1,22 @@
+name: Contacts Sync
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: yarn workspace @osteo/contacts-sync run check
+      - run: yarn workspace @osteo/contacts-sync test
+      - run: yarn workspace @osteo/contacts-sync build
+      - run: yarn workspace @osteo/contacts-sync wrangler d1 migrations apply DB --local
+      - run: yarn sync:admin status --local

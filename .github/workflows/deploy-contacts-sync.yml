@@ -1,0 +1,44 @@
+name: Deploy Contacts Sync
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Cloudflare environment (runtime starts paused on a new database)
+        type: choice
+        options: [staging, production]
+        default: staging
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: contacts-sync-${{ inputs.environment }}
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: contacts-sync-${{ inputs.environment }}
+    env:
+      SYNC_ENV: ${{ inputs.environment }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: yarn workspace @osteo/contacts-sync run check
+      - run: yarn workspace @osteo/contacts-sync test
+      - name: Configure, migrate and deploy
+        working-directory: apps/contacts-sync
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CONTACTS_SYNC_D1_ID: ${{ vars.CONTACTS_SYNC_D1_ID }}
+          EXPECTED_GOOGLE_EMAIL: ${{ vars.EXPECTED_GOOGLE_EMAIL }}
+          CALENDLY_USER_URI: ${{ vars.CALENDLY_USER_URI }}
+          CALENDLY_ORGANIZATION_URI: ${{ vars.CALENDLY_ORGANIZATION_URI }}
+        run: |
+          node scripts/configure.mjs "$SYNC_ENV"
+          yarn wrangler d1 migrations apply DB --remote --config wrangler.local.json --env "$SYNC_ENV"
+          yarn wrangler deploy --config wrangler.local.json --env "$SYNC_ENV"
