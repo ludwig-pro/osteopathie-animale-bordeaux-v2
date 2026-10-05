@@ -1,6 +1,6 @@
 [build]
-  command = "yarn build"
-  publish = "dist"
+  command = "yarn workspace @osteo/website build"
+  publish = "apps/website/dist"
 
 [build.environment]
   NODE_VERSION = "24.21.0"

@@ -15,3 +15,7 @@ test-results
 /CLAUDE.md
 /RFC.md
 /plans/
+
+.wrangler
+wrangler.local.json
+.credentials
