@@ -8,7 +8,7 @@ export const BOOKING_URL =
 
 export default function BookingLink({
   source,
-  label = 'Prendre rendez-vous',
+  label = 'Rendez-vous en cabinet',
   testId,
   className,
   variant,

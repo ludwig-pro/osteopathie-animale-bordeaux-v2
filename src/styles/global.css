@@ -4,6 +4,28 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 
+@keyframes accordion-expand {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes accordion-collapse {
+  from {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
 :root {
   --background: #f8f7f0;
   --foreground: #273e32;
@@ -139,6 +161,17 @@
 }
 
 @layer components {
+  .accordion-content[data-state='open'] {
+    animation: accordion-expand 250ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .accordion-content[data-state='closed'] {
+    animation: accordion-collapse 200ms ease-in;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .accordion-content[data-state] {
+      animation: none;
+    }
+  }
   .site-container {
     width: min(1240px, calc(100% - 112px));
     margin-inline: auto;
@@ -460,9 +493,10 @@
     line-height: 1.7;
   }
   .brand-mark > span {
-    font-size: 31px;
+    font-size: 25px;
     font-style: italic;
-    transform: translateY(-2px);
+    letter-spacing: -0.08em;
+    transform: translateY(-1px);
   }
   .animal-grid {
     display: grid;
@@ -794,11 +828,98 @@
     text-underline-offset: 3px;
   }
   .map-panel {
+    position: relative;
     height: 430px;
     border-radius: 24px;
     overflow: hidden;
     background: var(--secondary);
     border: 1px solid var(--border);
+  }
+  .map-static,
+  .map-interactive {
+    position: absolute;
+    inset: 0;
+  }
+  .map-static img {
+    position: absolute;
+    width: 256px;
+    height: 256px;
+    max-width: none;
+  }
+  .map-static-layer {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .cabinet-live-map {
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+  .map-attribution {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    padding: 0 5px;
+    background: #fffc;
+    font:
+      12px/1.5 'Helvetica Neue',
+      Arial,
+      sans-serif;
+    color: #0078a8;
+  }
+  .map-static-error {
+    position: absolute;
+    inset: 0;
+    background: var(--secondary);
+  }
+  .cabinet-map-marker {
+    width: 22px;
+    height: 22px;
+    border: 4px solid var(--background);
+    border-radius: 50%;
+    background: var(--primary);
+    box-shadow: 0 2px 8px #183c3040;
+    cursor: pointer;
+  }
+  .map-static .cabinet-map-marker {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .map-interactive {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 350ms ease;
+  }
+  .map-panel[data-interactive='true'] .map-interactive {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .map-activation {
+    position: absolute;
+    bottom: 42px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    padding-inline: 12px;
+  }
+  .map-activation p {
+    border-radius: 16px;
+    background: var(--background);
+    padding: 12px 18px;
+    font-size: var(--type-small);
+  }
+  .map-unavailable {
+    font-size: var(--type-small);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .map-interactive {
+      transition: none;
+    }
   }
   .map-placeholder {
     display: flex;

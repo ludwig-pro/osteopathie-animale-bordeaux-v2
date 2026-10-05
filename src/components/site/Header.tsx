@@ -25,6 +25,7 @@ import {
   SheetTrigger,
 } from '../ui/sheet';
 import BookingLink from './BookingLink';
+import BrandMark from './BrandMark';
 
 const animals = [
   { label: 'Le chien', slug: 'chien', icon: DogIcon },
@@ -57,9 +58,7 @@ export default function Header({
       <header className="site-header">
         <div className="site-container header-inner">
           <a href="/" className="brand" aria-label="Agathe Lescout — Accueil">
-            <span className="brand-mark">
-              <span aria-hidden="true">al.</span>
-            </span>
+            <BrandMark />
             <span>
               Agathe Lescout<small>OSTÉOPATHE ANIMALIER</small>
             </span>

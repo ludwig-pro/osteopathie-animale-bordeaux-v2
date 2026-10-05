@@ -1,18 +1,36 @@
-import { lazy, Suspense, useState } from 'react';
-import {
-  ArrowUpRightIcon,
-  MapPinIcon,
-  MapTrifoldIcon,
-} from '@phosphor-icons/react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { ArrowUpRightIcon, MapPinIcon } from '@phosphor-icons/react';
 import { BUSINESS_CONFIG } from '../../../lib/constants/site';
 import { CABINET_DIRECTIONS_URL } from '../../../lib/directions';
 import SectionHeading from '../../site/SectionHeading';
 import { Button } from '../../ui/button';
+import StaticMap from './StaticMap';
 
-const MapBox = lazy(() => import('./MapBox'));
+const InteractiveMap = lazy(() => import('./InteractiveMap'));
 
 export default function MapSection({ id = 'cabinet' }: { id?: string }) {
   const [isMapRequested, setIsMapRequested] = useState(false);
+  const [isMapReady, setIsMapReady] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
+  const panel = useRef<HTMLDivElement>(null);
+  const focusRequested = useRef(false);
+  const requestMap = () => setIsMapRequested(true);
+  const revealMap = () => {
+    focusRequested.current = Boolean(
+      panel.current
+        ?.querySelector('.map-activation')
+        ?.contains(document.activeElement)
+    );
+    setIsMapReady(true);
+  };
+  useEffect(() => {
+    if (isMapReady && focusRequested.current) {
+      panel.current
+        ?.querySelector<HTMLDivElement>('.cabinet-live-map')
+        ?.focus({ preventScroll: true });
+      focusRequested.current = false;
+    }
+  }, [isMapReady]);
   return (
     <section id={id} className="section-space site-container cabinet-grid">
       <div className="cabinet-copy">
@@ -59,35 +77,56 @@ export default function MapSection({ id = 'cabinet' }: { id?: string }) {
           </a>
         </Button>
       </div>
-      <div className="map-panel">
-        {!isMapRequested ? (
-          <div className="map-placeholder">
-            <MapTrifoldIcon size={65} weight="thin" aria-hidden="true" />
-            <h3>Rendez-vous à Bègles.</h3>
-            <p>34 rue du Maréchal Joffre · 33130</p>
-            <Button
-              data-testid="map-load-trigger"
-              className="mt-7"
-              onClick={() => setIsMapRequested(true)}
-            >
-              Afficher la carte interactive
-              <ArrowUpRightIcon aria-hidden="true" />
-            </Button>
+      <div
+        ref={panel}
+        className="map-panel"
+        data-interactive={isMapReady}
+        onClick={(event) => {
+          if (!isMapReady && !(event.target as HTMLElement).closest('a'))
+            requestMap();
+        }}
+        onPointerEnter={(event) => {
+          if (event.pointerType === 'mouse') requestMap();
+        }}
+      >
+        <StaticMap
+          lng={BUSINESS_CONFIG.geo.longitude}
+          lat={BUSINESS_CONFIG.geo.latitude}
+        />
+        <div
+          id={`${id}-interactive-map`}
+          className="map-interactive"
+          aria-hidden={!isMapReady}
+          inert={!isMapReady}
+        >
+          {isMapRequested && (
+            <Suspense fallback={null}>
+              <InteractiveMap
+                lng={BUSINESS_CONFIG.geo.longitude}
+                lat={BUSINESS_CONFIG.geo.latitude}
+                label="Cabinet de Bègles"
+                onReady={revealMap}
+                onError={() => setMapFailed(true)}
+              />
+            </Suspense>
+          )}
+        </div>
+        {!isMapReady && (
+          <div className="map-activation">
+            {mapFailed ? (
+              <p role="status">La carte est temporairement indisponible.</p>
+            ) : (
+              <Button
+                data-testid="map-load-trigger"
+                aria-controls={`${id}-interactive-map`}
+                aria-expanded={isMapRequested}
+                onClick={requestMap}
+              >
+                Afficher la carte interactive
+                <ArrowUpRightIcon aria-hidden="true" />
+              </Button>
+            )}
           </div>
-        ) : (
-          <Suspense
-            fallback={
-              <div className="map-placeholder" role="status">
-                Chargement de la carte...
-              </div>
-            }
-          >
-            <MapBox
-              lng={BUSINESS_CONFIG.geo.longitude}
-              lat={BUSINESS_CONFIG.geo.latitude}
-              label="Cabinet de Bègles"
-            />
-          </Suspense>
         )}
       </div>
     </section>

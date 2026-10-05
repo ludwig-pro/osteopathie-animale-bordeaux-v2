@@ -1,4 +1,5 @@
 import { ArrowUpRightIcon } from '@phosphor-icons/react';
+import BrandMark from '../site/BrandMark';
 
 export default function Footer() {
   return (
@@ -6,9 +7,7 @@ export default function Footer() {
       <div className="site-container">
         <div className="footer-top">
           <a href="/" className="brand" aria-label="Agathe Lescout — Accueil">
-            <span className="brand-mark">
-              <span aria-hidden="true">al.</span>
-            </span>
+            <BrandMark />
             <span>
               Agathe Lescout<small>OSTÉOPATHE ANIMALIER</small>
             </span>

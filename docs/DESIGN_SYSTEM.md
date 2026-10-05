@@ -11,7 +11,7 @@ La refonte conserve les photographies et les textes du site. La direction finale
 - `Button` : variantes `default`, `accent`, `outline`, `secondary`, `ghost`, `link` ; tailles `sm`, `default`, `lg`, `icon` ; `asChild` pour les liens. `BookingLink` transmet la variante au bouton partagé.
 - `Card` / `CardContent` : cartes de tarifs.
 - `Tabs` : changement du lieu de consultation, navigation au clavier.
-- `Accordion` : étapes de consultation, contrôles accessibles.
+- `Accordion` : étapes de consultation, contrôles accessibles, ouverture en 250 ms et fermeture en 200 ms avec animation de hauteur et d’opacité. Les animations et la rotation du pictogramme sont désactivées avec `prefers-reduced-motion`.
 - `Sheet` : menu mobile avec gestion du focus, fermeture par Échap et clic extérieur.
 - `DropdownMenu` : navigation desktop entre les animaux.
 - `Input` / `Textarea` : champs avec labels visibles et états d’erreur.
@@ -19,6 +19,8 @@ La refonte conserve les photographies et les textes du site. La direction finale
 ## Composition
 
 `BaseLayout.astro` fournit les métadonnées, le consentement, le lien d’évitement, le header et le footer. `SectionHeading`, `BookingLink` et `AnimalsSection` sont partagés entre les pages. Les sections statiques restent sans hydratation ; seuls les menus, rendez-vous suivis, tarifs, accordéons, carte et formulaire utilisent des îlots React.
+
+`BrandMark` affiche le monogramme « OA » (Ostéopathie Animale) dans l’en-tête et le pied de page. Les liens Calendly passent par `BookingLink` et indiquent visiblement « en cabinet » avant la redirection ; le libellé du hero reprend cette précision.
 
 Le hero de l’accueil associe une photographie pleine largeur, un fond vert profond et un grand titre en Lora. Ses tokens de surface, d’accent et de focus sont limités à `.hero` : le bouton de rendez-vous utilise la variante `accent` avec des angles légèrement arrondis. Les autres sections et les pages animaux conservent la palette, les cartes et les boutons arrondis de la V1. Le cadrage et les dégradés s’adaptent au mobile ; le bandeau inférieur renvoie vers les quatre animaux.
 
@@ -41,7 +43,7 @@ Les textes métier et les montants ne sont pas réécrits dans cette refonte. Le
 
 Lancer `yarn check:static`, `yarn test:unit` et `yarn test:e2e`. Les tests couvrent aussi les accès directs aux nouvelles pages, les canoniques, la conservation des textes, les liens entre pages, le menu mobile, le clavier, les images responsive et la navigation sans JavaScript.
 
-La prise de rendez-vous conserve le lien Calendly existant. Le formulaire conserve Netlify Forms et ses validations ; la soumission locale est testée avec des réponses simulées, sans envoyer de message réel. La carte Mapbox reste chargée à la demande et propose un repli si son jeton manque.
+La prise de rendez-vous conserve le lien Calendly existant. Le formulaire conserve Netlify Forms et ses validations ; la soumission locale est testée avec des réponses simulées, sans envoyer de message réel. La carte affiche d’abord un fond statique OpenStreetMap et un repère au cabinet. `StaticMap` et `InteractiveMap` partagent les tuiles, le zoom et le calcul du cadrage dans `src/lib/map.ts`. Leaflet et sa feuille de styles se chargent au survol avec une souris, au clic ou au clavier. La carte interactive apparaît en fondu seulement après le chargement complet des tuiles ; l’aperçu reste visible en cas d’erreur. Sur mobile, le défilement n’active pas la carte. Les attributions restent visibles et aucun jeton d’API n’est nécessaire. Le zoom à la molette est désactivé pour préserver le défilement de la page.
 
 ### Lisibilité
 

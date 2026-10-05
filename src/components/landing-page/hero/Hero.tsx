@@ -37,7 +37,7 @@ export default function Hero({
                 source="hero"
                 variant="accent"
                 className="rounded-sm"
-                label="Prendre rendez-vous en ligne"
+                label="Prendre rendez-vous en cabinet"
                 testId="cta-booking-online"
               />
               <a

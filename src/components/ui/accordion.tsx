@@ -34,7 +34,7 @@ export function AccordionTrigger({
         {children}
         <PlusIcon
           aria-hidden="true"
-          className="size-5 shrink-0 transition-transform group-data-[state=open]:rotate-45"
+          className="size-5 shrink-0 transition-transform duration-250 motion-reduce:transition-none group-data-[state=open]:rotate-45"
         />
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
@@ -47,7 +47,10 @@ export function AccordionContent({
   ...props
 }: ComponentProps<typeof AccordionPrimitive.Content>) {
   return (
-    <AccordionPrimitive.Content className="overflow-hidden" {...props}>
+    <AccordionPrimitive.Content
+      className="accordion-content overflow-hidden"
+      {...props}
+    >
       <div
         className={cn(
           'pb-6 text-sm leading-relaxed text-muted-foreground',
