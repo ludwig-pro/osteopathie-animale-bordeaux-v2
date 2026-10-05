@@ -55,6 +55,10 @@ Fond Mapbox Streets v12, tuiles haute définition, repère OA et étiquette « L
 
 La capture de la preview fournie par l’utilisateur confirme que Mapbox est actif mais que le fond Light manque de contraste. Le fond passe à Mapbox Streets v12, sans filtres CSS sur les tuiles statiques ou interactives. Le repère OA, les contrôles et la transition sont conservés. Contrôle navigateur à 320 et 1106 px : URLs Streets v12 et filtre calculé `none` sur les deux vues. Build, contrôle statique, 26 cas unitaires et 42 tests E2E réussis. La vérification précédente de la présence de la clé n’est donc plus nécessaire ; sa valeur n’a pas été consultée.
 
+## Activation directe de la carte — 5 octobre
+
+Le bouton visible « Afficher la carte interactive » est retiré. Une surface transparente couvre l’aperçu et permet son activation au clic, au toucher ou au clavier ; le survol avec une souris reste disponible. Le focus clavier passe ensuite à la carte interactive. Les crédits de carte restent cliquables.
+
 ## Limites de vérification
 
 La refonte est partagée via la Deploy Preview de la PR #26. Le lien Calendly a été vérifié sans créer de rendez-vous. Les réponses de soumission Netlify sont simulées dans les tests : aucun message réel n’a été envoyé. Le chargement des tuiles externes est simulé dans les tests de carte, le réseau de cet environnement ne permettant pas d’atteindre les fournisseurs de cartes. La transition, l’alignement des tuiles et du repère ainsi que le repli réseau sont vérifiés ; l’affichage des tuiles réelles dépend du service Mapbox et du jeton configuré sur Netlify (ou d’OpenStreetMap en repli). Le score Lighthouse décrit cette mesure locale et ne garantit pas les performances en production.

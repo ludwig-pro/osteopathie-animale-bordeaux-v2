@@ -19,7 +19,7 @@ export default function MapSection({ id = 'cabinet' }: { id?: string }) {
   const revealMap = () => {
     focusRequested.current = Boolean(
       panel.current
-        ?.querySelector('.map-activation')
+        ?.querySelector('[data-testid="map-load-trigger"]')
         ?.contains(document.activeElement)
     );
     setIsMapReady(true);
@@ -122,21 +122,20 @@ export default function MapSection({ id = 'cabinet' }: { id?: string }) {
             rel="noopener noreferrer"
           />
         )}
-        {!isMapReady && (
+        {!isMapReady && !mapFailed && (
+          <button
+            type="button"
+            className="map-load-surface"
+            data-testid="map-load-trigger"
+            aria-label="Activer la carte interactive du cabinet de Bègles"
+            aria-controls={`${id}-interactive-map`}
+            aria-expanded={isMapRequested}
+            onClick={requestMap}
+          />
+        )}
+        {!isMapReady && mapFailed && (
           <div className="map-activation">
-            {mapFailed ? (
-              <p role="status">La carte est temporairement indisponible.</p>
-            ) : (
-              <Button
-                data-testid="map-load-trigger"
-                aria-controls={`${id}-interactive-map`}
-                aria-expanded={isMapRequested}
-                onClick={requestMap}
-              >
-                Afficher la carte interactive
-                <ArrowUpRightIcon aria-hidden="true" />
-              </Button>
-            )}
+            <p role="status">La carte est temporairement indisponible.</p>
           </div>
         )}
       </div>

@@ -196,7 +196,7 @@ test('keeps the mobile preview static during scrolling and activates it on tap',
       .locator('.map-panel')
       .dispatchEvent('pointerenter', { pointerType: 'touch' });
     expect(requests.has(assets.js)).toBe(false);
-    await page.locator('.map-static').tap({ position: { x: 40, y: 40 } });
+    await trigger.tap({ position: { x: 40, y: 40 } });
     await expect(page.locator('.map-panel')).toHaveAttribute(
       'data-interactive',
       'true'
