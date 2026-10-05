@@ -2,6 +2,7 @@ name: CI Quality
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
 
@@ -80,6 +81,8 @@ jobs:
           if-no-files-found: ignore
 
   lighthouse_remote:
+    # Netlify previews target the production branch; stacked PRs are audited on retarget.
+    if: github.event_name != 'pull_request' || github.base_ref == 'main'
     name: Lighthouse (Remote)
     runs-on: ubuntu-latest
     needs: lint_build
