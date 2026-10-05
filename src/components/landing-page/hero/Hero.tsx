@@ -31,6 +31,8 @@ export default function Hero({
             </h1>
             <p className="hero-description">
               Votre experte pour le bien-être de vos chiens, chats et N.A.C.
+              <br />
+              Consultations en cabinet et à domicile.
             </p>
             <div className="hero-actions">
               <BookingLink
