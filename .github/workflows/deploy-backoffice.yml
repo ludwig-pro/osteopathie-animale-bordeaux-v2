@@ -1,0 +1,49 @@
+name: Deploy Backoffice
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Cloudflare environment (Google-only Access must already be configured)
+        type: choice
+        options: [staging, production]
+        default: staging
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: backoffice-${{ inputs.environment }}
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: backoffice-${{ inputs.environment }}
+    env:
+      BACKOFFICE_ENV: ${{ inputs.environment }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: yarn workspace @osteo/backoffice run check
+      - run: yarn workspace @osteo/backoffice test
+      - run: yarn build:backoffice
+      - name: Verify Google-only Access and deploy
+        working-directory: apps/backoffice
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          BACKOFFICE_HOSTNAME: ${{ vars.BACKOFFICE_HOSTNAME }}
+          ACCESS_TEAM_DOMAIN: ${{ vars.ACCESS_TEAM_DOMAIN }}
+          ACCESS_AUD: ${{ vars.ACCESS_AUD }}
+          ACCESS_APPLICATION_ID: ${{ vars.ACCESS_APPLICATION_ID }}
+          GOOGLE_IDP_ID: ${{ vars.GOOGLE_IDP_ID }}
+          BACKOFFICE_D1_ID: ${{ vars.BACKOFFICE_D1_ID }}
+          CONTACTS_SYNC_WORKER_NAME: ${{ vars.CONTACTS_SYNC_WORKER_NAME }}
+        run: |
+          yarn configure "$BACKOFFICE_ENV"
+          yarn access:check "$BACKOFFICE_ENV"
+          yarn wrangler d1 migrations apply DB --remote --config wrangler.local.json --env "$BACKOFFICE_ENV"
+          yarn wrangler deploy --config wrangler.local.json --env "$BACKOFFICE_ENV"

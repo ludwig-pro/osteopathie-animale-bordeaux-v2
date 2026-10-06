@@ -1,0 +1,43 @@
+{
+  "name": "@osteo/backoffice",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Backoffice privé d’Agathe Lescout sur Cloudflare Workers et Access",
+  "scripts": {
+    "dev": "yarn assets:build && wrangler dev --port 8788",
+    "preview": "yarn assets:build && node --watch --experimental-strip-types scripts/preview.mjs",
+    "preview:export": "yarn assets:build && node --experimental-strip-types scripts/export-preview.mjs",
+    "assets:build": "node scripts/build-assets.mjs",
+    "build": "yarn assets:build && wrangler deploy --dry-run --env='' --outdir dist/worker",
+    "typecheck": "tsc --noEmit && tsc --project tsconfig.browser.json",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx}' 'tests/**/*.ts' 'public/*.css' 'scripts/*.mjs' '*.{json,jsonc,md}'",
+    "check": "yarn format:check && yarn typecheck",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "configure": "node scripts/configure.mjs",
+    "access:check": "node scripts/check-access.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/dm-sans": "^5.3.0",
+    "@fontsource-variable/lora": "^5.3.0",
+    "@headlessui/react": "^2.2.10",
+    "@heroicons/react": "2.2.0",
+    "clsx": "^2.1.1",
+    "jose": "^6.2.12",
+    "motion": "^12.38.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261005.1",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^24.19.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "esbuild": "^0.28.1",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3",
+    "typescript": "6.0.3",
+    "wrangler": "4.147.0"
+  }
+}

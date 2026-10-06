@@ -178,6 +178,16 @@ La migration `0002_incremental_index.sql` ajoute le jeton de synchronisation Goo
 
 ## Diagnostic et reprise d’un conflit de notes
 
+Le backoffice possède un point d’entrée privé `GoogleContactsService` dans ce
+Worker pour lire le carnet Google, consulter les animaux et dates déjà connus
+dans D1, et modifier manuellement les coordonnées. Il réutilise l’autorisation
+Google côté serveur et vérifie le compte attendu. Les routes publiques ne
+donnent jamais accès à ce service ; les imports, le runner, ses baux et son
+mode ne sont pas modifiés par une consultation. Les modifications manuelles
+Google restent possibles indépendamment du mode des traitements automatiques.
+Les coordonnées issues des réservations restent dans l’historique et peuvent
+être réajoutées par le runner. Voir le [guide du backoffice](backoffice-cloudflare.md#5-brancher-longlet-contacts).
+
 `inspect-notes ID` met en file une inspection privée. Le Worker relit la fiche Google sans mutation et conserve uniquement des indicateurs techniques dans `contacts.notes_review` ; aucun texte de notes, nom, téléphone ou e-mail n’est affiché. `notes-review ID` affiche ces indicateurs, tandis que la tâche reste en conflit.
 
 Après examen et autorisation explicite, `resolve-notes ID --preserve-existing-notes` peut reprendre une ancienne première tentative non confirmée : aucun bloc précédemment confirmé, aucune synchronisation réussie, aucune balise Calendly et aucun marqueur technique présent dans la fiche Google. La reprise relit la fiche, préserve intégralement ses notes actuelles et y ajoute la section Calendly. L’etag, le mode et le bail sont toujours contrôlés. Une modification détectée après le diagnostic bloque la reprise.
