@@ -10,7 +10,8 @@ Le domaine retenu est **backoffice.osteopathie-animale-bordeaux.fr**.
 Le site public Astro et le service Calendly → Google Contacts gardent leurs
 déploiements indépendants. Le backoffice consulte tous les contacts Google,
 permet de modifier leurs coordonnées et gère des listes de diffusion dans une
-base D1 dédiée. Les coordonnées ne sont pas copiées dans cette nouvelle base.
+base D1 dédiée. En production, cette base contient uniquement les listes et accords.
+La preview conserve une copie modifiable des coordonnées dans sa propre base D1.
 La livraison du code ne déploie aucun service et ne lit aucun contact réel.
 
 ```mermaid
@@ -24,7 +25,11 @@ flowchart LR
   W -->|Service Binding privé| C[GoogleContactsService du Worker contacts-sync]
   C --> P[Google People API]
   C --> B[(D1 existant : historique Calendly)]
-  W --> L[(D1 backoffice : listes et affectations)]
+  W --> L[(D1 production : listes et affectations)]
+  W -->|Copie manuelle en lecture seule de Google| PDB[(D1 preview : copie et listes de test)]
+  U --> PA[Access preview : Google Agathe uniquement]
+  PA --> PW[Worker preview]
+  PW --> PDB
 ```
 
 L’unique adresse autorisée est `agathe.lescout.osteo@gmail.com`. Elle n’est pas
@@ -90,105 +95,153 @@ restriction d’e-mail. Ne créer aucune politique Bypass ou Service Auth.
 Relever le domaine d’organisation (`ACCESS_TEAM_DOMAIN`), l’identifiant de
 l’application (`ACCESS_APPLICATION_ID`) et son Audience tag (`ACCESS_AUD`).
 L’audience est propre à cette application, pas au service de synchronisation.
-Pour staging, créer une application distincte sur
-`backoffice-staging.osteopathie-animale-bordeaux.fr`, avec les mêmes restrictions
+Pour la preview, créer une application distincte sur
+`backoffice-preview.osteopathie-animale-bordeaux.fr`, avec les mêmes restrictions
 d’identité et une audience distincte.
 
 Références : [politiques Access](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/),
 [validation des JWT](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/).
 
-## 3. Préparer la configuration de déploiement
+## 3. Deux environnements isolés
 
-Créer une base D1 distincte pour chaque environnement, depuis `apps/backoffice` :
+|                    | Preview                                              | Production                                   |
+| ------------------ | ---------------------------------------------------- | -------------------------------------------- |
+| Domaine            | `backoffice-preview.osteopathie-animale-bordeaux.fr` | `backoffice.osteopathie-animale-bordeaux.fr` |
+| Worker             | `osteo-backoffice-preview`                           | `osteo-backoffice`                           |
+| Base principale D1 | `osteo-backoffice-preview`                           | `osteo-backoffice`                           |
+| Contacts           | Copie indépendante et modifiable                     | Google People API via le service privé       |
+| Accès              | Google, compte d’Agathe uniquement                   | Google, compte d’Agathe uniquement           |
+| Publication        | Push sur `preview`, ou lancement manuel              | Lancement manuel depuis `main`               |
 
-```sh
-yarn wrangler d1 create osteo-backoffice-staging
-yarn wrangler d1 create osteo-backoffice
-```
+La preview possède une application Access et une audience distinctes. Elle ne
+possède **aucun Service Binding Google ni secret Google/Calendly**, et ses
+modifications de fiches ne sont jamais synchronisées vers Gmail. Le Worker
+production dispose d’un binding supplémentaire `PREVIEW_DB`, qui permet de
+copier les données vers la base de preview après une action authentifiée.
+Les listes et leurs accords restent propres à chaque environnement.
 
-Conserver les identifiants dans les variables de l’environnement correspondant.
-Ne pas réutiliser la base de synchronisation pour les listes du backoffice.
+### Préparer Access et D1
 
-Utiliser Node et Yarn conformément au README du monorepo. Les scripts lisent les
-variables ci-dessous depuis l’environnement de la commande ou le gestionnaire
-de secrets, sans en imprimer les valeurs.
+Après les étapes Google et Zero Trust ci-dessus, renseigner dans le gestionnaire
+de secrets de l’environnement d’exécution `CLOUDFLARE_API_TOKEN`, puis les valeurs
+non secrètes `CLOUDFLARE_ACCOUNT_ID` et `GOOGLE_IDP_ID`. Pour Codex cloud, autoriser
+`api.cloudflare.com` dans la configuration réseau de cet environnement. Ne jamais
+coller le jeton ou les secrets OAuth dans le chat, un fichier suivi par Git ou
+les variables publiques du front-end.
 
-| Variable                    | Usage                                                         |
-| --------------------------- | ------------------------------------------------------------- |
-| `CLOUDFLARE_ACCOUNT_ID`     | Compte Cloudflare du domaine et de l’application Access       |
-| `BACKOFFICE_HOSTNAME`       | `backoffice.osteopathie-animale-bordeaux.fr` en production    |
-| `ACCESS_TEAM_DOMAIN`        | `https://<equipe>.cloudflareaccess.com`, sans slash final     |
-| `ACCESS_AUD`                | Audience tag de l’application Access correspondante           |
-| `ACCESS_APPLICATION_ID`     | Identifiant de cette application Access                       |
-| `GOOGLE_IDP_ID`             | Identifiant du fournisseur Google dans ce compte              |
-| `CLOUDFLARE_API_TOKEN`      | Jeton privé de lecture Access et de déploiement Workers       |
-| `BACKOFFICE_D1_ID`          | Identifiant de la base D1 dédiée à cet environnement          |
-| `CONTACTS_SYNC_WORKER_NAME` | Optionnel : nom du Worker fournissant `GoogleContactsService` |
-
-Le jeton doit pouvoir lire l’organisation Access, ses applications, politiques
-et fournisseurs d’identité, déployer les Workers et leurs assets, appliquer
-les migrations de cette base D1 et gérer le Custom Domain dans la zone concernée. Il doit être limité au compte et à la
-zone nécessaires. Aucun secret Google SSO n’est requis par le Worker : il reste
-dans la configuration du fournisseur d’identité Cloudflare.
+Le jeton de préparation doit pouvoir lire l’organisation et le fournisseur
+Google, lire/créer les applications et politiques Access et les bases D1.
+Le jeton de déploiement doit pouvoir lire Access, lire/modifier les bases D1,
+publier les Workers et leurs assets, et gérer les Custom Domains dans la zone
+active `osteopathie-animale-bordeaux.fr`. Limiter les droits au compte et à la
+zone concernés. Un jeton de CI n’a pas besoin de créer/modifier les politiques
+Access. Le fournisseur Google et ses secrets OAuth se configurent dans Zero
+Trust ; aucun de ces scripts ne crée un client OAuth Google.
 
 Depuis `apps/backoffice` :
 
 ```sh
-yarn configure production
-yarn access:check production
+yarn provision preview
+yarn provision production
 ```
 
-`configure` écrit un `wrangler.local.json` ignoré par Git. Il configure le compte,
-le domaine personnalisé, D1, le Service Binding et les paramètres Access, sans publier ni modifier
-Cloudflare. Le script `access:check` ne fait que lire les API Cloudflare : il
-vérifie le compte, l’organisation, l’audience, Google uniquement, l’adresse
-d’Agathe, les politiques et la protection de toutes les ressources. Une règle
-plus large bloque la mise en service ; les réponses privées des API ne sont
-jamais imprimées.
+Le provisionnement est réexécutable : il réutilise une application et une base
+existantes si leur configuration correspond, sinon il crée les ressources
+manquantes. Une politique Access trop large provoque un refus ; elle n’est pas
+réécrite automatiquement. Il n’active aucun Worker ni import. Les identifiants
+résultants sont enregistrés dans `.credentials/backoffice-preview.json` et
+`.credentials/backoffice-production.json`, ignorés par Git et sans jeton privé.
 
-Le domaine doit appartenir à une zone active du même compte Cloudflare.
-Wrangler crée le routage du Custom Domain lors de la publication. Les routes
-publiques alternatives `workers.dev` et les preview URLs restent désactivées.
+On peut aussi créer les ressources à la main et fournir ces variables :
 
-## 4. Valider puis publier
+| Variable                | Usage                                                                     |
+| ----------------------- | ------------------------------------------------------------------------- |
+| `CLOUDFLARE_ACCOUNT_ID` | Compte Cloudflare commun                                                  |
+| `BACKOFFICE_HOSTNAME`   | Domaine exact de l’environnement, facultatif en local                     |
+| `ACCESS_TEAM_DOMAIN`    | `https://<equipe>.cloudflareaccess.com`                                   |
+| `ACCESS_AUD`            | Audience de l’application Access de cet environnement                     |
+| `ACCESS_APPLICATION_ID` | Identifiant de cette application                                          |
+| `GOOGLE_IDP_ID`         | Fournisseur Google uniquement                                             |
+| `CLOUDFLARE_API_TOKEN`  | Secret du déploiement                                                     |
+| `BACKOFFICE_D1_ID`      | Base principale de cet environnement                                      |
+| `PREVIEW_D1_ID`         | Production uniquement : base de preview, différente de sa base principale |
 
-Depuis la racine :
+`yarn configure preview` ou `yarn configure production` prépare un
+`wrangler.local.json` ignoré par Git, limité à l’environnement choisi. Les
+variables explicites du processus prennent le pas sur le fichier privé issu
+du provisionnement. `yarn access:check preview` (ou `production`) vérifie les
+politiques Google, l’audience, le domaine et les noms réels des bases D1 avant
+les migrations ou la publication. Une inversion des bases bloque le déploiement.
+Les noms de Workers et domaines sont fixés dans `scripts/environments.mjs`.
+
+## 4. Publier et travailler dans la preview
+
+Les vérifications locales restent sans secret ni donnée réelle :
 
 ```sh
 yarn workspace @osteo/backoffice run check
 yarn workspace @osteo/backoffice test
 yarn build:backoffice
-yarn workspace @osteo/contacts-sync run check
-yarn workspace @osteo/contacts-sync test
-yarn build:sync
 ```
 
-Après la configuration Access et ces contrôles, depuis `apps/backoffice` :
+Le build compile séparément les Workers preview et production en **dry-run**.
+Après préparation des ressources, depuis `apps/backoffice` :
 
 ```sh
-yarn access:check production
-yarn wrangler d1 migrations apply DB --remote --config wrangler.local.json --env production
-yarn wrangler deploy --config wrangler.local.json --env production
+yarn deploy preview
+# Après mise à jour du service Google privé (étape 5) :
+yarn deploy production
 ```
 
-Le workflow manuel **Deploy Backoffice** reproduit cette séquence. Configurer
-les variables du tableau dans l’environnement GitHub `backoffice-production`
-(ou `backoffice-staging`) et le jeton comme secret. Il ne configure pas Google
-OAuth à la place de l’opérateur et n’élargit pas les politiques Access.
+Chaque publication prépare la configuration, contrôle Access et l’isolation D1,
+compile les assets et le Worker, applique les migrations à la base principale
+ciblée puis déploie le Custom Domain. Déployer la preview en premier pour que
+sa base et ses tables de copie existent avant la production. Les deux bases
+partagent les mêmes migrations ; les tables de copie restent vides en production.
+Les URL `workers.dev` et les preview URLs publiques de Cloudflare sont désactivées.
 
-La publication n’est pas une validation du SSO réel. Vérifier dans le navigateur :
+Pour GitHub Actions, créer les environnements `backoffice-preview` et
+`backoffice-production`, y renseigner les variables du tableau et le jeton
+comme secret. Restreindre les branches de l’environnement production à `main`
+et activer une validation de déploiement si souhaité. Après fusion du workflow
+sur `main`, le workflow **Deploy Backoffice** permet un lancement manuel sur
+l’environnement choisi. Tout push sur la branche `preview` met à jour la
+preview ; une publication production lancée depuis une autre branche que
+`main` est refusée. Les PR seules ne déclenchent pas de déploiement privilégié.
 
-1. Sans session, l’adresse du backoffice passe par la connexion Google.
-2. Le compte d’Agathe ouvre l’accueil et `/api/session` retourne son identité.
-3. Un autre compte Google est refusé, y compris sur les API et les assets.
-4. La déconnexion termine la session Access. Elle ne déconnecte pas Google
-   dans les autres applications ; une nouvelle visite repasse par Access.
-5. Aucun contenu privé ne s’ouvre via `workers.dev` ou une URL de preview.
+Le parcours de travail est : branche de fonctionnalité → branche `preview`
+pour tester → PR vers `main` → publication manuelle de la production. Promouvoir
+le code ne copie ni les listes de test ni les modifications de fiches en production.
+Un redéploiement conserve les données D1 et les essais en cours.
 
-Les tests locaux utilisent des clés éphémères et des réponses Cloudflare
-fictives. Ils vérifient la cryptographie, les règles d’accès, les erreurs,
-les routes et la confidentialité des réponses. Ils ne prouvent pas les réglages
-OAuth, les droits du compte Cloudflare ou la connexion Google réelle.
+### Copier les vrais contacts pour les essais
+
+1. Se connecter à la **production** avec le compte Google d’Agathe.
+2. Ouvrir Contacts → **Copier en preview**.
+3. Confirmer le remplacement, puis garder la fenêtre ouverte pendant la copie.
+4. Ouvrir la preview et actualiser les contacts.
+
+Cette action lit les contacts Google via le service privé de production et
+écrit uniquement dans `PREVIEW_DB`. La copie inclut les champs affichés (noms,
+e-mails, téléphones, animaux, dernier rendez-vous connu et libellés), jamais
+les biographies, notes de consultation ou réponses API brutes. Elle contient
+des données personnelles réelles : elle bénéficie du même accès privé que la
+production et ne doit jamais être utilisée dans les tests, captures publiques,
+exports HTML de démonstration ou journaux. La démo locale conserve ses données
+fictives.
+
+La copie avance par pages, reprend après une interruption et reste invisible
+tant qu’elle n’est pas complète. Une seule copie peut avancer à la fois.
+La version précédente reste consultable si Google est indisponible. Les anciennes
+copies sont supprimées après activation de la nouvelle. Relancer une copie
+remplace les coordonnées modifiées en preview ; ses listes et accords restent
+conservés. Aucun renouvellement automatique ne vient écraser les essais.
+
+La publication ne prouve pas le fonctionnement du SSO réel. Vérifier sur chaque
+domaine : redirection Google sans session, admission du compte d’Agathe, refus
+d’un autre compte sur pages/API/assets, déconnexion, et absence d’accès alternatif
+via `workers.dev`. Vérifier ensuite une copie et une modification en preview,
+puis confirmer que la fiche Gmail source n’a pas changé.
 
 ## 5. Brancher l’onglet Contacts
 
@@ -205,11 +258,10 @@ ni import ni reprise des traitements automatiques. Les modifications de
 coordonnées sont des actions manuelles explicites du backoffice, indépendantes
 du mode du runner Calendly.
 
-Le binding `GOOGLE_CONTACTS` vise `osteo-contacts-sync` en production et
-`osteo-contacts-sync-staging` en staging, dans le même compte Cloudflare.
-`CONTACTS_SYNC_WORKER_NAME` permet d’adapter ce nom. Vérifier qu’il vise
-l’environnement prévu. Les secrets et bases de production ne doivent jamais
-être utilisés dans un aperçu ou dans les tests.
+Le binding `GOOGLE_CONTACTS` vise uniquement `osteo-contacts-sync` en production,
+dans le même compte Cloudflare. La preview ne possède pas ce binding : elle lit
+et modifie la copie D1. Aucun secret Google de production n’est fourni à la
+preview, et les tests utilisent exclusivement des données fictives.
 
 L’autorisation `GOOGLE_OAUTH` reste uniquement dans les secrets du Worker de
 synchronisation. L’éditeur nécessite le scope Google `contacts`, déjà utilisé
@@ -218,8 +270,7 @@ Si l’autorisation n’existe pas, suivre le parcours OAuth du guide de
 synchronisation ; le SSO Access ne remplace pas cette autorisation.
 Chaque lecture ou modification vérifie l’adresse attendue, l’adresse Google
 vérifiée et le `sub`. Le backoffice impose le compte d’Agathe, y compris au
-service interne. Un service staging relié à un autre compte de test est donc
-refusé ; les tests du backoffice utilisent des réponses fictives et une
+service interne. Les tests du backoffice utilisent des réponses fictives et une
 identité Google simulée. Aucun secret Google n’est transmis au backoffice.
 
 Les lectures utilisent les contacts enregistrés dans Google (`CONTACT`), avec

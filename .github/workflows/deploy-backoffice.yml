@@ -1,26 +1,40 @@
 name: Deploy Backoffice
 on:
+  push:
+    branches: [preview]
+    paths:
+      - 'apps/backoffice/**'
+      - 'package.json'
+      - 'yarn.lock'
+      - '.github/workflows/deploy-backoffice.yml'
   workflow_dispatch:
     inputs:
       environment:
-        description: Cloudflare environment (Google-only Access must already be configured)
+        description: Cloudflare environment
         type: choice
-        options: [staging, production]
-        default: staging
+        options: [preview, production]
+        default: preview
         required: true
 permissions:
   contents: read
 concurrency:
-  group: backoffice-${{ inputs.environment }}
+  group: backoffice-${{ inputs.environment || 'preview' }}
   cancel-in-progress: false
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: backoffice-${{ inputs.environment }}
+    environment:
+      name: backoffice-${{ inputs.environment || 'preview' }}
+      url: ${{ inputs.environment == 'production' && 'https://backoffice.osteopathie-animale-bordeaux.fr' || 'https://backoffice-preview.osteopathie-animale-bordeaux.fr' }}
     env:
-      BACKOFFICE_ENV: ${{ inputs.environment }}
+      BACKOFFICE_ENV: ${{ inputs.environment || 'preview' }}
       WRANGLER_SEND_METRICS: 'false'
     steps:
+      - name: Require main for production
+        if: inputs.environment == 'production' && github.ref != 'refs/heads/main'
+        run: |
+          echo 'La production doit être publiée depuis main.'
+          exit 1
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -29,8 +43,7 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn workspace @osteo/backoffice run check
       - run: yarn workspace @osteo/backoffice test
-      - run: yarn build:backoffice
-      - name: Verify Google-only Access and deploy
+      - name: Verify isolation, migrate and deploy
         working-directory: apps/backoffice
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -41,9 +54,5 @@ jobs:
           ACCESS_APPLICATION_ID: ${{ vars.ACCESS_APPLICATION_ID }}
           GOOGLE_IDP_ID: ${{ vars.GOOGLE_IDP_ID }}
           BACKOFFICE_D1_ID: ${{ vars.BACKOFFICE_D1_ID }}
-          CONTACTS_SYNC_WORKER_NAME: ${{ vars.CONTACTS_SYNC_WORKER_NAME }}
-        run: |
-          yarn configure "$BACKOFFICE_ENV"
-          yarn access:check "$BACKOFFICE_ENV"
-          yarn wrangler d1 migrations apply DB --remote --config wrangler.local.json --env "$BACKOFFICE_ENV"
-          yarn wrangler deploy --config wrangler.local.json --env "$BACKOFFICE_ENV"
+          PREVIEW_D1_ID: ${{ vars.PREVIEW_D1_ID }}
+        run: yarn deploy "$BACKOFFICE_ENV"

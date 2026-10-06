@@ -11,7 +11,8 @@ const escapeAttribute = (value: string) =>
 export function renderFrame(
   identity: Identity,
   page: 'home' | 'contacts',
-  preview = false
+  preview = false,
+  hostedPreview = false
 ): string {
   return `<!doctype html>
 <html lang="fr">
@@ -27,16 +28,17 @@ export function renderFrame(
     <script defer src="/assets/backoffice.js"></script>
   </head>
   <body>
-    <div id="backoffice-root" data-page="${page}" data-email="${escapeAttribute(identity.email)}" data-name="${escapeAttribute(identity.name)}" data-preview="${preview}">
+    <div id="backoffice-root" data-page="${page}" data-email="${escapeAttribute(identity.email)}" data-name="${escapeAttribute(identity.name)}" data-preview="${preview}" data-hosted-preview="${hostedPreview}">
       <main id="main" class="mx-auto max-w-2xl px-6 py-16"><h1 class="font-display text-3xl">${page === 'contacts' ? 'Contacts' : 'Bonjour Agathe.'}</h1><p class="mt-4 text-zinc-500">Chargement de votre espace de gestion…</p><noscript><p class="mt-4">Activez JavaScript pour consulter vos contacts et vos listes.</p></noscript></main>
     </div>
   </body>
 </html>`;
 }
 
-export const renderHome = (identity: Identity) => renderFrame(identity, 'home');
-export const renderContacts = (identity: Identity) =>
-  renderFrame(identity, 'contacts');
+export const renderHome = (identity: Identity, hostedPreview = false) =>
+  renderFrame(identity, 'home', false, hostedPreview);
+export const renderContacts = (identity: Identity, hostedPreview = false) =>
+  renderFrame(identity, 'contacts', false, hostedPreview);
 
 export function renderError(status: number): string {
   const title =

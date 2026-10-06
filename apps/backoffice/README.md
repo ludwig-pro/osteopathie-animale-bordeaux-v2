@@ -7,6 +7,12 @@ Application privée sur **Cloudflare Workers + Static Assets**, protégée par
 Le backoffice comprend l’accueil, le compte connecté, la déconnexion et l’onglet
 Contacts : recherche, filtres, édition des coordonnées Google, animaux et dernier
 rendez-vous connu, listes de diffusion et affectations individuelles ou groupées.
+Deux environnements hébergés sont prévus : `backoffice-preview` et `backoffice`,
+avec Workers, applications Access et bases D1 distincts. La preview travaille
+sur une copie des vrais contacts, modifiable sans écriture dans Gmail. Depuis
+la production, « Copier en preview » remplace explicitement cette copie. Le
+code de preview ne possède aucun binding Google ni secret OAuth.
+
 Il reprend le monogramme OA, les couleurs et les polices locales du site.
 L’interface React utilise les composants TypeScript **Catalyst UI Kit** fournis
 dans l’archive du 7 août 2026 : SidebarLayout, Table, Dialog, Alert, Dropdown,
@@ -25,9 +31,10 @@ Les noms d’animaux et les dates sont consultables ; les modifications portent
 sur le prénom, le nom, les e-mails et les téléphones. La synchronisation peut
 réajouter des coordonnées conservées dans les réservations Calendly.
 
-La base D1 du backoffice contient les listes, leurs descriptions, les références
-Google et les accords de diffusion. Elle ne duplique pas les coordonnées ni
-les réservations. Une affectation commence « Accord à confirmer » ; l’ajout
+La base D1 de production contient les listes, leurs descriptions, les références
+Google et les accords de diffusion. La base de preview contient ses propres listes
+et une copie des coordonnées, des animaux et du dernier rendez-vous connu ;
+elle ne stocke pas les notes de consultation ni les réservations complètes. Une affectation commence « Accord à confirmer » ; l’ajout
 groupé conserve les accords et désinscriptions existants. Les listes archivées
 peuvent être restaurées avec leurs affectations.
 
@@ -79,3 +86,23 @@ toute route, API ou ressource statique. Les réponses privées ne sont pas mises
 en cache. Les URL `workers.dev` et de prévisualisation sont désactivées.
 
 [Configuration de Google SSO, Access et du domaine](../../docs/backoffice-cloudflare.md).
+
+## Environnements hébergés
+
+Après configuration du fournisseur Google dans Zero Trust et des accès Cloudflare,
+depuis ce workspace :
+
+```sh
+yarn provision preview
+yarn provision production
+yarn deploy preview
+# Le service Google privé doit être déployé avant la production.
+yarn deploy production
+```
+
+Les identifiants sans jeton sont conservés dans `.credentials/`, ignoré par Git.
+La CI publie la preview sur les pushes de la branche `preview` ; la production
+se publie manuellement depuis `main`. Le build valide les deux entrypoints
+sans les publier. Le [guide de mise en service](../../docs/backoffice-cloudflare.md)
+détaille les variables GitHub, les droits Cloudflare, la copie des contacts et
+les vérifications réelles de connexion.

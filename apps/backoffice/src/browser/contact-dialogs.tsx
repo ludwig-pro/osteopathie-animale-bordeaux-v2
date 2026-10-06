@@ -43,11 +43,13 @@ import { Text } from './ui/text';
 import { Textarea } from './ui/textarea';
 
 export function ContactDialog({
+  source = 'google',
   original,
   model,
   onClose,
 }: {
   original: GoogleContact;
+  source?: 'google' | 'demo' | 'copy';
   model: ContactsModel;
   onClose: () => void;
 }) {
@@ -169,7 +171,11 @@ export function ContactDialog({
                     setSaved(true);
                     setFeedback(
                       refreshed
-                        ? 'Coordonnées enregistrées dans Google Contacts.'
+                        ? source === 'demo'
+                          ? 'Coordonnées fictives enregistrées.'
+                          : source === 'copy'
+                            ? 'Coordonnées enregistrées dans la copie en preview.'
+                            : 'Coordonnées enregistrées dans Google Contacts.'
                         : 'Coordonnées enregistrées. Actualisez les contacts avant une nouvelle modification.'
                     );
                   } catch (error) {

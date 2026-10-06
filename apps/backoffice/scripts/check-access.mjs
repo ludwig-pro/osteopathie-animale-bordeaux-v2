@@ -1,74 +1,49 @@
 import { readFileSync } from 'node:fs';
 import { getAccessConfig } from '../src/config.ts';
 import { assertAccessSetup } from './access-policy.mjs';
+import {
+  assertDeploymentConfig,
+  configurationValues,
+} from './environments.mjs';
+import { cloudflareClient } from './cloudflare.mjs';
 
 const environment = process.argv[2];
-if (!['staging', 'production'].includes(environment)) {
-  throw new Error('Préciser staging ou production.');
-}
-const accountId = process.env['CLOUDFLARE_ACCOUNT_ID'];
-const applicationId = process.env['ACCESS_APPLICATION_ID'];
-const googleIdpId = process.env['GOOGLE_IDP_ID'];
-const token = process.env['CLOUDFLARE_API_TOKEN'];
+const values = configurationValues(environment);
+const applicationId = values.ACCESS_APPLICATION_ID;
+const googleIdpId = values.GOOGLE_IDP_ID;
 if (
-  !token ||
-  !/^[a-f0-9]{32}$/i.test(accountId ?? '') ||
-  !/^[a-f0-9-]{36}$/i.test(applicationId ?? '') ||
-  !/^[a-f0-9-]{36}$/i.test(googleIdpId ?? '')
-) {
-  throw new Error('Configurer les identifiants Cloudflare et le jeton privé.');
-}
+  ![applicationId, googleIdpId].every((value) =>
+    /^[a-f0-9-]{36}$/i.test(value ?? '')
+  )
+)
+  throw new Error('Configurer ACCESS_APPLICATION_ID et GOOGLE_IDP_ID.');
 const config = JSON.parse(readFileSync('wrangler.local.json', 'utf8'));
-const target = config.env[environment];
+const target = assertDeploymentConfig(config, environment);
+if (config.account_id !== values.CLOUDFLARE_ACCOUNT_ID)
+  throw new Error('Compte Cloudflare incohérent.');
 const { origin, issuer, audience } = getAccessConfig(target.vars);
-const hostname = new URL(origin).hostname;
-if (
-  config.account_id !== accountId ||
-  config.assets.run_worker_first !== true ||
-  target.workers_dev !== false ||
-  target.preview_urls !== false ||
-  target.routes?.length !== 1 ||
-  target.routes[0].pattern !== hostname ||
-  target.routes[0].custom_domain !== true
-) {
-  throw new Error('Configuration de déploiement invalide.');
-}
-async function readCloudflare(path) {
-  const response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${accountId}/access/${path}`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-      signal: AbortSignal.timeout(15000),
-    }
-  );
-  if (!response.ok) {
-    throw new Error(
-      `Vérification Cloudflare impossible (HTTP ${response.status}).`
-    );
-  }
-  const body = await response.json();
-  if (body.success !== true || !body.result) {
-    throw new Error('Réponse Cloudflare invalide.');
-  }
-  return body.result;
-}
-// Read-only. Do not print upstream bodies (IdP configuration can contain secrets).
-const organization = await readCloudflare('organizations');
-if (new URL(`https://${organization.auth_domain}`).origin !== issuer) {
-  throw new Error(
-    'Le domaine Zero Trust ne correspond pas au compte Cloudflare.'
-  );
-}
-const application = await readCloudflare(`apps/${applicationId}`);
-const policies = await readCloudflare(
-  `apps/${applicationId}/policies?per_page=100`
+const api = cloudflareClient(
+  values.CLOUDFLARE_ACCOUNT_ID,
+  values.CLOUDFLARE_API_TOKEN
 );
-const identityProvider = await readCloudflare(
-  `identity_providers/${googleIdpId}`
+const organization = await api('access/organizations');
+if (new URL(`https://${organization.auth_domain}`).origin !== issuer)
+  throw new Error('Organisation Zero Trust incohérente.');
+const application = await api(`access/apps/${applicationId}`);
+const policies = await api(
+  `access/apps/${applicationId}/policies?per_page=100`
 );
+const identityProvider = await api(`access/identity_providers/${googleIdpId}`);
 assertAccessSetup(application, policies, identityProvider, {
-  hostname,
+  hostname: new URL(origin).hostname,
   audience,
   googleIdpId,
 });
-console.log('Access vérifié : Google uniquement, compte d’Agathe uniquement.');
+for (const binding of target.d1_databases) {
+  const database = await api(`d1/database/${binding.database_id}`);
+  if (database.name !== binding.database_name)
+    throw new Error(
+      'La base D1 ne correspond pas à cet environnement. Déploiement refusé.'
+    );
+}
+console.log(`Access Google et isolation D1 vérifiés pour ${environment}.`);

@@ -41,6 +41,12 @@ export const appointmentDate = (value: string | null) =>
     : 'Non renseigné';
 
 const messages: Record<string, string> = {
+  contact_snapshot_changed:
+    'La copie a été actualisée. Rechargez les contacts pour consulter la nouvelle version.',
+  preview_copy_unavailable:
+    'La liaison vers la base de preview reste à configurer.',
+  preview_copy_in_progress:
+    'Une étape de copie est déjà en cours ou a expiré. Réessayez dans quelques instants.',
   google_connection_unavailable:
     'La connexion Google Contacts reste à configurer. Vos contacts apparaîtront ici après sa mise en service.',
   google_reconnection_required:
@@ -48,9 +54,9 @@ const messages: Record<string, string> = {
   google_rate_limited:
     'Google a temporairement limité les demandes. Réessayez dans quelques instants.',
   contact_changed:
-    'Cette fiche a changé dans Google. Actualisez les contacts, puis rouvrez la fiche avant de l’enregistrer.',
+    'Cette fiche a changé. Actualisez les contacts, puis rouvrez la fiche avant de l’enregistrer.',
   contact_not_found:
-    'Cette fiche n’existe plus dans Google Contacts. Actualisez votre carnet d’adresses.',
+    'Cette fiche n’existe plus. Actualisez votre carnet d’adresses.',
   invalid_contact:
     'Vérifiez les coordonnées : un e-mail valide par ligne, des téléphones composés de chiffres, et au moins un nom ou une coordonnée.',
   list_name_in_use: 'Une liste porte déjà ce nom. Choisissez un autre nom.',

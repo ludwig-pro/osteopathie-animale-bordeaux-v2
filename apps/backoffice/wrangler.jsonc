@@ -13,6 +13,7 @@
     "not_found_handling": "none",
   },
   "vars": {
+    "APP_ENVIRONMENT": "local",
     "APP_ORIGIN": "http://localhost:8788",
     "ACCESS_TEAM_DOMAIN": "configure-before-use",
     "ACCESS_AUD": "configure-before-use",
@@ -26,27 +27,23 @@
     },
   ],
   "env": {
-    "staging": {
-      "name": "osteo-backoffice-staging",
+    "preview": {
+      "name": "osteo-backoffice-preview",
+      "main": "src/preview.ts",
       "workers_dev": false,
       "preview_urls": false,
-      "services": [
-        {
-          "binding": "GOOGLE_CONTACTS",
-          "service": "osteo-contacts-sync-staging",
-          "entrypoint": "GoogleContactsService",
-        },
-      ],
+      "services": [],
       "d1_databases": [
         {
           "binding": "DB",
-          "database_name": "osteo-backoffice-staging",
+          "database_name": "osteo-backoffice-preview",
           "database_id": "00000000-0000-0000-0000-000000000001",
           "migrations_dir": "migrations",
         },
       ],
       "vars": {
-        "APP_ORIGIN": "https://backoffice-staging.osteopathie-animale-bordeaux.fr",
+        "APP_ENVIRONMENT": "preview",
+        "APP_ORIGIN": "https://backoffice-preview.osteopathie-animale-bordeaux.fr",
         "ACCESS_TEAM_DOMAIN": "configure-before-use",
         "ACCESS_AUD": "configure-before-use",
       },
@@ -69,8 +66,14 @@
           "database_id": "00000000-0000-0000-0000-000000000002",
           "migrations_dir": "migrations",
         },
+        {
+          "binding": "PREVIEW_DB",
+          "database_name": "osteo-backoffice-preview",
+          "database_id": "00000000-0000-0000-0000-000000000001",
+        },
       ],
       "vars": {
+        "APP_ENVIRONMENT": "production",
         "APP_ORIGIN": "https://backoffice.osteopathie-animale-bordeaux.fr",
         "ACCESS_TEAM_DOMAIN": "configure-before-use",
         "ACCESS_AUD": "configure-before-use",

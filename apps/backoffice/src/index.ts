@@ -9,6 +9,7 @@ import {
   replaceContactLists,
 } from './mailing-lists.ts';
 import { jsonBody } from './request-body.ts';
+import { copyContactsToPreview } from './preview-copy.ts';
 
 const json = (value: unknown, status = 200) =>
   new Response(JSON.stringify(value), {
@@ -45,7 +46,8 @@ function secureResponse(request: Request, response: Response): Response {
 }
 
 export function createBackofficeHandler(
-  verify: AccessVerifier = createAccessVerifier()
+  verify: AccessVerifier = createAccessVerifier(),
+  hostedPreview = false
 ) {
   return async (request: Request, env: Env): Promise<Response> => {
     const url = new URL(request.url);
@@ -73,6 +75,7 @@ export function createBackofficeHandler(
         }
       } else if (
         [
+          '/api/preview-copy',
           '/api/contact',
           '/api/mailing-lists',
           '/api/list-memberships',
@@ -83,6 +86,7 @@ export function createBackofficeHandler(
           throw new AccessError(403, 'origin_not_allowed');
         const method = request.method;
         if (
+          (url.pathname === '/api/preview-copy' && method === 'POST') ||
           (url.pathname === '/api/contact' && method === 'PATCH') ||
           (url.pathname === '/api/mailing-lists' &&
             ['POST', 'PATCH', 'DELETE'].includes(method)) ||
@@ -91,13 +95,15 @@ export function createBackofficeHandler(
         ) {
           const input = await jsonBody(request);
           const result =
-            url.pathname === '/api/contact'
-              ? await saveContact(input, env)
-              : url.pathname === '/api/mailing-lists'
-                ? await changeMailingList(method, input, env)
-                : method === 'POST'
-                  ? await assignLists(input, env)
-                  : await replaceContactLists(input, env);
+            url.pathname === '/api/preview-copy'
+              ? await copyContactsToPreview(input, env)
+              : url.pathname === '/api/contact'
+                ? await saveContact(input, env)
+                : url.pathname === '/api/mailing-lists'
+                  ? await changeMailingList(method, input, env)
+                  : method === 'POST'
+                    ? await assignLists(input, env)
+                    : await replaceContactLists(input, env);
           response = json(result);
         } else response = json({ error: 'method_not_allowed' }, 405);
       } else if (!['GET', 'HEAD'].includes(request.method)) {
@@ -106,9 +112,9 @@ export function createBackofficeHandler(
           headers: { Allow: 'GET, HEAD' },
         });
       } else if (url.pathname === '/') {
-        response = html(renderHome(identity));
+        response = html(renderHome(identity, hostedPreview));
       } else if (url.pathname === '/contacts') {
-        response = html(renderContacts(identity));
+        response = html(renderContacts(identity, hostedPreview));
       } else if (url.pathname === '/api/session') {
         response = json({ user: identity });
       } else if (

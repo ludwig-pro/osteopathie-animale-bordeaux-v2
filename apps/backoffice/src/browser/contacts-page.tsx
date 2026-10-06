@@ -124,6 +124,8 @@ function FiltersDialog({
 }
 
 export function ContactsPage({
+  source = 'google',
+  onCopy,
   model,
   listFilter,
   onListFilter,
@@ -133,6 +135,8 @@ export function ContactsPage({
   notice,
 }: {
   model: ContactsModel;
+  source?: 'google' | 'demo' | 'copy';
+  onCopy?: () => void;
   listFilter: string;
   onListFilter: (value: string) => void;
   onContact: (contact: GoogleContact) => void;
@@ -285,7 +289,12 @@ export function ContactsPage({
             Votre carnet d’adresses et le lien avec vos clients.
           </Text>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {onCopy && (
+            <Button outline onClick={onCopy}>
+              Copier en preview
+            </Button>
+          )}
           <Button outline onClick={onLists}>
             <TagIcon />
             Gérer les listes
@@ -333,7 +342,11 @@ export function ContactsPage({
             className="size-1.5 rounded-full bg-green-600"
             aria-hidden="true"
           />
-          Google Contacts
+          {source === 'demo'
+            ? 'Contacts fictifs'
+            : source === 'copy'
+              ? 'Copie des contacts Google'
+              : 'Google Contacts'}
         </span>
       </div>
       {(model.error || model.listsError || notice) && (
@@ -479,7 +492,9 @@ export function ContactsPage({
           description={
             model.contacts.length
               ? 'Essayez une autre recherche ou effacez les filtres.'
-              : 'Les fiches ajoutées dans Google Contacts apparaîtront ici après actualisation.'
+              : source === 'copy'
+                ? 'Depuis la production, utilisez « Copier en preview », puis actualisez cette page.'
+                : 'Les fiches ajoutées dans Google Contacts apparaîtront ici après actualisation.'
           }
           action={hasFilters ? 'Effacer les filtres' : undefined}
           onAction={reset}
@@ -671,7 +686,11 @@ export function ContactsPage({
         </>
       )}
       <Text className="mt-8 border-t border-zinc-950/5 pt-4 text-xs/5">
-        Coordonnées : Google Contacts · Animaux et rendez-vous connus : Calendly
+        {source === 'demo'
+          ? 'Contacts, animaux et rendez-vous fictifs pour vos essais.'
+          : source === 'copy'
+            ? 'Vos modifications concernent uniquement la copie en preview.'
+            : 'Coordonnées : Google Contacts · Animaux et rendez-vous connus : Calendly'}
         {!model.appointmentsAvailable && ' · Historique Calendly indisponible'}
         {model.updatedAt &&
           ` · Actualisé à ${model.updatedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })}`}

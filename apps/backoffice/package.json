@@ -9,13 +9,15 @@
     "preview": "yarn assets:build && node --watch --experimental-strip-types scripts/preview.mjs",
     "preview:export": "yarn assets:build && node --experimental-strip-types scripts/export-preview.mjs",
     "assets:build": "node scripts/build-assets.mjs",
-    "build": "yarn assets:build && wrangler deploy --dry-run --env='' --outdir dist/worker",
+    "build": "yarn assets:build && wrangler deploy --dry-run --env production --outdir dist/worker/production && wrangler deploy --dry-run --env preview --outdir dist/worker/preview",
     "typecheck": "tsc --noEmit && tsc --project tsconfig.browser.json",
     "format:check": "prettier --check 'src/**/*.{ts,tsx}' 'tests/**/*.ts' 'public/*.css' 'scripts/*.mjs' '*.{json,jsonc,md}'",
     "check": "yarn format:check && yarn typecheck",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "configure": "node scripts/configure.mjs",
-    "access:check": "node scripts/check-access.mjs"
+    "access:check": "node scripts/check-access.mjs",
+    "provision": "node scripts/provision.mjs",
+    "deploy": "node scripts/deploy.mjs"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.3.0",

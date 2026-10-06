@@ -2,11 +2,13 @@ export const ALLOWED_EMAIL = 'agathe.lescout.osteo@gmail.com';
 
 export interface Env {
   ASSETS: Fetcher;
+  APP_ENVIRONMENT?: 'local' | 'preview' | 'production';
   APP_ORIGIN: string;
   ACCESS_TEAM_DOMAIN: string;
   ACCESS_AUD: string;
-  GOOGLE_CONTACTS?: Fetcher;
+  GOOGLE_CONTACTS?: { fetch(request: Request): Promise<Response> };
   DB?: D1Database;
+  PREVIEW_DB?: D1Database;
 }
 
 export interface AccessConfig {

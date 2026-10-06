@@ -128,7 +128,7 @@ test('Wrangler protects every asset and disables public alternate URLs', async (
   assert.equal(config.assets.run_worker_first, true);
   for (const environment of [
     config,
-    config.env.staging,
+    config.env.preview,
     config.env.production,
   ]) {
     assert.equal(environment.workers_dev, false);

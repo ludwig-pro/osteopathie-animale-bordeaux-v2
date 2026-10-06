@@ -20,6 +20,7 @@ const codes = new Set([
   'google_contacts_unavailable',
   'invalid_contact',
   'contact_changed',
+  'contact_snapshot_changed',
   'contact_not_found',
   'google_contact_save_failed',
 ]);

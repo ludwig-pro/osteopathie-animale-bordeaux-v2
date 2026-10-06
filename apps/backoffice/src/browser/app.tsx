@@ -28,6 +28,7 @@ import {
   ListDialog,
 } from './contact-dialogs';
 import { ContactsPage } from './contacts-page';
+import { PreviewCopyDialog } from './preview-copy-dialog';
 import { ListsPage } from './lists-page';
 import { Notice } from './common';
 import { Avatar } from './ui/avatar';
@@ -265,12 +266,14 @@ export function App({
   identity,
   initial,
   preview,
+  hostedPreview = false,
   transport,
   offline,
 }: {
   identity: AppIdentity;
   initial: 'home' | 'contacts';
   preview: boolean;
+  hostedPreview?: boolean;
   offline: boolean;
   transport: ContactsTransport;
 }) {
@@ -288,6 +291,7 @@ export function App({
   );
   const [listFilter, setListFilter] = useState('');
   const [signedOut, setSignedOut] = useState(false);
+  const [copyOpen, setCopyOpen] = useState(false);
   const href = (target: View) =>
     preview
       ? `#${target === 'lists' ? 'listes' : target}`
@@ -493,10 +497,12 @@ export function App({
         }
       >
         <div id="main" tabIndex={-1}>
-          {preview && (
+          {(preview || hostedPreview) && (
             <div className="mb-7 flex flex-wrap items-center gap-2 rounded-lg bg-zinc-50 px-3.5 py-2.5 text-xs/5 text-zinc-600">
-              <Badge color="zinc">Aperçu</Badge>Données fictives · Modifications
-              temporaires
+              <Badge color="zinc">{hostedPreview ? 'Preview' : 'Aperçu'}</Badge>
+              {hostedPreview
+                ? 'Espace de test · Copie des contacts Google · Modifications conservées ici uniquement'
+                : 'Données fictives · Modifications temporaires'}
             </div>
           )}
           <div className="mb-6 flex items-center gap-2 text-xs/5 text-zinc-500">
@@ -523,6 +529,10 @@ export function App({
           )}
           {view === 'contacts' && (
             <ContactsPage
+              onCopy={
+                !preview && !hostedPreview ? () => setCopyOpen(true) : undefined
+              }
+              source={preview ? 'demo' : hostedPreview ? 'copy' : 'google'}
               model={model}
               listFilter={listFilter}
               onListFilter={setListFilter}
@@ -552,9 +562,16 @@ export function App({
           </footer>
         </div>
       </SidebarLayout>
+      {copyOpen && (
+        <PreviewCopyDialog
+          transport={transport}
+          onClose={() => setCopyOpen(false)}
+        />
+      )}
       <form id="logout-form" method="post" action="/logout" hidden />
       {contact && (
         <ContactDialog
+          source={preview ? 'demo' : hostedPreview ? 'copy' : 'google'}
           key={contact.id}
           original={contact}
           model={model}
