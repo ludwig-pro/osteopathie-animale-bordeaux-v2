@@ -6,7 +6,6 @@ import {
   type CSSProperties,
 } from 'react';
 import {
-  ArrowPathIcon,
   MagnifyingGlassIcon,
   EllipsisHorizontalIcon,
   ArrowLeftIcon,
@@ -22,7 +21,6 @@ import {
   type ContactsModel,
 } from './contacts-model';
 import { EmptyState, Notice } from './common';
-import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import {
@@ -157,13 +155,6 @@ export function ContactsPage({
               return (contact.animalTypes ?? []).join(', ');
             case 'appointment':
               return contact.lastAppointment ?? '';
-            case 'lists':
-              return (model.memberships.get(contact.id) ?? [])
-                .map(
-                  (m) =>
-                    model.lists.lists.find((l) => l.id === m.listId)?.name ?? ''
-                )
-                .join(', ');
           }
         };
         const left = value(a),
@@ -214,41 +205,6 @@ export function ContactsPage({
       checked ? next.add(id) : next.delete(id);
       return next;
     });
-  const listBadges = (contact: GoogleContact) => {
-    const memberships = model.memberships.get(contact.id) ?? [];
-    return (
-      <div className="flex max-w-56 flex-wrap gap-1.5">
-        {memberships.slice(0, 2).map((membership) => {
-          const list = model.lists.lists.find(
-            (item) => item.id === membership.listId
-          );
-          return list ? (
-            <Badge
-              key={membership.listId}
-              color={membership.status === 'unsubscribed' ? 'zinc' : 'green'}
-              title={
-                membership.status === 'unsubscribed'
-                  ? 'Désinscrit'
-                  : membership.status === 'confirmed'
-                    ? 'Accord confirmé'
-                    : 'Accord à confirmer'
-              }
-            >
-              {list.name}
-            </Badge>
-          ) : null;
-        })}
-        {memberships.length > 2 && (
-          <Badge color="zinc">+{memberships.length - 2}</Badge>
-        )}
-        {!memberships.length && (
-          <span className="text-zinc-500">
-            {model.listsReady ? '—' : 'Indisponible'}
-          </span>
-        )}
-      </div>
-    );
-  };
   return (
     <div aria-busy={model.loading}>
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -259,19 +215,6 @@ export function ContactsPage({
               Copier en preview
             </Button>
           )}
-
-          <Button
-            outline
-            id="contacts-refresh"
-            disabled={model.loading}
-            onClick={() => {
-              void model.refresh();
-            }}
-          >
-            <ArrowPathIcon className={model.loading ? 'animate-spin' : ''} />
-            <span className="hidden sm:inline">Actualiser</span>
-            <span className="sr-only sm:hidden">Actualiser les contacts</span>
-          </Button>
         </div>
       </div>
       {(model.error || model.listsError || notice) && (
@@ -383,7 +326,7 @@ export function ContactsPage({
           <div className="hidden md:block">
             <Table
               dense
-              className="contacts-table [&_table]:w-(--contacts-table-width) [&_table]:min-w-0 [&_table]:table-fixed [&_tbody_td]:overflow-hidden [&_tbody_td]:text-ellipsis"
+              className="contacts-table [&_table]:w-(--contacts-table-width) [&_table]:min-w-full [&_table]:table-fixed [&_tbody_td]:overflow-hidden [&_tbody_td]:text-ellipsis"
               style={
                 {
                   '--contacts-table-width': `${88 + Object.values(columnWidths).reduce((sum, width) => sum + width, 0)}px`,
@@ -395,7 +338,11 @@ export function ContactsPage({
                 {contactColumns.map((column) => (
                   <col
                     key={column.id}
-                    style={{ width: columnWidths[column.id] }}
+                    style={
+                      column.id === 'name'
+                        ? undefined
+                        : { width: columnWidths[column.id] }
+                    }
                   />
                 ))}
                 <col style={{ width: 44 }} />
@@ -436,7 +383,7 @@ export function ContactsPage({
                       onCommit={saveColumnWidths}
                     />
                   ))}
-                  <TableHeader>
+                  <TableHeader className="sticky right-0 z-20 bg-white shadow-[-1px_0_0_0_#e4e4e7]">
                     <span className="sr-only">Actions</span>
                   </TableHeader>
                 </TableRow>
@@ -482,8 +429,10 @@ export function ContactsPage({
                         ? appointmentDate(contact.lastAppointment)
                         : '—'}
                     </TableCell>
-                    <TableCell>{listBadges(contact)}</TableCell>
-                    <TableCell>
+                    <TableCell
+                      style={{ position: 'sticky', right: 0 }}
+                      className="z-10 bg-white shadow-[-1px_0_0_0_#e4e4e7]"
+                    >
                       <ContactActions contact={contact} onEdit={onContact} />
                     </TableCell>
                   </TableRow>
@@ -546,13 +495,13 @@ export function ContactsPage({
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-zinc-500">Animal / animaux</dt>
+                    <dt className="text-zinc-500">Animal</dt>
                     <dd className="text-zinc-700">
                       {contact.animals.join(', ') || 'Non renseigné'}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-zinc-500">Type d’animal</dt>
+                    <dt className="text-zinc-500">Type</dt>
                     <dd className="text-zinc-700">
                       {(contact.animalTypes ?? []).join(', ') ||
                         'Non renseigné'}
@@ -563,10 +512,6 @@ export function ContactsPage({
                     <dd className="text-zinc-700">
                       {appointmentDate(contact.lastAppointment)}
                     </dd>
-                  </div>
-                  <div>
-                    <dt className="text-zinc-500">Listes</dt>
-                    <dd>{listBadges(contact)}</dd>
                   </div>
                 </dl>
               </article>
