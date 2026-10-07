@@ -14,6 +14,8 @@ export function database() {
     '0006_contact_animal_overrides.sql',
     '0007_consultation_reports.sql',
     '0008_gmail_import_progress.sql',
+    '0009_contact_summaries.sql',
+    '0010_complete_preview_copy.sql',
   ])
     sqlite.exec(
       readFileSync(

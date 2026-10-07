@@ -4,6 +4,8 @@ import { SyncError } from './errors.ts';
 import { normalizeEmail } from './model.ts';
 import type { Env, Fetcher } from './types.ts';
 import { editGoogleContact } from './contact-editor.ts';
+import { readContactSources } from './contact-sources.ts';
+import { readNextAppointment } from './google-calendar.ts';
 
 const CONTACT_FIELDS = 'names,emailAddresses,phoneNumbers,memberships,metadata';
 interface GoogleContact {
@@ -60,7 +62,14 @@ export async function readGoogleContacts(
   const url = new URL(request.url);
   if (
     url.origin !== 'https://contacts.internal' ||
-    !['/contacts', '/labels', '/contact'].includes(url.pathname)
+    ![
+      '/contacts',
+      '/labels',
+      '/contact',
+      '/sources',
+      '/source',
+      '/next-appointment',
+    ].includes(url.pathname)
   ) {
     return reply({ error: 'not_found' }, 404);
   }
@@ -71,6 +80,10 @@ export async function readGoogleContacts(
   ) {
     return reply({ error: 'google_connection_unavailable' }, 503);
   }
+  if (url.pathname === '/sources' || url.pathname === '/source')
+    return readContactSources(request, env, fetcher);
+  if (url.pathname === '/next-appointment')
+    return readNextAppointment(request, env, fetcher);
   if (url.pathname === '/contact') {
     return request.method === 'PATCH' && !url.search
       ? editGoogleContact(request, env, fetcher)

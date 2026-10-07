@@ -82,6 +82,8 @@ Répéter pour `production` uniquement après les essais staging. L’endpoint `
 
 ## 2. Autoriser Google
 
+Pour activer également la carte « Prochain rendez-vous » du backoffice, voir le [guide Google Calendar](backoffice-google-calendar.md) : API Calendar et scope de lecture des événements, puis réautorisation avec `--calendar`. Cette lecture reste indépendante du runner et ne change pas son mode.
+
 Dans Google Cloud, créer un projet dédié, activer **People API**, configurer OAuth **Externe**, ajouter le scope `https://www.googleapis.com/auth/contacts` ainsi que `openid` et `email`, et publier l’écran de consentement **En production**. Créer un client **Application de bureau** et télécharger son fichier JSON dans un emplacement privé hors Git.
 
 Le mode Test peut expirer le refresh token après sept jours pour ces scopes. Le passage en production ne garantit pas une autorisation éternelle : révocation, politique de compte ou expiration nécessitent une reconnexion. Pour une application personnelle, vérifier les exceptions de validation OAuth et accepter l’éventuel avertissement d’application non vérifiée uniquement pour ce propre projet. Ne pas publier une application multi-utilisateur sans vérifier les obligations de validation.
@@ -119,7 +121,7 @@ yarn admin import --env production
 yarn admin status --env production
 ```
 
-La simulation lit Calendly et Google et écrit uniquement dans D1. Elle prédit `would_create` / `would_update`, construit les réservations et signale les conflits. Attendre la fin du parcours (`scan_active=0`) et des tâches en attente avant de valider ; examiner les nombres et conflits dans `status`. Ne pas recopier les données réelles dans les outils de développement.
+La simulation lit Calendly et Google et écrit uniquement dans D1. Elle prédit `would_create` / `would_update`, construit les réservations et signale les conflits. Attendre la fin du parcours (`scan_active=0`) et des tâches en attente avant de valider ; examiner les nombres et conflits dans `status`. Les tests restent fictifs ; le backoffice preview et local utilisent une copie privée des données métier de production, sans ses secrets.
 
 ```sh
 yarn admin pilot --env production --confirm-google-writes

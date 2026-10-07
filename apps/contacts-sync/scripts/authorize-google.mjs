@@ -7,6 +7,9 @@ import { options, uploadSecrets } from './common.mjs';
 let server;
 try {
   const opts = options();
+  const calendarScope =
+    'https://www.googleapis.com/auth/calendar.events.owned.readonly';
+  const calendar = opts.argv.includes('--calendar');
   if (opts.local)
     throw new Error(
       'Utiliser un environnement distant pour enregistrer le jeton comme secret.'
@@ -61,7 +64,12 @@ try {
     client_id: credentials.client_id,
     redirect_uri: redirect,
     response_type: 'code',
-    scope: 'openid email https://www.googleapis.com/auth/contacts',
+    scope: [
+      'openid',
+      'email',
+      'https://www.googleapis.com/auth/contacts',
+      ...(calendar ? [calendarScope] : []),
+    ].join(' '),
     access_type: 'offline',
     prompt: 'consent',
     state,
@@ -106,6 +114,15 @@ try {
   const tokens = await response.json();
   if (!tokens.refresh_token)
     throw new Error('Google n’a pas fourni de jeton de renouvellement.');
+  if (
+    calendar &&
+    !['https://www.googleapis.com/auth/contacts', calendarScope].every(
+      (scope) => tokens.scope?.split(' ').includes(scope)
+    )
+  )
+    throw new Error(
+      'Les accès Contacts et événements Google Calendar en lecture seule sont requis.'
+    );
   const identityResponse = await fetch(
     'https://openidconnect.googleapis.com/v1/userinfo',
     {

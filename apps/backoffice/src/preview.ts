@@ -23,6 +23,8 @@ export function createPreviewHandler(verify?: AccessVerifier) {
     return handler(request, {
       ...env,
       PREVIEW_DB: undefined,
+      PREVIEW_REPORTS: undefined,
+      OPENAI_API_KEY: undefined,
       GOOGLE_CONTACTS: previewContacts(env.DB),
     });
   };

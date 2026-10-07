@@ -19,10 +19,33 @@ export class Clients {
     this.env = env;
     this.fetcher = (input, init) => fetcher(input, init);
   }
+  private async responseJson<T>(
+    response: Response,
+    maxBytes?: number
+  ): Promise<T> {
+    if (!maxBytes) return response.json() as Promise<T>;
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error('empty_response');
+    const decoder = new TextDecoder();
+    let bytes = 0;
+    let body = '';
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      bytes += value.byteLength;
+      if (bytes > maxBytes) {
+        await reader.cancel();
+        throw new Error('response_too_large');
+      }
+      body += decoder.decode(value, { stream: true });
+    }
+    return JSON.parse(body + decoder.decode()) as T;
+  }
   private async request<T>(
     url: string,
     init: RequestInit,
-    service: string
+    service: string,
+    maxBytes?: number
   ): Promise<T> {
     // A Free Worker allows 50 external subrequests. Leave headroom and stop
     // before sending anything when a batch has exhausted its budget.
@@ -51,6 +74,25 @@ export class Clients {
         (service === 'oauth' && response.status === 400)
       )
         throw new SyncError(`${service}_reauthorize`);
+      // Calendar quotas can return 403 as well as 429. They must not ask
+      // the operator to reconnect an otherwise valid Google authorization.
+      if (service === 'google_calendar' && response.status === 403) {
+        const data = await this.responseJson<{
+          error?: { errors?: { reason?: string }[] };
+        }>(response, 65536).catch(() => null);
+        if (
+          Array.isArray(data?.error?.errors) &&
+          data.error.errors.some((error) =>
+            [
+              'userRateLimitExceeded',
+              'rateLimitExceeded',
+              'quotaExceeded',
+              'dailyLimitExceeded',
+            ].includes(error?.reason ?? '')
+          )
+        )
+          throw new SyncError('google_calendar_http_429', true, retryAfter);
+      }
       throw new SyncError(
         `${service}_http_${response.status}`,
         response.status === 429 ||
@@ -60,7 +102,7 @@ export class Clients {
       );
     }
     try {
-      return (await response.json()) as T;
+      return await this.responseJson<T>(response, maxBytes);
     } catch {
       throw new SyncError(`${service}_invalid_response`, true);
     }
@@ -130,6 +172,17 @@ export class Clients {
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       },
       method === 'PATCH' ? 'google_update' : 'google'
+    );
+  }
+  async googleCalendar<T>(path: string): Promise<T> {
+    if (!path.startsWith('/') || path.startsWith('//'))
+      throw new SyncError('invalid_google_path');
+    const token = await this.googleAuth();
+    return this.request<T>(
+      `https://www.googleapis.com/calendar/v3${path}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+      'google_calendar',
+      2 * 1024 * 1024
     );
   }
   async calendly<T>(path: string): Promise<T> {

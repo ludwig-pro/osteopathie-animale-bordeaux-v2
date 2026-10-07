@@ -109,3 +109,31 @@ test('people and animal names start with uppercase letters without lowercasing e
   assert.equal(result!.familyName, 'Dupont');
   assert.deepEqual(result!.animals, ['Romy Bella']);
 });
+
+test('nested or incomplete annotations stay intact and copied reads do not add animals', async () => {
+  for (const name of ['Martin (Moka (Chien))', 'Martin (Moka (Chien)']) {
+    const f = database();
+    try {
+      const [first] = await normalizeIncomingContacts(
+        [{ ...raw, name, givenName: '', familyName: name, animals: ['Luna'] }],
+        f.db
+      );
+      assert.equal(first!.name, name);
+      assert.deepEqual(first!.animals, ['Luna']);
+      const before = f.sqlite
+        .prepare('SELECT * FROM known_contact_animals ORDER BY animal_key')
+        .all();
+      assert.deepEqual(await normalizeIncomingContacts([first!], f.db), [
+        first,
+      ]);
+      assert.deepEqual(
+        f.sqlite
+          .prepare('SELECT * FROM known_contact_animals ORDER BY animal_key')
+          .all(),
+        before
+      );
+    } finally {
+      f.sqlite.close();
+    }
+  }
+});

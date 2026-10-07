@@ -20,6 +20,9 @@ import {
   consultationReports,
   consultationPdf,
 } from './consultation-reports.ts';
+import { contactSummary, requestSummaryRefresh } from './contact-summary.ts';
+import { runSummaries } from './summary-runner.ts';
+import { nextAppointment } from './calendar.ts';
 
 const json = (value: unknown, status = 200) =>
   new Response(JSON.stringify(value), {
@@ -92,6 +95,7 @@ export function createBackofficeHandler(
           '/api/contact-normalization',
           '/api/mailing-lists',
           '/api/list-memberships',
+          '/api/contact-summary/refresh',
         ].includes(url.pathname) &&
         !['GET', 'HEAD'].includes(request.method)
       ) {
@@ -100,6 +104,8 @@ export function createBackofficeHandler(
         const method = request.method;
         if (
           (url.pathname === '/api/preview-copy' && method === 'POST') ||
+          (url.pathname === '/api/contact-summary/refresh' &&
+            method === 'POST') ||
           (url.pathname === '/api/contact' && method === 'PATCH') ||
           (url.pathname === '/api/contact-animals' && method === 'PATCH') ||
           (url.pathname === '/api/contact-identity' && method === 'POST') ||
@@ -112,21 +118,23 @@ export function createBackofficeHandler(
         ) {
           const input = await jsonBody(request);
           const result =
-            url.pathname === '/api/contact-animals'
-              ? await saveContactAnimals(input, env)
-              : url.pathname === '/api/contact-normalization'
-                ? await normalizeIdentities(input, env, identity.email)
-                : url.pathname === '/api/contact-identity'
-                  ? await reviewIdentity(input, env, identity.email)
-                  : url.pathname === '/api/preview-copy'
-                    ? await copyContactsToPreview(input, env)
-                    : url.pathname === '/api/contact'
-                      ? await saveContact(input, env)
-                      : url.pathname === '/api/mailing-lists'
-                        ? await changeMailingList(method, input, env)
-                        : method === 'POST'
-                          ? await assignLists(input, env)
-                          : await replaceContactLists(input, env);
+            url.pathname === '/api/contact-summary/refresh'
+              ? await requestSummaryRefresh(input, env)
+              : url.pathname === '/api/contact-animals'
+                ? await saveContactAnimals(input, env)
+                : url.pathname === '/api/contact-normalization'
+                  ? await normalizeIdentities(input, env, identity.email)
+                  : url.pathname === '/api/contact-identity'
+                    ? await reviewIdentity(input, env, identity.email)
+                    : url.pathname === '/api/preview-copy'
+                      ? await copyContactsToPreview(input, env)
+                      : url.pathname === '/api/contact'
+                        ? await saveContact(input, env)
+                        : url.pathname === '/api/mailing-lists'
+                          ? await changeMailingList(method, input, env)
+                          : method === 'POST'
+                            ? await assignLists(input, env)
+                            : await replaceContactLists(input, env);
           response = json(result);
         } else response = json({ error: 'method_not_allowed' }, 405);
       } else if (!['GET', 'HEAD'].includes(request.method)) {
@@ -140,6 +148,13 @@ export function createBackofficeHandler(
         response = html(renderContacts(identity, hostedPreview));
       } else if (url.pathname === '/api/session') {
         response = json({ user: identity });
+      } else if (url.pathname === '/api/next-appointment') {
+        if (url.search)
+          throw new ContactsError(400, 'invalid_calendar_request');
+        response =
+          request.method === 'HEAD'
+            ? json(null)
+            : json(await nextAppointment(env));
       } else if (
         ['/api/contacts', '/api/contact-labels'].includes(url.pathname)
       ) {
@@ -160,6 +175,16 @@ export function createBackofficeHandler(
         response = json(
           await identityHistory(url.searchParams.get('id') ?? '', env)
         );
+      } else if (url.pathname === '/api/contact-summary') {
+        if (
+          [...url.searchParams.keys()].some((key) => key !== 'id') ||
+          url.searchParams.getAll('id').length !== 1
+        )
+          throw new ContactsError(400, 'invalid_contact');
+        response =
+          request.method === 'HEAD'
+            ? json(null)
+            : json(await contactSummary(url.searchParams.get('id') ?? '', env));
       } else if (url.pathname === '/api/mailing-lists') {
         response =
           request.method === 'HEAD'
@@ -195,4 +220,7 @@ export function createBackofficeHandler(
 
 export default {
   fetch: createBackofficeHandler(),
+  async scheduled(_controller: ScheduledController, env: Env) {
+    await runSummaries(env);
+  },
 } satisfies ExportedHandler<Env>;

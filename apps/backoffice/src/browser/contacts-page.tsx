@@ -53,7 +53,6 @@ import { formatPhoneNumber } from './phone-number';
 
 export function ContactsPage({
   source = 'google',
-  onCopy,
   model,
   listFilter,
   onListFilter,
@@ -63,7 +62,6 @@ export function ContactsPage({
 }: {
   model: ContactsModel;
   source?: 'google' | 'demo' | 'copy';
-  onCopy?: () => void;
   listFilter: string;
   onListFilter: (value: string) => void;
   onContact: (contact: GoogleContact) => void;
@@ -207,16 +205,7 @@ export function ContactsPage({
     });
   return (
     <div aria-busy={model.loading}>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <Heading>Contacts</Heading>
-        <div className="flex flex-wrap items-center gap-2">
-          {onCopy && (
-            <Button outline onClick={onCopy}>
-              Copier en preview
-            </Button>
-          )}
-        </div>
-      </div>
+      <Heading>Contacts</Heading>
       {(model.error || model.listsError || notice) && (
         <div className="mt-5 space-y-3">
           {model.error && <Notice>{model.error}</Notice>}
@@ -315,7 +304,7 @@ export function ContactsPage({
             model.contacts.length
               ? 'Essayez une autre recherche ou effacez les filtres.'
               : source === 'copy'
-                ? 'Depuis la production, utilisez « Copier en preview », puis actualisez cette page.'
+                ? 'Les contacts apparaîtront lorsque les données seront disponibles.'
                 : 'Les fiches ajoutées dans Google Contacts apparaîtront ici après actualisation.'
           }
           action={hasFilters ? 'Réinitialiser la recherche' : undefined}

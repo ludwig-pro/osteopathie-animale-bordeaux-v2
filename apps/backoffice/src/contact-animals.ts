@@ -1,6 +1,7 @@
 import { ContactsError } from './contacts.ts';
 import { capitalizeName } from './contact-identity.ts';
 import type { Env } from './config.ts';
+import { summaryRefreshStatements } from './contact-summary.ts';
 
 /** Replace the local animal names; later upstream reads cannot restore removed names. */
 export async function saveContactAnimals(input: unknown, env: Env) {
@@ -36,11 +37,18 @@ export async function saveContactAnimals(input: unknown, env: Env) {
     ).values(),
   ];
   const version = crypto.randomUUID();
-  const result = await env.DB.prepare(
+  const save = env.DB.prepare(
     'UPDATE contact_animal_overrides SET names=?,version=? WHERE contact_id=? AND version=?'
-  )
-    .bind(JSON.stringify(animals), version, value.id, value.version)
-    .run();
+  ).bind(JSON.stringify(animals), version, value.id, value.version);
+  const result =
+    env.APP_ENVIRONMENT === 'production'
+      ? (
+          await env.DB.batch([
+            save,
+            ...summaryRefreshStatements(env.DB, value.id, version),
+          ])
+        )[0]!
+      : await save.run();
   if (!result.meta.changes) throw new ContactsError(409, 'contact_changed');
   return { saved: true, animals, version };
 }

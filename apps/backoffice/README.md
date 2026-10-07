@@ -8,11 +8,14 @@ et dans la politique Access. Le carnet Google reste celui d’Agathe.
 Le backoffice comprend l’accueil, le compte connecté, la déconnexion et l’onglet
 Contacts : recherche, filtres, édition des coordonnées Google, animaux et dernier
 rendez-vous connu, listes de diffusion et affectations individuelles ou groupées.
+L’accueil affiche aussi le prochain rendez-vous de l’agenda Google Calendar
+d’Agathe, avec son horaire, son lieu et un lien vers l’événement. La connexion
+en lecture seule est décrite dans le [guide Calendar](../../docs/backoffice-google-calendar.md).
 Deux environnements hébergés sont prévus : `backoffice-preview` et `backoffice`,
 avec Workers, applications Access et bases D1 distincts. La preview travaille
-sur une copie des vrais contacts, modifiable sans écriture dans Gmail. Depuis
-la production, « Copier en preview » remplace explicitement cette copie. Le
-code de preview ne possède aucun binding Google ni secret OAuth.
+sur une copie des vrais contacts, modifiable sans écriture dans Gmail. La commande technique
+`yarn preview:copy:backoffice` remplace explicitement cette copie. Aucun bouton
+de gestion des copies n’apparaît dans l’interface. Le code de preview ne possède aucun binding Google ni secret OAuth.
 
 Il reprend le monogramme OA, les couleurs et les polices locales du site.
 L’interface React utilise les composants TypeScript **Catalyst UI Kit** fournis
@@ -34,8 +37,8 @@ réajouter des coordonnées conservées dans les réservations Calendly.
 
 La base D1 de production contient les listes, leurs descriptions, les références
 Google et les accords de diffusion. La base de preview contient ses propres listes
-et une copie des coordonnées, des animaux et du dernier rendez-vous connu ;
-elle ne stocke pas les notes de consultation ni les réservations complètes. Une affectation commence « Accord à confirmer » ; l’ajout
+et une copie complète des données métier : coordonnées, animaux, notes,
+réservations structurées, synthèses et comptes rendus privés. Une affectation commence « Accord à confirmer » ; l’ajout
 groupé conserve les accords et désinscriptions existants. Les listes archivées
 peuvent être restaurées avec leurs affectations.
 
@@ -59,20 +62,25 @@ des clés de signature éphémères et des services fictifs, jamais des jetons r
 
 `preview:backoffice` lance un serveur d’interface distinct sur
 `http://localhost:8788`, limité à l’adresse de boucle locale. Il affiche une
-session locale, sans appel à Google. Par défaut, les
-contacts sont fictifs. Pour travailler avec le contenu de la preview hébergée,
+session locale, sans appel à Google. Par défaut, il exige une copie des données
+de production ; une copie absente provoque une erreur explicite. Les données
+fictives exigent `BACKOFFICE_PREVIEW_DEMO=1` et servent uniquement aux démos.
+Pour travailler avec la copie de production de la preview hébergée,
 lancer `yarn preview:pull:backoffice` à la racine, puis redémarrer
 `yarn preview:backoffice`. Cette lecture D1 récupère le snapshot actif, les
-libellés, les listes actives/archivées et les affectations de la preview.
+libellés, notes et historiques, synthèses, agenda copié, listes actives/archivées,
+affectations et corrections. Les PDF privés sont téléchargés depuis le bucket
+de preview et vérifiés par taille et empreinte SHA-256.
 Elle utilise la session Wrangler existante et les identifiants non secrets de
 `.credentials/backoffice-preview.json`. La copie est enregistrée dans
 `apps/backoffice/.credentials/local-preview-data.json`, ignoré par Git et lisible
 uniquement par son propriétaire. Aucun secret Google n’est téléchargé.
 Les modifications locales sont conservées dans `.credentials/local-backoffice.sqlite`
 (mode 0600), même après un redémarrage. Elles ne modifient ni la preview hébergée ni Google. La récupération est explicite,
-sans synchronisation automatique. Une preview vide donne un local vide.
-Pour alimenter la preview depuis Google, lancer d’abord « Copier en preview »
-dans le backoffice de production. L’export HTML conserve toujours les données fictives.
+sans synchronisation automatique. Une copie complète vide donne un local vide ;
+une ancienne copie partielle doit être renouvelée avant un nouvel import local.
+Pour alimenter la preview depuis la production, lancer d’abord
+`yarn preview:copy:backoffice` avec la session Wrangler de l’opérateur. L’export HTML conserve toujours les données fictives.
 Le serveur recharge les sources TypeScript. Après une modification de
 l’interface React ou du CSS Tailwind,
 relancer `yarn workspace @osteo/backoffice assets:build` et rafraîchir la page.
@@ -99,8 +107,9 @@ modifications. Un chemin de sortie peut être passé en argument à la commande.
 Le Worker vérifie la signature RS256, l’émetteur Access, l’audience de cette
 application, la durée de validité, le type de jeton et l’adresse autorisée avant
 toute route, API ou ressource statique. Les réponses privées ne sont pas mises
-en cache. Les adresses `admin.osteopathie-animale-bordeaux.fr` et
-`admin-preview.osteopathie-animale-bordeaux.fr` sont protégées par Access.
+en cache. Les domaines configurés sont protégés par Access ; les déploiements actuels sont
+`osteo-backoffice.lvantours.workers.dev` et
+`osteo-backoffice-preview.lvantours.workers.dev`.
 Les URL de version sont désactivées.
 
 [Configuration de Google SSO, Access et du domaine](../../docs/backoffice-cloudflare.md).
@@ -133,8 +142,10 @@ l’extraction des animaux s’exécutent automatiquement à la lecture.
 
 Les corrections et animaux sont enregistrés atomiquement avec un historique privé.
 « Annuler cette étape » restaure la version précédente uniquement si la fiche n’a
-pas changé depuis. La recherche retrouve aussi le nom d’origine. Une nouvelle
-copie Google est refusée dès qu’une revue existe, pour préserver le travail de test.
+pas changé depuis. La recherche retrouve aussi le nom d’origine. Une copie complète conserve le snapshot précédent et ses corrections en sauvegarde
+privée avant de remplacer les données par celles de production. Les anciens
+appelants qui ne savent copier que les coordonnées restent bloqués en présence
+de corrections.
 
 Les migrations 0003 et 0004 sont déployées uniquement en preview. L’API de revue
 refuse la production et la preview ne possède aucun binding Google. La publication
@@ -196,3 +207,7 @@ Au 7 octobre 2026, 2 461 associations de réservations ont été récupérées ;
 Cette itération est locale : le lecteur modifié doit encore être déployé avant
 une prochaine copie distante. Les données actuelles ne contiennent pas de photo ;
 l’avatar à initiales a donc été retiré de la fiche.
+
+## Synthèses client
+
+La fiche client peut afficher une synthèse Luna issue des notes Google et des réservations structurées. Le traitement démarre en pause, reste indépendant du runner Calendly et nécessite une mise en service explicite. Voir le [guide des synthèses](../../docs/client-summaries.md) pour les modes lecture, pilote sur 20 contacts et traitement complet. Les notes et résumés réels ne sont pas copiés en preview.
