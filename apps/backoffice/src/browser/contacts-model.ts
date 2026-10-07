@@ -41,6 +41,15 @@ export const appointmentDate = (value: string | null) =>
     : 'Non renseigné';
 
 const messages: Record<string, string> = {
+  invalid_animals:
+    'Renseignez un animal par ligne (30 maximum, 200 caractères par nom).',
+  animals_storage_unavailable: 'Le stockage des animaux est indisponible.',
+  invalid_identity:
+    'Renseignez un nom et vérifiez les noms des animaux (un animal par ligne).',
+  identity_preview_only:
+    'Les corrections sont disponibles en preview pour validation avant la production.',
+  preview_has_corrections:
+    'La preview contient des corrections. Elles doivent être conservées ou exportées avant de remplacer la copie.',
   contact_snapshot_changed:
     'La copie a été actualisée. Rechargez les contacts pour consulter la nouvelle version.',
   preview_copy_unavailable:
@@ -211,6 +220,12 @@ export function useContacts(transport: ContactsTransport) {
     [transport]
   );
 
+  const identityHistory = useCallback(
+    (id: string) =>
+      transport(`/api/contact-identity?id=${encodeURIComponent(id)}`),
+    [transport]
+  );
+
   const memberships = useMemo(() => {
     const result = new Map<string, ListMembership[]>();
     for (const item of lists.memberships)
@@ -233,6 +248,7 @@ export function useContacts(transport: ContactsTransport) {
     refresh,
     reloadLists,
     mutation,
+    identityHistory,
   };
 }
 

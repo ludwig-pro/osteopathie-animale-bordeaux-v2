@@ -4,12 +4,12 @@ import { getAccessConfig } from '../src/config.ts';
 const profiles = {
   preview: {
     name: 'osteo-backoffice-preview',
-    hostname: 'backoffice-preview.osteopathie-animale-bordeaux.fr',
+    hostname: 'admin-preview.osteopathie-animale-bordeaux.fr',
     main: 'src/preview.ts',
   },
   production: {
     name: 'osteo-backoffice',
-    hostname: 'backoffice.osteopathie-animale-bordeaux.fr',
+    hostname: 'admin.osteopathie-animale-bordeaux.fr',
     main: 'src/index.ts',
   },
 };
@@ -70,6 +70,7 @@ export function deploymentConfig(template, environment, values) {
       );
     target.d1_databases[1].database_id = previewId;
   }
+  target.workers_dev = false;
   target.routes = [{ pattern: profile.hostname, custom_domain: true }];
   config.env = { [environment]: target };
   assertDeploymentConfig(config, environment);

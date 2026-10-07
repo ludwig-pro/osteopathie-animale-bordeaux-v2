@@ -9,7 +9,7 @@ import {
   type JWTVerifyGetKey,
 } from 'jose';
 import { createAccessVerifier } from '../src/auth.ts';
-import { ALLOWED_EMAIL, type Env } from '../src/config.ts';
+import { CONTACTS_ACCOUNT_EMAIL, type Env } from '../src/config.ts';
 import worker, { createBackofficeHandler } from '../src/index.ts';
 
 const origin = 'https://backoffice.osteopathie-animale-bordeaux.fr';
@@ -33,7 +33,7 @@ async function signedToken(overrides: JWTPayload = {}, remove: string[] = []) {
     iss: issuer,
     aud: [audience],
     sub: 'fictitious-google-subject',
-    email: ALLOWED_EMAIL,
+    email: CONTACTS_ACCOUNT_EMAIL,
     type: 'app',
     iat: now,
     exp: now + 3600,
@@ -78,7 +78,19 @@ test('only the verified owner can load the home and session', async () => {
   assert.match(await home.text(), /Bonjour Agathe/);
   const session = await handle(request('/api/session', token), env);
   assert.deepEqual(await session.json(), {
-    user: { email: ALLOWED_EMAIL, name: 'Agathe Lescout' },
+    user: { email: CONTACTS_ACCOUNT_EMAIL, name: 'Agathe Lescout' },
+  });
+});
+
+test('Ludwig can authenticate on pages, assets and session with his own identity', async () => {
+  const { env, handle } = fixture();
+  const token = await signedToken({ email: 'vantoursludwig@gmail.com' });
+  for (const path of ['/', '/contacts', '/assets/backoffice.css']) {
+    assert.equal((await handle(request(path, token), env)).status, 200);
+  }
+  const session = await handle(request('/api/session', token), env);
+  assert.deepEqual(await session.json(), {
+    user: { email: 'vantoursludwig@gmail.com', name: 'Ludwig Vantours' },
   });
 });
 
@@ -130,7 +142,7 @@ test('untrusted email headers and cookies cannot authenticate a request', async 
   const response = await handle(
     request('/api/session', undefined, {
       headers: {
-        'Cf-Access-Authenticated-User-Email': ALLOWED_EMAIL,
+        'Cf-Access-Authenticated-User-Email': CONTACTS_ACCOUNT_EMAIL,
         Cookie: `CF_Authorization=${await signedToken()}`,
       },
     }),
@@ -158,6 +170,8 @@ test('email aliases are not added to the allowlist', async () => {
   const { env, handle } = fixture();
   for (const email of [
     'agathe.lescout.osteo+admin@gmail.com',
+    'vantoursludwig+admin@gmail.com',
+    'vantours.ludwig@gmail.com',
     'agathelescoutosteo@gmail.com',
     'agathe.lescout.osteo@gmail.com.example.test',
   ]) {
@@ -171,10 +185,10 @@ test('email aliases are not added to the allowlist', async () => {
 test('bad signatures and unsigned tokens are rejected', async () => {
   const { env, handle } = fixture();
   const pair = await generateKeyPair('RS256');
-  const wrongSignature = await new SignJWT({ email: ALLOWED_EMAIL })
+  const wrongSignature = await new SignJWT({ email: CONTACTS_ACCOUNT_EMAIL })
     .setProtectedHeader({ alg: 'RS256', kid: 'test' })
     .sign(pair.privateKey);
-  const unsigned = `${Buffer.from('{"alg":"none"}').toString('base64url')}.${Buffer.from(JSON.stringify({ email: ALLOWED_EMAIL })).toString('base64url')}.`;
+  const unsigned = `${Buffer.from('{"alg":"none"}').toString('base64url')}.${Buffer.from(JSON.stringify({ email: CONTACTS_ACCOUNT_EMAIL })).toString('base64url')}.`;
   for (const token of [
     wrongSignature,
     unsigned,

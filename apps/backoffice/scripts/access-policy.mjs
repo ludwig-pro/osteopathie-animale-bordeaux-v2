@@ -1,4 +1,4 @@
-import { ALLOWED_EMAIL } from '../src/config.ts';
+import { ALLOWED_EMAILS } from '../src/config.ts';
 
 export function assertAccessSetup(
   application,
@@ -26,16 +26,22 @@ export function assertAccessSetup(
     identityProvider.type !== 'google' ||
     policies.length !== 1 ||
     policy?.decision !== 'allow' ||
-    policy.include?.length !== 1 ||
-    Object.keys(policy.include[0]).length !== 1 ||
-    policy.include[0].email?.email !== ALLOWED_EMAIL ||
+    policy.include?.length !== ALLOWED_EMAILS.length ||
+    !ALLOWED_EMAILS.every((email) =>
+      policy.include.some(
+        (rule) =>
+          Object.keys(rule).length === 1 &&
+          Object.keys(rule.email ?? {}).length === 1 &&
+          rule.email.email === email
+      )
+    ) ||
     policy.require?.length !== 1 ||
     Object.keys(policy.require[0]).length !== 1 ||
     policy.require[0].login_method?.id !== expected.googleIdpId ||
     (policy.exclude?.length ?? 0) !== 0
   ) {
     throw new Error(
-      'Access doit protéger ce seul domaine avec Google uniquement et le seul compte autorisé. Consulter le guide du backoffice.'
+      'Access doit protéger ce seul domaine avec Google uniquement et les deux comptes autorisés. Consulter le guide du backoffice.'
     );
   }
 }

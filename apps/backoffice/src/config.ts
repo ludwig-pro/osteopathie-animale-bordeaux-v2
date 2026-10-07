@@ -1,4 +1,10 @@
-export const ALLOWED_EMAIL = 'agathe.lescout.osteo@gmail.com';
+export const CONTACTS_ACCOUNT_EMAIL = 'agathe.lescout.osteo@gmail.com';
+
+export const ALLOWED_USERS = {
+  [CONTACTS_ACCOUNT_EMAIL]: 'Agathe Lescout',
+  'vantoursludwig@gmail.com': 'Ludwig Vantours',
+} as const;
+export const ALLOWED_EMAILS = Object.keys(ALLOWED_USERS);
 
 export interface Env {
   ASSETS: Fetcher;

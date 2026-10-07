@@ -1,4 +1,4 @@
-import { ALLOWED_EMAIL } from '../src/config.ts';
+import { ALLOWED_EMAILS } from '../src/config.ts';
 import { assertAccessSetup } from './access-policy.mjs';
 import { environmentProfile } from './environments.mjs';
 
@@ -43,7 +43,7 @@ export async function provisionResources(environment, api, googleIdpId) {
     });
   const expectedPolicy = {
     decision: 'allow',
-    include: [{ email: { email: ALLOWED_EMAIL } }],
+    include: ALLOWED_EMAILS.map((email) => ({ email: { email } })),
     require: [{ login_method: { id: googleIdpId } }],
     exclude: [],
   };
@@ -57,10 +57,10 @@ export async function provisionResources(environment, api, googleIdpId) {
   );
   if (!policies.length && application.name === profile.name) {
     await api(`access/apps/${application.id}/policies`, 'POST', {
-      name: 'Agathe uniquement',
+      name: 'Agathe et Ludwig uniquement',
       decision: 'allow',
       precedence: 1,
-      include: [{ email: { email: ALLOWED_EMAIL } }],
+      include: ALLOWED_EMAILS.map((email) => ({ email: { email } })),
       require: [{ login_method: { id: googleIdpId } }],
       exclude: [],
     });

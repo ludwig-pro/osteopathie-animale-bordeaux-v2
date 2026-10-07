@@ -116,7 +116,7 @@ export function createDemoData() {
 // Self-contained factory also embedded in the offline HTML export.
 export function createDemoTransport(initial) {
   const data = structuredClone(initial);
-  data.archivedLists = [];
+  data.archivedLists ??= [];
   let revision = 0;
   const demoId = () => `demo-${Date.now().toString(36)}-${++revision}`;
   return async (path, init = {}) => {
@@ -131,7 +131,7 @@ export function createDemoTransport(initial) {
           contacts: data.contacts.slice(offset, offset + 20),
           nextPageToken:
             offset + 20 < data.contacts.length ? String(offset + 20) : null,
-          appointmentsAvailable: true,
+          appointmentsAvailable: data.appointmentsAvailable ?? true,
         });
       }
       if (url.pathname === '/api/contact-labels')

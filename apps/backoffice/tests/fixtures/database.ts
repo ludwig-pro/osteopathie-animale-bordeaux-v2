@@ -8,6 +8,10 @@ export function database() {
   for (const migration of [
     '0001_mailing_lists.sql',
     '0002_preview_snapshots.sql',
+    '0003_contact_identity.sql',
+    '0004_protect_identity_import.sql',
+    '0005_known_contact_animals.sql',
+    '0006_contact_animal_overrides.sql',
   ])
     sqlite.exec(
       readFileSync(

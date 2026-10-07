@@ -4,11 +4,11 @@ import {
   jwtVerify,
   type JWTVerifyGetKey,
 } from 'jose';
-import { ALLOWED_EMAIL, AccessError, type AccessConfig } from './config.ts';
+import { ALLOWED_USERS, AccessError, type AccessConfig } from './config.ts';
 
 export interface Identity {
-  email: typeof ALLOWED_EMAIL;
-  name: 'Agathe Lescout';
+  email: keyof typeof ALLOWED_USERS;
+  name: string;
 }
 
 export type AccessVerifier = (
@@ -67,9 +67,13 @@ export function createAccessVerifier(
     ) {
       throw new AccessError(401, 'authentication_required');
     }
-    if (payload['email'] !== ALLOWED_EMAIL) {
+    if (
+      typeof payload['email'] !== 'string' ||
+      !Object.hasOwn(ALLOWED_USERS, payload['email'])
+    ) {
       throw new AccessError(403, 'account_not_allowed');
     }
-    return { email: ALLOWED_EMAIL, name: 'Agathe Lescout' };
+    const email = payload['email'] as keyof typeof ALLOWED_USERS;
+    return { email, name: ALLOWED_USERS[email] };
   };
 }

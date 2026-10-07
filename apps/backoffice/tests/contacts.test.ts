@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { contactsPage } from '../src/contacts.ts';
-import { ALLOWED_EMAIL, type Env } from '../src/config.ts';
+import { CONTACTS_ACCOUNT_EMAIL, type Env } from '../src/config.ts';
 import { createBackofficeHandler } from '../src/index.ts';
 
 const origin = 'https://backoffice.osteopathie-animale-bordeaux.fr';
@@ -28,6 +28,23 @@ function fixture() {
               labelIds: [],
               animals: ['Moka'],
               lastAppointment: null,
+              history: [
+                {
+                  id: 'booking-1',
+                  type: 'appointment',
+                  date: '2026-01-02T10:00:00Z',
+                  animal: 'Moka',
+                  status: 'active',
+                  note: 'private-note',
+                },
+                {
+                  id: 'invalid',
+                  type: 'appointment',
+                  date: 'invalid',
+                  animal: '',
+                  status: 'active',
+                },
+              ],
               biographies: [{ value: 'private-note' }],
             },
           ],
@@ -39,7 +56,7 @@ function fixture() {
     },
   } as unknown as Env;
   const handle = createBackofficeHandler(async () => ({
-    email: ALLOWED_EMAIL,
+    email: CONTACTS_ACCOUNT_EMAIL,
     name: 'Agathe Lescout',
   }));
   return { env, calls, handle };
@@ -55,7 +72,20 @@ test('contact pages use only the private binding with the pinned owner account a
     f.calls[0]!.url,
     'https://contacts.internal/contacts?pageToken=next%26token'
   );
-  assert.equal(f.calls[0]!.headers.get('X-Contacts-Account'), ALLOWED_EMAIL);
+  assert.equal(
+    f.calls[0]!.headers.get('X-Contacts-Account'),
+    CONTACTS_ACCOUNT_EMAIL
+  );
+  assert.ok('contacts' in data);
+  assert.deepEqual(data.contacts[0]?.history, [
+    {
+      id: 'booking-1',
+      type: 'appointment',
+      date: '2026-01-02T10:00:00Z',
+      animal: 'Moka',
+      status: 'active',
+    },
+  ]);
   assert.doesNotMatch(JSON.stringify(data), /private-note|private-secret/);
 });
 
@@ -167,4 +197,18 @@ test('malformed/oversized JSON, cursors and upstream bodies cannot leak or reach
   assert.deepEqual(await response.json(), {
     error: 'google_contacts_unavailable',
   });
+});
+
+test('Ludwig reads the same pinned Agathe contact account', async () => {
+  const f = fixture();
+  const handle = createBackofficeHandler(async () => ({
+    email: 'vantoursludwig@gmail.com',
+    name: 'Ludwig Vantours',
+  }));
+  const response = await handle(new Request(`${origin}/api/contacts`), f.env);
+  assert.equal(response.status, 200);
+  assert.equal(
+    f.calls[0]!.headers.get('X-Contacts-Account'),
+    CONTACTS_ACCOUNT_EMAIL
+  );
 });

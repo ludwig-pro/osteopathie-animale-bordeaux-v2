@@ -1,3 +1,4 @@
+import { animalTypeFrom } from './animal-type.ts';
 import { Clients } from './api.ts';
 import { SyncError } from './errors.ts';
 import { normalizeEmail } from './model.ts';
@@ -158,7 +159,17 @@ export async function readGoogleContacts(
           ),
         ],
         animals: [] as string[],
+        animalTypes: [] as string[],
         lastAppointment: null as string | null,
+        history: [] as
+          | {
+              id: string;
+              type: 'appointment';
+              date: string;
+              animal: string;
+              status: 'active' | 'canceled';
+            }[]
+          | undefined,
       }));
     let appointmentsAvailable = true;
     try {
@@ -166,21 +177,29 @@ export async function readGoogleContacts(
         const slice = contacts.slice(offset, offset + 80);
         const details = await env.DB.prepare(
           `SELECT c.resource_name AS id, COALESCE(json_extract(b.data, '$.animal'), '') AS animal,
+          COALESCE(json_extract(b.data, '$.animalType'), json_extract(b.data, '$.breed'), '') AS animal_type,
+          json_group_array(json_object('id', b.uri, 'type', 'appointment', 'date', json_extract(b.data, '$.start'), 'animal', COALESCE(json_extract(b.data, '$.animal'), ''), 'status', json_extract(b.data, '$.status'))) AS history,
           MAX(CASE WHEN json_extract(b.data, '$.status') = 'active' AND datetime(json_extract(b.data, '$.start')) <= datetime(?) THEN json_extract(b.data, '$.start') END) AS last_appointment
           FROM contacts c JOIN bookings b ON b.email = c.email
           WHERE c.resource_name IN (${slice.map(() => '?').join(',')})
-          GROUP BY c.resource_name, json_extract(b.data, '$.animal')`
+          GROUP BY c.resource_name, json_extract(b.data, '$.animal'), animal_type`
         )
           .bind(new Date().toISOString(), ...slice.map((contact) => contact.id))
           .all<{
             id: string;
             animal: string;
+            animal_type: string;
+            history: string;
             last_appointment: string | null;
           }>();
         const byId = new Map(slice.map((contact) => [contact.id, contact]));
         for (const row of details.results) {
           const contact = byId.get(row.id);
           if (!contact) continue;
+          contact.history!.push(...JSON.parse(row.history));
+          const animalType = animalTypeFrom(row.animal_type);
+          if (animalType && !contact.animalTypes.includes(animalType))
+            contact.animalTypes.push(animalType);
           if (row.animal.trim() && !contact.animals.includes(row.animal))
             contact.animals.push(row.animal);
           if (
@@ -195,7 +214,9 @@ export async function readGoogleContacts(
       appointmentsAvailable = false;
       for (const contact of contacts) {
         contact.animals = [];
+        contact.animalTypes = [];
         contact.lastAppointment = null;
+        contact.history = undefined;
       }
     }
     return reply({

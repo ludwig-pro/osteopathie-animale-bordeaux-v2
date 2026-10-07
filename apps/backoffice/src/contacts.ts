@@ -1,4 +1,5 @@
-import { ALLOWED_EMAIL, type Env } from './config.ts';
+import { normalizeIncomingContacts } from './incoming-contacts.ts';
+import { CONTACTS_ACCOUNT_EMAIL, type Env } from './config.ts';
 import type { ContactPage, LabelPage } from './contact-types.ts';
 
 export class ContactsError extends Error {
@@ -49,7 +50,7 @@ export async function contactsPage(
   try {
     const response = await env.GOOGLE_CONTACTS.fetch(
       new Request(target, {
-        headers: { 'X-Contacts-Account': ALLOWED_EMAIL },
+        headers: { 'X-Contacts-Account': CONTACTS_ACCOUNT_EMAIL },
         signal: AbortSignal.timeout(25000),
       })
     );
@@ -109,30 +110,72 @@ export async function contactsPage(
     )
       throw new Error('invalid_page');
     return {
-      contacts: data.contacts.map(
-        ({
-          id,
-          name,
-          givenName,
-          familyName,
-          etag,
-          emails,
-          phones,
-          labelIds,
-          animals,
-          lastAppointment,
-        }) => ({
-          id,
-          name,
-          givenName,
-          familyName,
-          etag,
-          emails,
-          phones,
-          labelIds,
-          animals,
-          lastAppointment,
-        })
+      contacts: await normalizeIncomingContacts(
+        data.contacts.map(
+          ({
+            id,
+            name,
+            givenName,
+            familyName,
+            etag,
+            emails,
+            phones,
+            labelIds,
+            animals,
+            animalTypes,
+            lastAppointment,
+            history,
+            identity,
+          }) => ({
+            id,
+            name,
+            givenName,
+            familyName,
+            etag,
+            emails,
+            phones,
+            labelIds,
+            animals,
+            lastAppointment,
+            history: Array.isArray(history)
+              ? history
+                  .filter(
+                    (event) =>
+                      event &&
+                      typeof event.id === 'string' &&
+                      event.type === 'appointment' &&
+                      typeof event.date === 'string' &&
+                      Number.isFinite(Date.parse(event.date)) &&
+                      typeof event.animal === 'string' &&
+                      ['active', 'canceled'].includes(event.status)
+                  )
+                  .map(({ id, type, date, animal, status }) => ({
+                    id,
+                    type,
+                    date,
+                    animal,
+                    status,
+                  }))
+              : undefined,
+            animalTypes: Array.isArray(animalTypes)
+              ? animalTypes.filter((value) => typeof value === 'string')
+              : [],
+            ...(identity
+              ? {
+                  identity: {
+                    originalName: identity.originalName,
+                    reviewId: identity.reviewId,
+                    animals: identity.animals.map(({ id, name, source }) => ({
+                      id,
+                      name,
+                      source,
+                    })),
+                  },
+                }
+              : {}),
+          })
+        ),
+        env.DB
       ),
       nextPageToken: data.nextPageToken,
       appointmentsAvailable: data.appointmentsAvailable,
@@ -155,7 +198,7 @@ export async function saveContact(
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'X-Contacts-Account': ALLOWED_EMAIL,
+          'X-Contacts-Account': CONTACTS_ACCOUNT_EMAIL,
         },
         body: JSON.stringify(input),
         signal: AbortSignal.timeout(30000),

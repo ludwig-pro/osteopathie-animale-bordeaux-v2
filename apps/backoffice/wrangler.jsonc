@@ -43,7 +43,7 @@
       ],
       "vars": {
         "APP_ENVIRONMENT": "preview",
-        "APP_ORIGIN": "https://backoffice-preview.osteopathie-animale-bordeaux.fr",
+        "APP_ORIGIN": "https://admin-preview.osteopathie-animale-bordeaux.fr",
         "ACCESS_TEAM_DOMAIN": "configure-before-use",
         "ACCESS_AUD": "configure-before-use",
       },
@@ -74,7 +74,7 @@
       ],
       "vars": {
         "APP_ENVIRONMENT": "production",
-        "APP_ORIGIN": "https://backoffice.osteopathie-animale-bordeaux.fr",
+        "APP_ORIGIN": "https://admin.osteopathie-animale-bordeaux.fr",
         "ACCESS_TEAM_DOMAIN": "configure-before-use",
         "ACCESS_AUD": "configure-before-use",
       },

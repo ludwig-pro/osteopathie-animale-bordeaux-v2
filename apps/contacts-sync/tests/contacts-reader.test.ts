@@ -93,7 +93,11 @@ test('contacts are reduced to requested fields and booking history excludes futu
   const f = fixture();
   await saveBooking(
     f.env.DB,
-    booking('past', { animal: 'Moka', start: '2020-01-02T10:00:00Z' })
+    booking('past', {
+      animal: 'Moka',
+      animalType: 'Chien',
+      start: '2020-01-02T10:00:00Z',
+    })
   );
   await saveBooking(
     f.env.DB,
@@ -117,13 +121,41 @@ test('contacts are reduced to requested fields and booking history excludes futu
   );
   assert.equal(response.status, 200);
   const data = (await response.json()) as {
-    contacts: { animals: string[]; lastAppointment: string }[];
+    contacts: {
+      animals: string[];
+      animalTypes: string[];
+      lastAppointment: string;
+      history: {
+        id: string;
+        type: string;
+        date: string;
+        animal: string;
+        status: string;
+      }[];
+    }[];
     appointmentsAvailable: boolean;
     nextPageToken: string;
   };
   assert.equal(data.contacts.length, 1);
   assert.deepEqual(data.contacts[0]!.animals, ['Moka', 'Nala']);
+  assert.deepEqual(data.contacts[0]!.animalTypes, ['Chien']);
   assert.equal(data.contacts[0]!.lastAppointment, '2020-01-02T10:00:00Z');
+  assert.equal(data.contacts[0]!.history.length, 3);
+  assert.equal(
+    data.contacts[0]!.history.filter((event) => event.status === 'canceled')
+      .length,
+    1
+  );
+  assert.ok(
+    data.contacts[0]!.history.some(
+      (event) => event.date === '2999-01-02T10:00:00Z'
+    )
+  );
+  assert.ok(
+    data.contacts[0]!.history.every(
+      (event) => event.type === 'appointment' && event.id
+    )
+  );
   assert.equal(data.appointmentsAvailable, true);
   assert.equal(data.nextPageToken, 'next&token');
   assert.doesNotMatch(

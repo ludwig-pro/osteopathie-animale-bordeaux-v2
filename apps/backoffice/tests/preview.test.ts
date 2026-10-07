@@ -5,7 +5,11 @@ import { copyContactsToPreview } from '../src/preview-copy.ts';
 import { previewContacts } from '../src/preview-contacts.ts';
 import { createPreviewHandler } from '../src/preview.ts';
 import { createBackofficeHandler } from '../src/index.ts';
-import { ALLOWED_EMAIL, AccessError, type Env } from '../src/config.ts';
+import {
+  CONTACTS_ACCOUNT_EMAIL,
+  AccessError,
+  type Env,
+} from '../src/config.ts';
 import type { GoogleContact, ContactPage } from '../src/contact-types.ts';
 
 function fixture(count = 1103) {
@@ -138,7 +142,8 @@ test('copy all Google pages into preview only, atomically activate and preserve 
   );
   assert.ok(
     f.requests.every(
-      (request) => request.headers.get('X-Contacts-Account') === ALLOWED_EMAIL
+      (request) =>
+        request.headers.get('X-Contacts-Account') === CONTACTS_ACCOUNT_EMAIL
     )
   );
   f.production.sqlite.close();
@@ -240,7 +245,7 @@ test('preview uses Access before reading storage and ignores any Google binding'
   );
   assert.equal(f.preview.queries(), queries);
   const handle = createPreviewHandler(async () => ({
-    email: ALLOWED_EMAIL,
+    email: CONTACTS_ACCOUNT_EMAIL,
     name: 'Agathe Lescout',
   }));
   const response = await handle(
@@ -265,7 +270,7 @@ test('preview uses Access before reading storage and ignores any Google binding'
   });
   assert.equal((await handle(write, f.previewEnv)).status, 503);
   const productionHandle = createBackofficeHandler(async () => ({
-    email: ALLOWED_EMAIL,
+    email: CONTACTS_ACCOUNT_EMAIL,
     name: 'Agathe Lescout',
   }));
   assert.equal(
@@ -299,4 +304,36 @@ test('snapshot pagination detects a replacement instead of mixing two contact co
   assert.equal(response.status, 409);
   f.production.sqlite.close();
   f.preview.sqlite.close();
+});
+
+test('preview accepts its deployed and official hosts, rejects production and arbitrary hosts', async () => {
+  const f = fixture(2);
+  await copy(f.env);
+  const handle = createPreviewHandler(async () => ({
+    email: CONTACTS_ACCOUNT_EMAIL,
+    name: 'Agathe Lescout',
+  }));
+  try {
+    for (const origin of [
+      'https://admin-preview.osteopathie-animale-bordeaux.fr',
+      'https://osteo-backoffice-preview.lvantours.workers.dev',
+      'https://admin.osteopathie-animale-bordeaux.fr',
+      'https://other.example.test',
+    ]) {
+      const response = await handle(new Request(`${origin}/api/contacts`), {
+        ...f.previewEnv,
+        APP_ORIGIN: origin,
+      });
+      assert.equal(
+        response.status,
+        origin.includes('admin-preview.') ||
+          origin.includes('osteo-backoffice-preview.')
+          ? 200
+          : 503
+      );
+    }
+  } finally {
+    f.production.sqlite.close();
+    f.preview.sqlite.close();
+  }
 });

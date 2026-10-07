@@ -8,7 +8,7 @@ import {
   assertDeploymentConfig,
 } from '../scripts/environments.mjs';
 import { provisionResources } from '../scripts/provision-resources.mjs';
-import { ALLOWED_EMAIL } from '../src/config.ts';
+import { ALLOWED_EMAILS } from '../src/config.ts';
 
 const template = ts.parseConfigFileTextToJson(
   'wrangler.jsonc',
@@ -41,7 +41,7 @@ test('preview and production use separate entrypoints, domains, bindings and dat
   assert.throws(() =>
     deploymentConfig(template, 'preview', {
       ...values,
-      BACKOFFICE_HOSTNAME: 'backoffice.osteopathie-animale-bordeaux.fr',
+      BACKOFFICE_HOSTNAME: 'admin.osteopathie-animale-bordeaux.fr',
     })
   );
   assert.throws(() =>
@@ -109,14 +109,27 @@ test('provisioning is idempotent and creates only a restricted Google Access app
   const before = writes.length;
   assert.deepEqual(await provisionResources('preview', api, idp), first);
   assert.equal(writes.length, before);
-  assert.deepEqual((policies[0] as { include: unknown }).include, [
-    { email: { email: ALLOWED_EMAIL } },
-  ]);
+  assert.deepEqual(
+    (policies[0] as { include: unknown }).include,
+    ALLOWED_EMAILS.map((email) => ({ email: { email } }))
+  );
   assert.equal(
     first.BACKOFFICE_HOSTNAME,
-    'backoffice-preview.osteopathie-animale-bordeaux.fr'
+    'admin-preview.osteopathie-animale-bordeaux.fr'
   );
   Object.assign(app, { allowed_idps: [idp, 'another-provider'] });
   await assert.rejects(provisionResources('preview', api, idp));
   assert.equal(writes.length, before);
+});
+
+test('public alternative routes and version URLs cannot be enabled', () => {
+  for (const change of [
+    { routes: [{ pattern: 'example.test', custom_domain: true }] },
+    { preview_urls: true },
+    { workers_dev: true },
+  ]) {
+    const config = deploymentConfig(template, 'preview', values);
+    Object.assign(config.env.preview, change);
+    assert.throws(() => assertDeploymentConfig(config, 'preview'));
+  }
 });

@@ -53,6 +53,7 @@ export interface Booking {
   start: string;
   status: 'active' | 'canceled';
   animal: string;
+  animalType?: string;
   breed: string;
   birth: string;
   reason: string;
@@ -61,6 +62,7 @@ export interface Booking {
   updatedAt: string;
 }
 export interface ScheduledEvent {
+  name?: string;
   uri: string;
   start_time: string;
   status: 'active' | 'canceled';

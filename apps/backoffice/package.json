@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "yarn assets:build && wrangler dev --port 8788",
     "preview": "yarn assets:build && node --watch --experimental-strip-types scripts/preview.mjs",
+    "preview:pull": "node scripts/pull-preview.mjs",
     "preview:export": "yarn assets:build && node --experimental-strip-types scripts/export-preview.mjs",
     "assets:build": "node scripts/build-assets.mjs",
     "build": "yarn assets:build && wrangler deploy --dry-run --env production --outdir dist/worker/production && wrangler deploy --dry-run --env preview --outdir dist/worker/preview",
@@ -26,6 +27,7 @@
     "@heroicons/react": "2.2.0",
     "clsx": "^2.1.1",
     "jose": "^6.2.12",
+    "libphonenumber-js": "^1.13.14",
     "motion": "^12.38.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"

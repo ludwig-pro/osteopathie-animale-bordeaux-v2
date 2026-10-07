@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: backoffice-${{ inputs.environment || 'preview' }}
-      url: ${{ inputs.environment == 'production' && 'https://backoffice.osteopathie-animale-bordeaux.fr' || 'https://backoffice-preview.osteopathie-animale-bordeaux.fr' }}
+      url: ${{ inputs.environment == 'production' && 'https://admin.osteopathie-animale-bordeaux.fr' || 'https://admin-preview.osteopathie-animale-bordeaux.fr' }}
     env:
       BACKOFFICE_ENV: ${{ inputs.environment || 'preview' }}
       WRANGLER_SEND_METRICS: 'false'

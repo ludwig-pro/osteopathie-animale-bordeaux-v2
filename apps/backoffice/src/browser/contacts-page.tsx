@@ -1,10 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import {
   ArrowPathIcon,
-  AdjustmentsHorizontalIcon,
   MagnifyingGlassIcon,
-  ChevronDownIcon,
-  CheckIcon,
+  EllipsisHorizontalIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
   TagIcon,
@@ -14,16 +18,13 @@ import type { GoogleContact } from '../contact-types';
 import {
   appointmentDate,
   contactName,
-  initials,
   normalize,
   type ContactsModel,
 } from './contacts-model';
 import { EmptyState, Notice } from './common';
-import { Avatar } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
-import { Dialog, DialogTitle, DialogBody, DialogActions } from './ui/dialog';
 import {
   Dropdown,
   DropdownButton,
@@ -31,12 +32,9 @@ import {
   DropdownLabel,
   DropdownMenu,
 } from './ui/dropdown';
-import { Field, FieldGroup, Label } from './ui/fieldset';
 import { Heading } from './ui/heading';
 import { Input, InputGroup } from './ui/input';
-import { Listbox, ListboxLabel, ListboxOption } from './ui/listbox';
 import { Pagination } from './ui/pagination';
-import { Select } from './ui/select';
 import {
   Table,
   TableBody,
@@ -46,82 +44,14 @@ import {
   TableRow,
 } from './ui/table';
 import { Text } from './ui/text';
-
-type Filters = { label: string; email: string };
-const sorting = [
-  { value: 'asc', label: 'Nom : A → Z' },
-  { value: 'desc', label: 'Nom : Z → A' },
-  { value: 'recent', label: 'Dernier rendez-vous' },
-];
-
-function FiltersDialog({
-  model,
-  current,
-  onApply,
-  onClose,
-}: {
-  model: ContactsModel;
-  current: Filters;
-  onApply: (filters: Filters) => void;
-  onClose: () => void;
-}) {
-  const [filters, setFilters] = useState(current);
-  return (
-    <Dialog open onClose={onClose} size="md">
-      <DialogTitle>Filtrer les contacts</DialogTitle>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          onApply(filters);
-          onClose();
-        }}
-      >
-        <DialogBody>
-          <FieldGroup className="space-y-5">
-            <Field>
-              <Label>Libellé Google</Label>
-              <Select
-                id="contacts-label"
-                value={filters.label}
-                onChange={(event) =>
-                  setFilters({ ...filters, label: event.target.value })
-                }
-              >
-                <option value="">Tous les libellés</option>
-                <option value="__unlabelled">Sans libellé</option>
-                {model.labels.map((label) => (
-                  <option key={label.id} value={label.id}>
-                    {label.name}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field>
-              <Label>Adresse e-mail</Label>
-              <Select
-                id="contacts-email-filter"
-                value={filters.email}
-                onChange={(event) =>
-                  setFilters({ ...filters, email: event.target.value })
-                }
-              >
-                <option value="all">Toutes les fiches</option>
-                <option value="with">Avec un e-mail</option>
-                <option value="without">Sans e-mail</option>
-              </Select>
-            </Field>
-          </FieldGroup>
-        </DialogBody>
-        <DialogActions>
-          <Button outline onClick={onClose}>
-            Annuler
-          </Button>
-          <Button type="submit">Appliquer les filtres</Button>
-        </DialogActions>
-      </form>
-    </Dialog>
-  );
-}
+import {
+  contactColumns,
+  columnWidthsStorageKey,
+  parseColumnWidths,
+  type ContactColumn,
+} from './contact-column-widths';
+import { ResizableColumnHeader } from './resizable-column-header';
+import { formatPhoneNumber } from './phone-number';
 
 export function ContactsPage({
   source = 'google',
@@ -131,7 +61,6 @@ export function ContactsPage({
   onListFilter,
   onContact,
   onBulk,
-  onLists,
   notice,
 }: {
   model: ContactsModel;
@@ -141,19 +70,50 @@ export function ContactsPage({
   onListFilter: (value: string) => void;
   onContact: (contact: GoogleContact) => void;
   onBulk: (ids: string[], done: () => void) => void;
-  onLists: () => void;
   notice: string;
 }) {
   const [search, setSearch] = useState('');
-  const [filters, setFilters] = useState<Filters>({ label: '', email: 'all' });
-  const [showFilters, setShowFilters] = useState(false);
-  const [sort, setSort] = useState('asc');
+  const [sort, setSort] = useState<{
+    column: ContactColumn['id'];
+    direction: 'asc' | 'desc';
+  }>({ column: 'name', direction: 'asc' });
+  const sortColumn = (column: ContactColumn['id']) =>
+    setSort((current) => ({
+      column,
+      direction:
+        current.column === column && current.direction === 'asc'
+          ? 'desc'
+          : 'asc',
+    }));
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [columnWidths, setColumnWidths] = useState(() => {
+    try {
+      return parseColumnWidths(
+        window.localStorage.getItem(columnWidthsStorageKey)
+      );
+    } catch {
+      return parseColumnWidths(null);
+    }
+  });
+  const widthsRef = useRef(columnWidths);
+  function resizeColumn(column: ContactColumn, width: number) {
+    widthsRef.current = { ...widthsRef.current, [column.id]: width };
+    setColumnWidths(widthsRef.current);
+  }
+  function saveColumnWidths() {
+    try {
+      window.localStorage.setItem(
+        columnWidthsStorageKey,
+        JSON.stringify(widthsRef.current)
+      );
+    } catch {
+      // Resizing remains usable when browser storage is disabled.
+    }
+  }
   const pageSize = 25;
   const filtered = useMemo(() => {
     const query = normalize(search.trim());
-    const labels = new Set(model.labels.map((label) => label.id));
     const collator = new Intl.Collator('fr', {
       numeric: true,
       sensitivity: 'base',
@@ -165,24 +125,13 @@ export function ContactsPage({
           !normalize(
             [
               contactName(contact),
+              contact.identity?.originalName ?? '',
               ...contact.emails,
               ...contact.phones,
+              ...contact.phones.map(formatPhoneNumber),
               ...contact.animals,
             ].join(' ')
           ).includes(query)
-        )
-          return false;
-        if (filters.email === 'with' && !contact.emails.length) return false;
-        if (filters.email === 'without' && contact.emails.length) return false;
-        if (
-          filters.label === '__unlabelled' &&
-          contact.labelIds.some((id) => labels.has(id))
-        )
-          return false;
-        if (
-          filters.label &&
-          filters.label !== '__unlabelled' &&
-          !contact.labelIds.includes(filters.label)
         )
           return false;
         const memberships = model.memberships.get(contact.id) ?? [];
@@ -195,25 +144,48 @@ export function ContactsPage({
           return false;
         return true;
       })
-      .sort((a, b) =>
-        sort === 'recent'
-          ? (b.lastAppointment ?? '').localeCompare(a.lastAppointment ?? '') ||
-            collator.compare(contactName(a), contactName(b))
-          : (sort === 'desc' ? -1 : 1) *
-            collator.compare(contactName(a), contactName(b))
-      );
+      .sort((a, b) => {
+        const value = (contact: GoogleContact) => {
+          switch (sort.column) {
+            case 'name':
+              return contactName(contact);
+            case 'phone':
+              return contact.phones[0] ?? '';
+            case 'animals':
+              return contact.animals.join(', ');
+            case 'animalTypes':
+              return (contact.animalTypes ?? []).join(', ');
+            case 'appointment':
+              return contact.lastAppointment ?? '';
+            case 'lists':
+              return (model.memberships.get(contact.id) ?? [])
+                .map(
+                  (m) =>
+                    model.lists.lists.find((l) => l.id === m.listId)?.name ?? ''
+                )
+                .join(', ');
+          }
+        };
+        const left = value(a),
+          right = value(b);
+        if (!left !== !right) return left ? -1 : 1;
+        return (
+          (sort.direction === 'desc' ? -1 : 1) *
+            collator.compare(left, right) ||
+          collator.compare(contactName(a), contactName(b))
+        );
+      });
   }, [
     model.contacts,
-    model.labels,
+    model.lists.lists,
     model.memberships,
     search,
-    filters,
     listFilter,
     sort,
   ]);
   useEffect(() => {
     setPage(0);
-  }, [search, filters, listFilter, sort]);
+  }, [search, listFilter, sort]);
   useEffect(() => {
     const ids = new Set(model.contacts.map((contact) => contact.id));
     setSelected(
@@ -231,12 +203,9 @@ export function ContactsPage({
   const selectedOnPage = visible.filter((contact) =>
     selected.has(contact.id)
   ).length;
-  const activeFilters =
-    Number(Boolean(filters.label)) + Number(filters.email !== 'all');
-  const hasFilters = Boolean(search || listFilter || activeFilters);
+  const hasFilters = Boolean(search || listFilter);
   const reset = () => {
     setSearch('');
-    setFilters({ label: '', email: 'all' });
     onListFilter('');
   };
   const toggle = (id: string, checked: boolean) =>
@@ -283,22 +252,14 @@ export function ContactsPage({
   return (
     <div aria-busy={model.loading}>
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <Heading>Contacts</Heading>
-          <Text className="mt-1">
-            Votre carnet d’adresses et le lien avec vos clients.
-          </Text>
-        </div>
+        <Heading>Contacts</Heading>
         <div className="flex flex-wrap items-center gap-2">
           {onCopy && (
             <Button outline onClick={onCopy}>
               Copier en preview
             </Button>
           )}
-          <Button outline onClick={onLists}>
-            <TagIcon />
-            Gérer les listes
-          </Button>
+
           <Button
             outline
             id="contacts-refresh"
@@ -312,42 +273,6 @@ export function ContactsPage({
             <span className="sr-only sm:hidden">Actualiser les contacts</span>
           </Button>
         </div>
-      </div>
-      <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-zinc-950/10 py-4 text-sm/6 text-zinc-500">
-        <span>
-          <strong id="contacts-total" className="font-semibold text-zinc-950">
-            {model.ready ? model.contacts.length : '—'}
-          </strong>{' '}
-          contacts
-        </span>
-        <span>
-          <strong className="font-semibold text-zinc-950">
-            {model.ready
-              ? model.contacts.filter((contact) => contact.emails.length).length
-              : '—'}
-          </strong>{' '}
-          avec un e-mail
-        </span>
-        <span>
-          <strong
-            id="contacts-lists-total"
-            className="font-semibold text-zinc-950"
-          >
-            {model.listsReady ? model.lists.lists.length : '—'}
-          </strong>{' '}
-          listes de diffusion
-        </span>
-        <span className="ml-auto inline-flex items-center gap-2 text-xs/5">
-          <span
-            className="size-1.5 rounded-full bg-green-600"
-            aria-hidden="true"
-          />
-          {source === 'demo'
-            ? 'Contacts fictifs'
-            : source === 'copy'
-              ? 'Copie des contacts Google'
-              : 'Google Contacts'}
-        </span>
       </div>
       {(model.error || model.listsError || notice) && (
         <div className="mt-5 space-y-3">
@@ -370,35 +295,6 @@ export function ContactsPage({
             disabled={!model.ready}
           />
         </InputGroup>
-        <div className="min-w-0 flex-1 basis-48 sm:max-w-60">
-          <Listbox
-            value={listFilter}
-            onChange={onListFilter}
-            aria-label="Liste de diffusion"
-            disabled={!model.ready || !model.listsReady}
-          >
-            <ListboxOption value="">
-              <ListboxLabel>Toutes les listes</ListboxLabel>
-            </ListboxOption>
-            <ListboxOption value="__unassigned">
-              <ListboxLabel>Sans liste</ListboxLabel>
-            </ListboxOption>
-            {model.lists.lists.map((list) => (
-              <ListboxOption key={list.id} value={list.id}>
-                <ListboxLabel>{list.name}</ListboxLabel>
-              </ListboxOption>
-            ))}
-          </Listbox>
-        </div>
-        <Button
-          outline
-          disabled={!model.ready}
-          onClick={() => setShowFilters(true)}
-        >
-          <AdjustmentsHorizontalIcon />
-          Filtres
-          {activeFilters > 0 && <Badge color="green">{activeFilters}</Badge>}
-        </Button>
       </div>
       <div className="my-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3">
@@ -411,27 +307,10 @@ export function ContactsPage({
           </Text>
           {hasFilters && (
             <Button plain onClick={reset} id="contacts-reset">
-              Effacer les filtres
+              Réinitialiser la recherche
             </Button>
           )}
         </div>
-        <Dropdown>
-          <DropdownButton plain disabled={!model.ready}>
-            {sorting.find((item) => item.value === sort)?.label}
-            <ChevronDownIcon />
-          </DropdownButton>
-          <DropdownMenu anchor="bottom end">
-            {sorting.map((item) => (
-              <DropdownItem
-                key={item.value}
-                onClick={() => setSort(item.value)}
-              >
-                <DropdownLabel>{item.label}</DropdownLabel>
-                {sort === item.value && <CheckIcon />}
-              </DropdownItem>
-            ))}
-          </DropdownMenu>
-        </Dropdown>
       </div>
       {selected.size > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg bg-green-50 px-3 py-2.5">
@@ -496,13 +375,31 @@ export function ContactsPage({
                 ? 'Depuis la production, utilisez « Copier en preview », puis actualisez cette page.'
                 : 'Les fiches ajoutées dans Google Contacts apparaîtront ici après actualisation.'
           }
-          action={hasFilters ? 'Effacer les filtres' : undefined}
+          action={hasFilters ? 'Réinitialiser la recherche' : undefined}
           onAction={reset}
         />
       ) : (
         <>
           <div className="hidden md:block">
-            <Table dense className="contacts-table">
+            <Table
+              dense
+              className="contacts-table [&_table]:w-(--contacts-table-width) [&_table]:min-w-0 [&_table]:table-fixed [&_tbody_td]:overflow-hidden [&_tbody_td]:text-ellipsis"
+              style={
+                {
+                  '--contacts-table-width': `${88 + Object.values(columnWidths).reduce((sum, width) => sum + width, 0)}px`,
+                } as CSSProperties
+              }
+            >
+              <colgroup>
+                <col style={{ width: 44 }} />
+                {contactColumns.map((column) => (
+                  <col
+                    key={column.id}
+                    style={{ width: columnWidths[column.id] }}
+                  />
+                ))}
+                <col style={{ width: 44 }} />
+              </colgroup>
               <TableHead>
                 <TableRow>
                   <TableHeader className="w-8">
@@ -526,11 +423,22 @@ export function ContactsPage({
                       }
                     />
                   </TableHeader>
-                  <TableHeader>Nom et e-mail</TableHeader>
-                  <TableHeader>Téléphone</TableHeader>
-                  <TableHeader>Animal / animaux</TableHeader>
-                  <TableHeader>Dernier rendez-vous</TableHeader>
-                  <TableHeader>Listes</TableHeader>
+                  {contactColumns.map((column) => (
+                    <ResizableColumnHeader
+                      key={column.id}
+                      column={column}
+                      sortDirection={
+                        sort.column === column.id ? sort.direction : undefined
+                      }
+                      onSort={() => sortColumn(column.id)}
+                      width={columnWidths[column.id]}
+                      onResize={resizeColumn}
+                      onCommit={saveColumnWidths}
+                    />
+                  ))}
+                  <TableHeader>
+                    <span className="sr-only">Actions</span>
+                  </TableHeader>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -546,29 +454,28 @@ export function ContactsPage({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar
-                          initials={initials(contactName(contact))}
-                          className="size-9 shrink-0 bg-zinc-100 text-zinc-700"
-                        />
                         <div className="min-w-0">
                           <button
                             type="button"
-                            className="contact-name font-medium text-zinc-950 hover:text-green-700 focus-visible:outline-2 focus-visible:outline-offset-4"
+                            className="contact-name block max-w-full truncate text-left font-medium text-zinc-950 hover:text-green-700 focus-visible:outline-2 focus-visible:outline-offset-4"
                             onClick={() => onContact(contact)}
                           >
                             {contactName(contact)}
                           </button>
-                          <div className="text-xs/5 text-zinc-500">
+                          <div className="truncate text-xs/5 text-zinc-500">
                             {contact.emails[0] ?? 'E-mail non renseigné'}
                           </div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="text-zinc-600">
-                      {contact.phones[0] ?? '—'}
+                      {formatPhoneNumber(contact.phones[0]) || '—'}
                     </TableCell>
                     <TableCell className="text-zinc-600">
                       {contact.animals.join(', ') || '—'}
+                    </TableCell>
+                    <TableCell className="text-zinc-600">
+                      {(contact.animalTypes ?? []).join(', ') || '—'}
                     </TableCell>
                     <TableCell className="text-zinc-600">
                       {contact.lastAppointment
@@ -576,6 +483,9 @@ export function ContactsPage({
                         : '—'}
                     </TableCell>
                     <TableCell>{listBadges(contact)}</TableCell>
+                    <TableCell>
+                      <ContactActions contact={contact} onEdit={onContact} />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -612,10 +522,6 @@ export function ContactsPage({
                     checked={selected.has(contact.id)}
                     onChange={(checked) => toggle(contact.id, checked)}
                   />
-                  <Avatar
-                    initials={initials(contactName(contact))}
-                    className="size-9 shrink-0 bg-zinc-100 text-zinc-700"
-                  />
                   <div className="min-w-0">
                     <button
                       type="button"
@@ -629,17 +535,27 @@ export function ContactsPage({
                     </p>
                   </div>
                 </div>
+                <div className="flex justify-end">
+                  <ContactActions contact={contact} onEdit={onContact} />
+                </div>
                 <dl className="mt-3 grid grid-cols-2 gap-3 pl-8 text-xs/5">
                   <div>
                     <dt className="text-zinc-500">Téléphone</dt>
                     <dd className="text-zinc-700">
-                      {contact.phones[0] ?? 'Non renseigné'}
+                      {formatPhoneNumber(contact.phones[0]) || 'Non renseigné'}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-zinc-500">Animal / animaux</dt>
                     <dd className="text-zinc-700">
                       {contact.animals.join(', ') || 'Non renseigné'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-zinc-500">Type d’animal</dt>
+                    <dd className="text-zinc-700">
+                      {(contact.animalTypes ?? []).join(', ') ||
+                        'Non renseigné'}
                     </dd>
                   </div>
                   <div>
@@ -695,14 +611,27 @@ export function ContactsPage({
         {model.updatedAt &&
           ` · Actualisé à ${model.updatedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })}`}
       </Text>
-      {showFilters && (
-        <FiltersDialog
-          model={model}
-          current={filters}
-          onApply={setFilters}
-          onClose={() => setShowFilters(false)}
-        />
-      )}
     </div>
+  );
+}
+
+function ContactActions({
+  contact,
+  onEdit,
+}: {
+  contact: GoogleContact;
+  onEdit: (contact: GoogleContact) => void;
+}) {
+  return (
+    <Dropdown>
+      <DropdownButton plain aria-label={`Actions pour ${contactName(contact)}`}>
+        <EllipsisHorizontalIcon />
+      </DropdownButton>
+      <DropdownMenu anchor="bottom end">
+        <DropdownItem onClick={() => onEdit(contact)}>
+          <DropdownLabel>Éditer le contact</DropdownLabel>
+        </DropdownItem>
+      </DropdownMenu>
+    </Dropdown>
   );
 }
