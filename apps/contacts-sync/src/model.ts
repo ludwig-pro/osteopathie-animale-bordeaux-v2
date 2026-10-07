@@ -1,4 +1,4 @@
-import { animalTypeFrom } from './animal-type.ts';
+import { animalTypeFrom, animalTypeFromBreed } from './animal-type.ts';
 import { SyncError } from './errors.ts';
 import type {
   Booking,
@@ -56,7 +56,10 @@ export function bookingFrom(invitee: Invitee, event: ScheduledEvent): Booking {
     questions.get("espece de l'animal") ??
     questions.get("type d'animal") ??
     questions.get("type de l'animal");
-  const animalType = animalTypeFrom(speciesAnswer ?? event.name);
+  const animalType = speciesAnswer?.trim()
+    ? (animalTypeFrom(speciesAnswer) ?? speciesAnswer.trim())
+    : (animalTypeFromBreed(questions.get("race de l'animal")) ??
+      animalTypeFrom(event.name));
   return {
     ...(animalType ? { animalType } : {}),
     uri: invitee.uri,

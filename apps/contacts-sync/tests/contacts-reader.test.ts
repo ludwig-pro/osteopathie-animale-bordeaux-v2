@@ -394,3 +394,34 @@ test('stale or invalid edits cannot overwrite Google data', async () => {
   );
   f.sqlite.close();
 });
+
+test('historical breeds enrich species without rewriting bookings or contacts upstream', async () => {
+  const f = fixture();
+  for (const [id, breed] of [
+    ['dog', 'Berger australien'],
+    ['cat', 'Maine coon'],
+    ['ambiguous', 'Shetland'],
+  ]) {
+    await saveBooking(f.env.DB, booking(id, { breed, animal: 'Même prénom' }));
+  }
+  f.sqlite.prepare("UPDATE contacts SET resource_name='people/c1'").run();
+  const before = f.sqlite.prepare('SELECT * FROM bookings ORDER BY uri').all();
+  const response = await readGoogleContacts(f.request(), f.env, f.fetcher);
+  const data = (await response.json()) as {
+    contacts: { animalTypes: string[]; history: unknown[] }[];
+  };
+  assert.deepEqual(data.contacts[0]!.animalTypes.toSorted(), ['Chat', 'Chien']);
+  assert.equal(data.contacts[0]!.history.length, 3);
+  assert.deepEqual(
+    f.sqlite.prepare('SELECT * FROM bookings ORDER BY uri').all(),
+    before
+  );
+  assert.ok(
+    f.calls.every(
+      (call) =>
+        new URL(call.url).hostname !== 'people.googleapis.com' ||
+        !call.init?.method ||
+        call.init.method === 'GET'
+    )
+  );
+});
