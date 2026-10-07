@@ -1,6 +1,12 @@
 // Persistent isolated preview using exactly the deployed domain and SQL paths.
 import { DatabaseSync } from 'node:sqlite';
-import { readFileSync, readdirSync, mkdirSync, chmodSync } from 'node:fs';
+import {
+  readFileSync,
+  readdirSync,
+  mkdirSync,
+  chmodSync,
+  existsSync,
+} from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createBackofficeHandler } from '../src/index.ts';
 import { previewContacts } from '../src/preview-contacts.ts';
@@ -13,7 +19,7 @@ export function createLocalTransport(
   const sqlite = new DatabaseSync(fileURLToPath(path));
   chmodSync(path, 0o600);
   sqlite.exec(
-    'PRAGMA foreign_keys = ON; CREATE TABLE IF NOT EXISTS local_migrations(name TEXT PRIMARY KEY);'
+    'PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON; CREATE TABLE IF NOT EXISTS local_migrations(name TEXT PRIMARY KEY);'
   );
   const migrations = new URL('../migrations/', import.meta.url);
   for (const name of readdirSync(migrations)
@@ -169,17 +175,30 @@ export function createLocalTransport(
     ACCESS_AUD: 'a'.repeat(64),
     DB: db,
     GOOGLE_CONTACTS: previewContacts(db),
+    REPORTS: {
+      async get(key) {
+        if (!/^[a-f0-9]{64}\.pdf$/.test(key)) return null;
+        const file = new URL(`./consultation-reports/${key}`, path);
+        return existsSync(file) ? { body: readFileSync(file) } : null;
+      },
+    },
   };
-  return async (path, init = {}) => {
-    const response = await handler(
+  const fetchResponse = (path, init = {}) =>
+    handler(
       new Request(new URL(path, env.APP_ORIGIN), {
         ...init,
         headers: { Origin: env.APP_ORIGIN, 'Content-Type': 'application/json' },
       }),
       env
     );
+  const transport = async (path, init = {}) => {
+    const response = await fetchResponse(path, init);
     const result = await response.json();
     if (!response.ok) throw new Error(result.error);
     return result;
   };
+  return Object.assign(transport, {
+    fetchResponse,
+    close: () => sqlite.close(),
+  });
 }

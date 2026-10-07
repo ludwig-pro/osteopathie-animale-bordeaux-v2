@@ -2,7 +2,7 @@
 // Loopback only. Loads a private preview copy or fictitious demo data.
 // Never calls Google or any hosted API.
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { CONTACTS_ACCOUNT_EMAIL } from '../src/config.ts';
 import { renderFrame } from '../src/views.ts';
@@ -42,6 +42,19 @@ const assets = new Map([
     ['../dist/assets/assets/fonts/lora.woff2', 'font/woff2'],
   ],
 ]);
+assets.set('/assets/pdf.worker.min.mjs', [
+  '../dist/assets/assets/pdf.worker.min.mjs',
+  'text/javascript',
+]);
+for (const name of await readdir(
+  new URL('../dist/assets/assets/pdf-fonts/', import.meta.url)
+)) {
+  if (/^[a-zA-Z0-9_.-]+$/.test(name))
+    assets.set(`/assets/pdf-fonts/${name}`, [
+      `../dist/assets/assets/pdf-fonts/${name}`,
+      'application/octet-stream',
+    ]);
+}
 function page(path) {
   return renderFrame(
     { email: CONTACTS_ACCOUNT_EMAIL, name: 'Agathe Lescout' },
@@ -90,6 +103,24 @@ const server = createServer(async (request, response) => {
         chunks.push(chunk);
       }
       try {
+        if (demoTransport.fetchResponse) {
+          const result = await demoTransport.fetchResponse(
+            url.pathname + url.search,
+            {
+              method: request.method,
+              body: chunks.length
+                ? Buffer.concat(chunks).toString()
+                : undefined,
+            }
+          );
+          response.writeHead(result.status, Object.fromEntries(result.headers));
+          response.end(
+            request.method === 'HEAD'
+              ? undefined
+              : Buffer.from(await result.arrayBuffer())
+          );
+          return;
+        }
         const result = await demoTransport(url.pathname + url.search, {
           method: request.method,
           body: chunks.length ? Buffer.concat(chunks).toString() : undefined,

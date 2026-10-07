@@ -56,3 +56,11 @@ export interface LabelPage {
   labels: ContactLabel[];
   nextPageToken: string | null;
 }
+
+export interface ConsultationReport {
+  id: string;
+  type: 'consultation-report';
+  date: string;
+  filename: string;
+  size: number;
+}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ConsultationReport } from '../contact-types';
 import type {
   ContactLabel,
   ContactPage,
@@ -225,6 +226,13 @@ export function useContacts(transport: ContactsTransport) {
       transport(`/api/contact-identity?id=${encodeURIComponent(id)}`),
     [transport]
   );
+  const consultationReports = useCallback(
+    (id: string) =>
+      transport(
+        `/api/consultation-reports?contactId=${encodeURIComponent(id)}`
+      ) as Promise<{ reports: ConsultationReport[] }>,
+    [transport]
+  );
 
   const memberships = useMemo(() => {
     const result = new Map<string, ListMembership[]>();
@@ -249,6 +257,7 @@ export function useContacts(transport: ContactsTransport) {
     reloadLists,
     mutation,
     identityHistory,
+    consultationReports,
   };
 }
 

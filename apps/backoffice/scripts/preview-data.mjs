@@ -125,6 +125,7 @@ export function createDemoTransport(initial) {
     const method = init.method ?? 'GET';
     const input = init.body ? JSON.parse(init.body) : null;
     if (method === 'GET') {
+      if (url.pathname === '/api/consultation-reports') return { reports: [] };
       if (url.pathname === '/api/contacts') {
         const offset = Number(url.searchParams.get('pageToken') ?? 0);
         return structuredClone({

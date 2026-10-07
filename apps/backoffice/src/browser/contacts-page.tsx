@@ -329,7 +329,7 @@ export function ContactsPage({
               className="contacts-table [&_table]:w-(--contacts-table-width) [&_table]:min-w-full [&_table]:table-fixed [&_tbody_td]:overflow-hidden [&_tbody_td]:text-ellipsis"
               style={
                 {
-                  '--contacts-table-width': `${88 + Object.values(columnWidths).reduce((sum, width) => sum + width, 0)}px`,
+                  '--contacts-table-width': `${108 + Object.values(columnWidths).reduce((sum, width) => sum + width, 0)}px`,
                 } as CSSProperties
               }
             >
@@ -345,7 +345,7 @@ export function ContactsPage({
                     }
                   />
                 ))}
-                <col style={{ width: 44 }} />
+                <col style={{ width: 64 }} />
               </colgroup>
               <TableHead>
                 <TableRow>
@@ -430,7 +430,7 @@ export function ContactsPage({
                         : '—'}
                     </TableCell>
                     <TableCell
-                      style={{ position: 'sticky', right: 0 }}
+                      style={{ position: 'sticky', right: 0, paddingInline: 8 }}
                       className="z-10 bg-white shadow-[-1px_0_0_0_#e4e4e7]"
                     >
                       <ContactActions contact={contact} onEdit={onContact} />

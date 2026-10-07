@@ -31,6 +31,15 @@ for (const [family, filename] of [
     join(output, 'assets/fonts', filename)
   );
 }
+const pdfjsRoot = dirname(require.resolve('pdfjs-dist/package.json'));
+await cp(
+  join(pdfjsRoot, 'build/pdf.worker.min.mjs'),
+  join(output, 'assets/pdf.worker.min.mjs')
+);
+await cp(join(pdfjsRoot, 'standard_fonts'), join(output, 'assets/pdf-fonts'), {
+  recursive: true,
+});
+
 await build({
   entryPoints: [join(root, 'src/browser/entry.tsx')],
   outfile: join(output, 'assets/backoffice.js'),
