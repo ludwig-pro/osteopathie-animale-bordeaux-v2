@@ -147,3 +147,69 @@ test('custom phone question and curly apostrophe are mapped, canceled event over
   assert.equal(b.birth, '2020');
   assert.equal(b.status, 'canceled');
 });
+
+test('new Calendly species answer wins over breed; historical breeds remain usable', () => {
+  const invitee = {
+    uri: booking().uri,
+    event: booking().eventUri,
+    email: 'person@example.com',
+    name: 'Camille',
+    status: 'active' as const,
+    updated_at: '2025-01-01T00:00:00Z',
+  };
+  const event = {
+    uri: booking().eventUri,
+    start_time: booking().start,
+    status: 'active' as const,
+    updated_at: invitee.updated_at,
+    event_memberships: [],
+  };
+  const race = { question: "Race de l'animal", answer: 'Labrador' };
+  assert.equal(
+    bookingFrom({ ...invitee, questions_and_answers: [race] }, event)
+      .animalType,
+    'Chien'
+  );
+  assert.equal(
+    bookingFrom(
+      {
+        ...invitee,
+        questions_and_answers: [
+          race,
+          { question: ' Espèce de l’animal ', answer: 'Chat' },
+        ],
+      },
+      event
+    ).animalType,
+    'Chat'
+  );
+  assert.equal(
+    bookingFrom(
+      {
+        ...invitee,
+        questions_and_answers: [
+          race,
+          {
+            question: 'Espèce de l’animal',
+            answer: 'Autre (à préciser dans la race)',
+          },
+        ],
+      },
+      event
+    ).animalType,
+    'Autre'
+  );
+  assert.equal(
+    bookingFrom(
+      {
+        ...invitee,
+        questions_and_answers: [
+          race,
+          { question: 'Espèce de l’animal', answer: 'Espèce inconnue' },
+        ],
+      },
+      event
+    ).animalType,
+    'Espèce inconnue'
+  );
+});

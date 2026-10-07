@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { URL as NodeURL, fileURLToPath } from 'node:url';
-import { ALLOWED_EMAIL } from '../src/config.ts';
+import { CONTACTS_ACCOUNT_EMAIL, ALLOWED_EMAILS } from '../src/config.ts';
 import { assertAccessSetup } from '../scripts/access-policy.mjs';
 
 function fixture() {
   const expected = {
-    hostname: 'backoffice.osteopathie-animale-bordeaux.fr',
+    hostname: 'osteo-backoffice.lvantours.workers.dev',
     audience: 'a'.repeat(64),
     googleIdpId: 'fictitious-google-idp',
   };
@@ -20,7 +20,7 @@ function fixture() {
   const policies = [
     {
       decision: 'allow',
-      include: [{ email: { email: ALLOWED_EMAIL } }],
+      include: ALLOWED_EMAILS.map((email) => ({ email: { email } })),
       require: [{ login_method: { id: expected.googleIdpId } }],
       exclude: [],
     },
@@ -29,7 +29,7 @@ function fixture() {
   return { application, policies, identityProvider, expected };
 }
 
-test('the exact owner and Google-only Access policy is accepted', () => {
+test('the two exact users and Google-only Access policy is accepted', () => {
   const f = fixture();
   assert.doesNotThrow(() =>
     assertAccessSetup(f.application, f.policies, f.identityProvider, f.expected)
@@ -40,7 +40,7 @@ test('a broader email rule, OTP login, or a bypass policy blocks deployment', ()
   for (const include of [
     [{ everyone: {} }],
     [{ email_domain: { domain: 'gmail.com' } }],
-    [{ email: { email: ALLOWED_EMAIL } }, { everyone: {} }],
+    [{ email: { email: CONTACTS_ACCOUNT_EMAIL } }, { everyone: {} }],
   ]) {
     const f = fixture();
     assert.throws(() =>
@@ -81,13 +81,13 @@ test('a broader email rule, OTP login, or a bypass policy blocks deployment', ()
 
 test('another hostname, issuer application or identity provider is rejected', () => {
   for (const changes of [
-    { domain: 'backoffice.osteopathie-animale-bordeaux.fr/public' },
+    { domain: 'osteo-backoffice.lvantours.workers.dev/public' },
     { aud: 'b'.repeat(64) },
     { allowed_idps: ['fictitious-google-idp', 'fictitious-otp-idp'] },
     { session_duration: '24h' },
     {
       self_hosted_domains: [
-        'backoffice.osteopathie-animale-bordeaux.fr',
+        'osteo-backoffice.lvantours.workers.dev',
         'example.test',
       ],
     },
@@ -114,7 +114,7 @@ test('another hostname, issuer application or identity provider is rejected', ()
   );
 });
 
-test('Wrangler protects every asset and disables public alternate URLs', async () => {
+test('Wrangler authenticates every asset and disables version URLs', async () => {
   const { readFile } = await import('node:fs/promises');
   const ts = await import('typescript');
   const source = await readFile(
@@ -133,5 +133,28 @@ test('Wrangler protects every asset and disables public alternate URLs', async (
   ]) {
     assert.equal(environment.workers_dev, false);
     assert.equal(environment.preview_urls, false);
+  }
+});
+
+test('missing users, duplicate users and an additional user are rejected', () => {
+  const f = fixture();
+  for (const emails of [
+    [ALLOWED_EMAILS[0]],
+    [ALLOWED_EMAILS[0], ALLOWED_EMAILS[0]],
+    [...ALLOWED_EMAILS, 'someone@example.test'],
+  ]) {
+    assert.throws(() =>
+      assertAccessSetup(
+        f.application,
+        [
+          {
+            ...f.policies[0],
+            include: emails.map((email) => ({ email: { email } })),
+          },
+        ],
+        f.identityProvider,
+        f.expected
+      )
+    );
   }
 });

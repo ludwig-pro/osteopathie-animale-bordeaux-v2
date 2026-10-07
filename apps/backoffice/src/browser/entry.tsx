@@ -32,6 +32,7 @@ if (root)
       initial={root.dataset['page'] === 'home' ? 'home' : 'contacts'}
       preview={root.dataset['preview'] === 'true'}
       hostedPreview={root.dataset['hostedPreview'] === 'true'}
+      localPreviewCopy={root.dataset['localPreviewCopy'] === 'true'}
       offline={Boolean(window.__BACKOFFICE_PREVIEW_TRANSPORT__)}
       transport={window.__BACKOFFICE_PREVIEW_TRANSPORT__ ?? transport}
     />

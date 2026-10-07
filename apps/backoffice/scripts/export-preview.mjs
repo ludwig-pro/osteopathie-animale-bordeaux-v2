@@ -2,7 +2,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ALLOWED_EMAIL } from '../src/config.ts';
+import { CONTACTS_ACCOUNT_EMAIL } from '../src/config.ts';
 import { renderFrame } from '../src/views.ts';
 import { createDemoData, createDemoTransport } from './preview-data.mjs';
 
@@ -42,7 +42,7 @@ const previewScript = `
   /* ${legal.replaceAll('*/', '* /')} */
 `.replaceAll('</script', '<\\/script');
 const html = renderFrame(
-  { email: ALLOWED_EMAIL, name: 'Agathe Lescout' },
+  { email: CONTACTS_ACCOUNT_EMAIL, name: 'Agathe Lescout' },
   'contacts',
   true
 )

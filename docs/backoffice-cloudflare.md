@@ -5,7 +5,7 @@
 Le backoffice est une application indépendante dans `apps/backoffice`.
 Son interface, son API et ses ressources statiques sont servies par Cloudflare
 Workers ; Cloudflare Access gère la connexion Google et les cookies de session.
-Le domaine retenu est **backoffice.osteopathie-animale-bordeaux.fr**.
+Le domaine retenu est **admin.osteopathie-animale-bordeaux.fr**.
 
 Le site public Astro et le service Calendly → Google Contacts gardent leurs
 déploiements indépendants. Le backoffice consulte tous les contacts Google,
@@ -27,20 +27,21 @@ flowchart LR
   C --> B[(D1 existant : historique Calendly)]
   W --> L[(D1 production : listes et affectations)]
   W -->|Copie manuelle en lecture seule de Google| PDB[(D1 preview : copie et listes de test)]
-  U --> PA[Access preview : Google Agathe uniquement]
+  U --> PA[Access preview : Google Agathe et Ludwig]
   PA --> PW[Worker preview]
   PW --> PDB
 ```
 
-L’unique adresse autorisée est `agathe.lescout.osteo@gmail.com`. Elle n’est pas
-modifiable par une variable d’environnement. L’application refuse les autres
+Les seules adresses autorisées sont `agathe.lescout.osteo@gmail.com` et
+`vantoursludwig@gmail.com`. Cette liste n’est pas modifiable par une variable
+d’environnement. Le carnet Google reste celui d’Agathe. L’application refuse les autres
 adresses, les alias, les jetons non signés, expirés, issus d’une autre application
 ou d’une autre organisation Access. Elle ne fait confiance ni à un simple en-tête
 d’e-mail, ni à un cookie fourni directement au Worker.
 
 ## 1. Configurer Zero Trust et Google
 
-Dans le compte Cloudflare du domaine, ouvrir Zero Trust et définir le nom
+Dans le compte Cloudflare hébergeant les Workers, ouvrir Zero Trust et définir le nom
 d’organisation. Le domaine obtenu est de la forme
 `https://<equipe>.cloudflareaccess.com`.
 
@@ -62,7 +63,7 @@ dans les consoles et gestionnaires de secrets ; ne pas les ajouter au dépôt
 ou les transmettre dans une conversation. Activer PKCE lorsque proposé.
 Noter l’identifiant du fournisseur Google (`GOOGLE_IDP_ID`).
 
-Le SSO sert uniquement à identifier Agathe. Il ne donne pas au Worker un jeton
+Le SSO sert uniquement à identifier Agathe ou Ludwig. Il ne donne pas au Worker un jeton
 Google People API et ne demande pas l’autorisation d’accéder aux contacts.
 
 Référence : [Google avec Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/integrations/identity-providers/google/).
@@ -73,7 +74,7 @@ Dans **Zero Trust → Access controls → Applications**, créer une application
 **Self-hosted** :
 
 - Nom : `Backoffice Agathe Lescout`.
-- Domaine : `backoffice.osteopathie-animale-bordeaux.fr`.
+- Domaine : `admin.osteopathie-animale-bordeaux.fr`.
 - Aucun chemin : protéger le domaine entier, y compris `/api/*` et `/assets/*`.
 - Durée de session : **8 heures**.
 - Fournisseurs autorisés : **uniquement le fournisseur Google créé ci-dessus**.
@@ -82,11 +83,11 @@ Dans **Zero Trust → Access controls → Applications**, créer une application
 
 Créer **une seule politique** pour cette application :
 
-| Réglage                 | Valeur                            |
-| ----------------------- | --------------------------------- |
-| Action                  | Allow                             |
-| Include → Emails        | `agathe.lescout.osteo@gmail.com`  |
-| Require → Login Methods | Le fournisseur Google sélectionné |
+| Réglage                 | Valeur                                                       |
+| ----------------------- | ------------------------------------------------------------ |
+| Action                  | Allow                                                        |
+| Include → Emails        | `agathe.lescout.osteo@gmail.com`, `vantoursludwig@gmail.com` |
+| Require → Login Methods | Le fournisseur Google sélectionné                            |
 
 Il ne faut pas placer le fournisseur Google dans un deuxième `Include` : les
 conditions `Include` sont alternatives, alors que `Require` s’ajoute à la
@@ -96,7 +97,7 @@ Relever le domaine d’organisation (`ACCESS_TEAM_DOMAIN`), l’identifiant de
 l’application (`ACCESS_APPLICATION_ID`) et son Audience tag (`ACCESS_AUD`).
 L’audience est propre à cette application, pas au service de synchronisation.
 Pour la preview, créer une application distincte sur
-`backoffice-preview.osteopathie-animale-bordeaux.fr`, avec les mêmes restrictions
+`admin-preview.osteopathie-animale-bordeaux.fr`, avec les mêmes restrictions
 d’identité et une audience distincte.
 
 Références : [politiques Access](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/),
@@ -104,14 +105,14 @@ Références : [politiques Access](https://developers.cloudflare.com/cloudflare-
 
 ## 3. Deux environnements isolés
 
-|                    | Preview                                              | Production                                   |
-| ------------------ | ---------------------------------------------------- | -------------------------------------------- |
-| Domaine            | `backoffice-preview.osteopathie-animale-bordeaux.fr` | `backoffice.osteopathie-animale-bordeaux.fr` |
-| Worker             | `osteo-backoffice-preview`                           | `osteo-backoffice`                           |
-| Base principale D1 | `osteo-backoffice-preview`                           | `osteo-backoffice`                           |
-| Contacts           | Copie indépendante et modifiable                     | Google People API via le service privé       |
-| Accès              | Google, compte d’Agathe uniquement                   | Google, compte d’Agathe uniquement           |
-| Publication        | Push sur `preview`, ou lancement manuel              | Lancement manuel depuis `main`               |
+|                    | Preview                                         | Production                                    |
+| ------------------ | ----------------------------------------------- | --------------------------------------------- |
+| Domaine            | `admin-preview.osteopathie-animale-bordeaux.fr` | `admin.osteopathie-animale-bordeaux.fr`       |
+| Worker             | `osteo-backoffice-preview`                      | `osteo-backoffice`                            |
+| Base principale D1 | `osteo-backoffice-preview`                      | `osteo-backoffice`                            |
+| Contacts           | Copie indépendante et modifiable                | Google People API via le service privé        |
+| Accès              | Google, comptes d’Agathe et Ludwig uniquement   | Google, comptes d’Agathe et Ludwig uniquement |
+| Publication        | Push sur `preview`, ou lancement manuel         | Lancement manuel depuis `main`                |
 
 La preview possède une application Access et une audience distinctes. Elle ne
 possède **aucun Service Binding Google ni secret Google/Calendly**, et ses
@@ -132,9 +133,7 @@ les variables publiques du front-end.
 Le jeton de préparation doit pouvoir lire l’organisation et le fournisseur
 Google, lire/créer les applications et politiques Access et les bases D1.
 Le jeton de déploiement doit pouvoir lire Access, lire/modifier les bases D1,
-publier les Workers et leurs assets, et gérer les Custom Domains dans la zone
-active `osteopathie-animale-bordeaux.fr`. Limiter les droits au compte et à la
-zone concernés. Un jeton de CI n’a pas besoin de créer/modifier les politiques
+publier les Workers et leurs assets, lire la zone Cloudflare et gérer ses routes Workers et domaines personnalisés. Limiter les droits au compte et à la zone concernés. Un jeton de CI n’a pas besoin de créer/modifier les politiques
 Access. Le fournisseur Google et ses secrets OAuth se configurent dans Zero
 Trust ; aucun de ces scripts ne crée un client OAuth Google.
 
@@ -195,10 +194,13 @@ yarn deploy production
 
 Chaque publication prépare la configuration, contrôle Access et l’isolation D1,
 compile les assets et le Worker, applique les migrations à la base principale
-ciblée puis déploie le Custom Domain. Déployer la preview en premier pour que
+ciblée puis déploie le Worker sur son domaine personnalisé. Déployer la preview en premier pour que
 sa base et ses tables de copie existent avant la production. Les deux bases
 partagent les mêmes migrations ; les tables de copie restent vides en production.
-Les URL `workers.dev` et les preview URLs publiques de Cloudflare sont désactivées.
+Les deux domaines personnalisés sont protégés par Access. Les adresses `workers.dev`
+et les URL de version Cloudflare (`preview_urls`) sont désactivées. Le domaine
+reste enregistré chez OVH ; sa zone DNS est gérée par Cloudflare. Le site public
+reste sur Netlify avec des enregistrements DNS sans proxy.
 
 Pour GitHub Actions, créer les environnements `backoffice-preview` et
 `backoffice-production`, y renseigner les variables du tableau et le jeton
@@ -238,9 +240,9 @@ remplace les coordonnées modifiées en preview ; ses listes et accords restent
 conservés. Aucun renouvellement automatique ne vient écraser les essais.
 
 La publication ne prouve pas le fonctionnement du SSO réel. Vérifier sur chaque
-domaine : redirection Google sans session, admission du compte d’Agathe, refus
+domaine : redirection Google sans session, admission des comptes d’Agathe et Ludwig, refus
 d’un autre compte sur pages/API/assets, déconnexion, et absence d’accès alternatif
-via `workers.dev`. Vérifier ensuite une copie et une modification en preview,
+via les URL de version. Vérifier ensuite une copie et une modification en preview,
 puis confirmer que la fiche Gmail source n’a pas changé.
 
 ## 5. Brancher l’onglet Contacts
@@ -269,7 +271,7 @@ par cette application, ainsi que `openid` et `email` pour vérifier le compte.
 Si l’autorisation n’existe pas, suivre le parcours OAuth du guide de
 synchronisation ; le SSO Access ne remplace pas cette autorisation.
 Chaque lecture ou modification vérifie l’adresse attendue, l’adresse Google
-vérifiée et le `sub`. Le backoffice impose le compte d’Agathe, y compris au
+vérifiée et le `sub`. Le backoffice autorise Agathe et Ludwig, et impose le carnet d’Agathe au
 service interne. Les tests du backoffice utilisent des réponses fictives et une
 identité Google simulée. Aucun secret Google n’est transmis au backoffice.
 

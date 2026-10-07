@@ -1,3 +1,4 @@
+import { saveContactAnimals } from './contact-animals.ts';
 import { createAccessVerifier, type AccessVerifier } from './auth.ts';
 import { AccessError, getAccessConfig, type Env } from './config.ts';
 import { renderContacts, renderError, renderHome } from './views.ts';
@@ -8,6 +9,11 @@ import {
   mailingLists,
   replaceContactLists,
 } from './mailing-lists.ts';
+import {
+  identityHistory,
+  reviewIdentity,
+  normalizeIdentities,
+} from './identity-review.ts';
 import { jsonBody } from './request-body.ts';
 import { copyContactsToPreview } from './preview-copy.ts';
 
@@ -77,6 +83,9 @@ export function createBackofficeHandler(
         [
           '/api/preview-copy',
           '/api/contact',
+          '/api/contact-identity',
+          '/api/contact-animals',
+          '/api/contact-normalization',
           '/api/mailing-lists',
           '/api/list-memberships',
         ].includes(url.pathname) &&
@@ -88,6 +97,10 @@ export function createBackofficeHandler(
         if (
           (url.pathname === '/api/preview-copy' && method === 'POST') ||
           (url.pathname === '/api/contact' && method === 'PATCH') ||
+          (url.pathname === '/api/contact-animals' && method === 'PATCH') ||
+          (url.pathname === '/api/contact-identity' && method === 'POST') ||
+          (url.pathname === '/api/contact-normalization' &&
+            method === 'POST') ||
           (url.pathname === '/api/mailing-lists' &&
             ['POST', 'PATCH', 'DELETE'].includes(method)) ||
           (url.pathname === '/api/list-memberships' &&
@@ -95,15 +108,21 @@ export function createBackofficeHandler(
         ) {
           const input = await jsonBody(request);
           const result =
-            url.pathname === '/api/preview-copy'
-              ? await copyContactsToPreview(input, env)
-              : url.pathname === '/api/contact'
-                ? await saveContact(input, env)
-                : url.pathname === '/api/mailing-lists'
-                  ? await changeMailingList(method, input, env)
-                  : method === 'POST'
-                    ? await assignLists(input, env)
-                    : await replaceContactLists(input, env);
+            url.pathname === '/api/contact-animals'
+              ? await saveContactAnimals(input, env)
+              : url.pathname === '/api/contact-normalization'
+                ? await normalizeIdentities(input, env, identity.email)
+                : url.pathname === '/api/contact-identity'
+                  ? await reviewIdentity(input, env, identity.email)
+                  : url.pathname === '/api/preview-copy'
+                    ? await copyContactsToPreview(input, env)
+                    : url.pathname === '/api/contact'
+                      ? await saveContact(input, env)
+                      : url.pathname === '/api/mailing-lists'
+                        ? await changeMailingList(method, input, env)
+                        : method === 'POST'
+                          ? await assignLists(input, env)
+                          : await replaceContactLists(input, env);
           response = json(result);
         } else response = json({ error: 'method_not_allowed' }, 405);
       } else if (!['GET', 'HEAD'].includes(request.method)) {
@@ -124,6 +143,10 @@ export function createBackofficeHandler(
           request.method === 'HEAD'
             ? json(null)
             : json(await contactsPage(url, env));
+      } else if (url.pathname === '/api/contact-identity') {
+        response = json(
+          await identityHistory(url.searchParams.get('id') ?? '', env)
+        );
       } else if (url.pathname === '/api/mailing-lists') {
         response =
           request.method === 'HEAD'

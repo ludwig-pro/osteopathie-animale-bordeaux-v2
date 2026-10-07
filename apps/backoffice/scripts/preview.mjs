@@ -1,13 +1,19 @@
 // Interface-only local preview. Never imported by the Cloudflare Worker.
-// No credentials, contacts, authentication configuration or upstream API calls.
+// Loopback only. Loads a private preview copy or fictitious demo data.
+// Never calls Google or any hosted API.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { ALLOWED_EMAIL } from '../src/config.ts';
+import { CONTACTS_ACCOUNT_EMAIL } from '../src/config.ts';
 import { renderFrame } from '../src/views.ts';
 import { createDemoData, createDemoTransport } from './preview-data.mjs';
+import { createLocalTransport } from './local-database.mjs';
+import { readLocalPreview } from './local-preview-data.mjs';
 
-const demoTransport = createDemoTransport(createDemoData());
+const localData = await readLocalPreview();
+const demoTransport = localData
+  ? createLocalTransport(localData)
+  : createDemoTransport(createDemoData());
 
 const port = Number(process.env['BACKOFFICE_PREVIEW_PORT'] ?? 8788);
 if (!Number.isInteger(port) || port < 1024 || port > 65535) {
@@ -38,9 +44,11 @@ const assets = new Map([
 ]);
 function page(path) {
   return renderFrame(
-    { email: ALLOWED_EMAIL, name: 'Agathe Lescout' },
+    { email: CONTACTS_ACCOUNT_EMAIL, name: 'Agathe Lescout' },
     path === '/contacts' ? 'contacts' : 'home',
-    true
+    true,
+    false,
+    Boolean(localData)
   );
 }
 
@@ -49,9 +57,10 @@ const server = createServer(async (request, response) => {
   response.setHeader('X-Robots-Tag', 'noindex, nofollow');
   response.setHeader('X-Content-Type-Options', 'nosniff');
   response.setHeader('Referrer-Policy', 'no-referrer');
+  // Codex annotations inject styles into a shadow root in the local browser.
   response.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
   );
   const host = request.headers.host;
   if (![`localhost:${port}`, `127.0.0.1:${port}`].includes(host)) {
@@ -61,6 +70,15 @@ const server = createServer(async (request, response) => {
   const url = new URL(request.url ?? '/', `http://localhost:${port}`);
   try {
     if (url.pathname.startsWith('/api/')) {
+      if (
+        !['GET', 'HEAD'].includes(request.method) &&
+        ![`http://localhost:${port}`, `http://127.0.0.1:${port}`].includes(
+          request.headers.origin
+        )
+      ) {
+        response.writeHead(403).end();
+        return;
+      }
       const chunks = [];
       let size = 0;
       for await (const chunk of request) {
@@ -121,6 +139,8 @@ const server = createServer(async (request, response) => {
 server.listen(port, '127.0.0.1', () => {
   console.log(`Aperçu local du backoffice : http://localhost:${port}`);
   console.log(
-    'Interface de démonstration, sans connexion Google ni contacts réels.'
+    localData
+      ? `Copie isolée de la preview : ${localData.contacts.length} contacts. Modifications locales conservées dans SQLite.`
+      : 'Interface de démonstration, sans connexion Google ni contacts réels.'
   );
 });

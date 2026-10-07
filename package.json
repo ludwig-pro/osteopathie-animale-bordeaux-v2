@@ -31,6 +31,7 @@
     "sync:admin": "yarn workspace @osteo/contacts-sync admin",
     "dev:backoffice": "yarn workspace @osteo/backoffice dev",
     "preview:backoffice": "yarn workspace @osteo/backoffice preview",
+    "preview:pull:backoffice": "yarn workspace @osteo/backoffice preview:pull",
     "preview:export:backoffice": "yarn workspace @osteo/backoffice preview:export",
     "build:backoffice": "yarn workspace @osteo/backoffice build",
     "backoffice:configure": "yarn workspace @osteo/backoffice configure",

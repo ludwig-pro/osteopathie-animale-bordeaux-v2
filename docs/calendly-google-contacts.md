@@ -41,6 +41,7 @@ Le nom et l’e-mail viennent des champs standards. `src/model.ts` mappe les que
 | ----------- | ----------------------------- |
 | Téléphone   | Numéro de téléphone           |
 | Animal      | Prénom de l’animal            |
+| Espèce      | Espèce de l’animal            |
 | Race        | Race de l’animal              |
 | Naissance   | Date de naissance de l’animal |
 | Motif       | Motif de consultation         |
@@ -193,3 +194,71 @@ Les coordonnées issues des réservations restent dans l’historique et peuvent
 Après examen et autorisation explicite, `resolve-notes ID --preserve-existing-notes` peut reprendre une ancienne première tentative non confirmée : aucun bloc précédemment confirmé, aucune synchronisation réussie, aucune balise Calendly et aucun marqueur technique présent dans la fiche Google. La reprise relit la fiche, préserve intégralement ses notes actuelles et y ajoute la section Calendly. L’etag, le mode et le bail sont toujours contrôlés. Une modification détectée après le diagnostic bloque la reprise.
 
 Cette commande ne réécrit pas un bloc Calendly modifié et ne contourne pas un conflit de marqueur ou une limite de taille. Ces cas restent à examiner avec le propriétaire des données. Les commandes privées passent par D1 ; aucun endpoint d’administration public n’est ajouté. La migration 0003 ajoute seulement le diagnostic technique.
+
+## Espèces : historique et nouvelles réservations (7 octobre 2026)
+
+La question obligatoire **Espèce de l’animal** est publiée sur le rendez-vous
+« Cabinet Bègles Agathe Lescout ». Liste : Chien, Chat, Cheval, Lapin, Oiseau,
+Bovin, Caprin, Ovin, Autre NAC, Autre (à préciser dans la race).
+Le formulaire public a été contrôlé sans créer de rendez-vous.
+
+La synchronisation conserve la réponse explicite en priorité. Sans réponse,
+`animal-type.ts` utilise une liste bornée de races et variantes orthographiques,
+puis éventuellement une espèce explicite dans le nom du type de rendez-vous.
+Le lecteur du backoffice applique aussi cette correspondance aux anciennes
+réservations : aucun réimport Calendly ni réécriture Google n’est nécessaire
+pour exploiter les races déjà stockées. Les réponses inconnues restent inconnues.
+Les mots ambigus seuls (Shetland, angora, rex, nain, croisé) et les croisements
+non résolus ne suffisent pas. On ne classe ni les prénoms ni les motifs médicaux.
+Un contact peut avoir plusieurs espèces ; cela ne fusionne pas ses animaux.
+
+Références de la table de races :
+[nomenclature canine FCI](https://fci.be/fr/nomenclature/Default.aspx) et
+[races félines LOOF](https://loof.asso.fr/les-races-de-chat).
+Les variantes abrégées et fautes reconnues sont des choix explicites du code,
+pas une classification exhaustive ou probabiliste.
+
+### Copie locale
+
+Depuis la racine, effectuer une simulation :
+
+```sh
+node apps/backoffice/scripts/enrich-local-species.mjs \
+  --config /chemin/contacts-sync/wrangler.local.json \
+  --database /chemin/prive/local-backoffice.sqlite
+```
+
+Ajouter `--apply` pour appliquer. Cette opération lit l’historique D1 de
+production mais n’écrit que les espèces dans la copie SQLite désignée. Elle
+préserve les valeurs existantes, sauvegarde la base avant mutation, utilise
+une transaction et n’affiche que des compteurs. Les coordonnées et les autres
+tables restent intactes. Ne pas utiliser ces données réelles dans les tests.
+
+Résultat vérifié dans le serveur local : **1 129 contacts sur 1 702** avec au
+moins une espèce (184 avant). 947 fiches enrichies, dont 945 auparavant sans
+espèce. 956 contacts avec chien, 172 avec chat, 7 avec lapin ; certains contacts
+ont plusieurs espèces. 1 983 des 2 461 réservations associées à une fiche Google
+fournissent une espèce reconnue. Les 2 485 réservations totales n’ont pas été
+modifiées. Deuxième passage : zéro changement. Comparaison à la sauvegarde :
+aucune différence hors `animalTypes`.
+
+### Livraison et validation
+
+Worker de synchronisation déployé : version
+`f64277e9-dd4d-4fad-bd21-121f50796b5f`. Pause temporaire sans bail actif,
+puis restauration du mode `live` sans réinitialiser les tâches ni les curseurs.
+Health HTTP 200 et aucune erreur globale au contrôle. Treize tâches contact
+signalent `google_contact_shared_by_emails` ; elles n’ont pas été reprises ni
+fusionnées dans cette intervention.
+
+La question Calendly et le Worker sont en ligne. L’enrichissement de la copie
+locale est appliqué ; les snapshots de la preview hébergée n’ont pas été
+remplacés. Le domaine du backoffice de production ne se résout pas depuis le
+navigateur utilisé lors de cette vérification. Aucun déploiement du backoffice
+ou changement DNS n’a été effectué. Une nouvelle réservation réelle n’a pas
+été créée pour tester la réception de bout en bout.
+
+Validation : check:static, 58 tests synchronisation, 26 tests unitaires site,
+61 tests backoffice, build Worker, 42 tests Playwright. Le premier lancement
+Playwright a repris par erreur un autre projet sur 4321 ; la suite complète a
+été relancée avec la même configuration sur le port isolé 4339 et a réussi.

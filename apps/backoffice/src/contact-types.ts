@@ -1,3 +1,11 @@
+import type { ContactAnimal } from './contact-identity.ts';
+export interface ContactInteraction {
+  id: string;
+  type: 'appointment';
+  date: string;
+  animal: string;
+  status: 'active' | 'canceled';
+}
 export interface GoogleContact {
   id: string;
   name: string;
@@ -8,7 +16,15 @@ export interface GoogleContact {
   phones: string[];
   labelIds: string[];
   animals: string[];
+  animalTypes?: string[];
+  animalsVersion?: string;
   lastAppointment: string | null;
+  history?: ContactInteraction[];
+  identity?: {
+    originalName: string;
+    reviewId: string;
+    animals: ContactAnimal[];
+  };
 }
 export interface ContactLabel {
   id: string;

@@ -10,8 +10,11 @@ export function createPreviewHandler(verify?: AccessVerifier) {
     if (
       env.APP_ENVIRONMENT !== 'preview' ||
       !env.DB ||
-      env.APP_ORIGIN !==
-        'https://backoffice-preview.osteopathie-animale-bordeaux.fr'
+      ![
+        'https://admin-preview.osteopathie-animale-bordeaux.fr',
+        'https://osteo-backoffice-preview.lvantours.workers.dev',
+        'https://backoffice-preview.osteopathie-animale-bordeaux.fr',
+      ].includes(env.APP_ORIGIN)
     )
       return new Response('Preview indisponible.', {
         status: 503,

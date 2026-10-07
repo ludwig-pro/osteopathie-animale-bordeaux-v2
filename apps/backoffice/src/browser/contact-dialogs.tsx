@@ -3,25 +3,19 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react';
 import {
   XMarkIcon,
   UserIcon,
-  TagIcon,
+  ClockIcon,
   CheckIcon,
 } from '@heroicons/react/20/solid';
-import type {
-  GoogleContact,
-  MailingList,
-  SubscriptionStatus,
-} from '../contact-types';
+import type { GoogleContact, MailingList } from '../contact-types';
 import {
   appointmentDate,
   contactName,
   errorMessage,
-  initials,
   type ContactsModel,
 } from './contacts-model';
 import { Notice } from './common';
+import { ContactHistory } from './contact-history';
 import { Alert, AlertTitle, AlertDescription, AlertActions } from './ui/alert';
-import { Avatar } from './ui/avatar';
-import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Checkbox, CheckboxField, CheckboxGroup } from './ui/checkbox';
 import {
@@ -38,7 +32,6 @@ import {
 } from './ui/dialog';
 import { Description, Field, FieldGroup, Label } from './ui/fieldset';
 import { Input } from './ui/input';
-import { Select } from './ui/select';
 import { Text } from './ui/text';
 import { Textarea } from './ui/textarea';
 
@@ -59,29 +52,24 @@ export function ContactDialog({
     original.givenName || (!original.familyName ? original.name : '')
   );
   const [familyName, setFamilyName] = useState(original.familyName);
-  const [emails, setEmails] = useState(original.emails.join('\n'));
-  const [phones, setPhones] = useState(original.phones.join('\n'));
-  const [statuses, setStatuses] = useState<
-    Record<string, SubscriptionStatus | 'none'>
-  >(() =>
-    Object.fromEntries(
-      model.lists.lists.map((list) => [
-        list.id,
-        model.memberships
-          .get(original.id)
-          ?.find((item) => item.listId === list.id)?.status ?? 'none',
-      ])
-    )
-  );
+  const [emails, setEmails] = useState(original.emails[0] ?? '');
+  const [phones, setPhones] = useState(original.phones[0] ?? '');
+  const [animals, setAnimals] = useState(original.animals);
+  const [animalDraft, setAnimalDraft] = useState('');
+  const pendingAnimals = () => {
+    const name = animalDraft.trim();
+    return name &&
+      !animals.some(
+        (animal) =>
+          animal.toLocaleLowerCase('fr') === name.toLocaleLowerCase('fr')
+      )
+      ? [...animals, name]
+      : animals;
+  };
   const [busy, setBusy] = useState(false);
   const [requiresRefresh, setRequiresRefresh] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [saved, setSaved] = useState(false);
-  const lines = (value: string) =>
-    value
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean);
   return (
     <Dialog
       open
@@ -92,10 +80,6 @@ export function ContactDialog({
       id="contact-detail"
     >
       <div className="flex items-start gap-3.5">
-        <Avatar
-          initials={initials(contactName(contact))}
-          className="size-12 bg-zinc-100 text-zinc-700"
-        />
         <div className="min-w-0 flex-1">
           <DialogTitle className="break-words">
             {contactName(contact)}
@@ -115,28 +99,9 @@ export function ContactDialog({
       </div>
       <DialogBody>
         <DescriptionList className="mb-5">
-          <DescriptionTerm>Animal / animaux</DescriptionTerm>
-          <DescriptionDetails>
-            {contact.animals.join(', ') || 'Non renseigné'}
-          </DescriptionDetails>
           <DescriptionTerm>Dernier rendez-vous connu</DescriptionTerm>
           <DescriptionDetails>
             {appointmentDate(contact.lastAppointment)}
-          </DescriptionDetails>
-          <DescriptionTerm>Libellés Google</DescriptionTerm>
-          <DescriptionDetails>
-            <div className="flex flex-wrap gap-1.5">
-              {model.labels
-                .filter((label) => contact.labelIds.includes(label.id))
-                .map((label) => (
-                  <Badge key={label.id} color="zinc">
-                    {label.name}
-                  </Badge>
-                ))}
-              {!model.labels.some((label) =>
-                contact.labelIds.includes(label.id)
-              ) && 'Sans libellé'}
-            </div>
           </DescriptionDetails>
         </DescriptionList>
         <TabGroup onChange={() => setFeedback('')}>
@@ -146,8 +111,8 @@ export function ContactDialog({
               Coordonnées
             </Tab>
             <Tab className="contact-tab">
-              <TagIcon className="size-4" aria-hidden="true" />
-              Listes de diffusion
+              <ClockIcon className="size-4" aria-hidden="true" />
+              Historique
             </Tab>
           </TabList>
           <TabPanels>
@@ -157,34 +122,64 @@ export function ContactDialog({
                   event.preventDefault();
                   setBusy(true);
                   setFeedback('');
+                  let coordinatesSaved = false;
                   try {
-                    await model.mutation('/api/contact', 'PATCH', {
-                      id: contact.id,
-                      etag: contact.etag,
-                      givenName,
-                      familyName,
-                      emails: lines(emails),
-                      phones: lines(phones),
-                    });
+                    const coordinatesChanged =
+                      givenName !== contact.givenName ||
+                      familyName !== contact.familyName ||
+                      emails !== (contact.emails[0] ?? '') ||
+                      phones !== (contact.phones[0] ?? '');
+                    if (coordinatesChanged) {
+                      await model.mutation('/api/contact', 'PATCH', {
+                        id: contact.id,
+                        etag: contact.etag,
+                        givenName,
+                        familyName,
+                        emails: emails.trim() ? [emails.trim()] : [],
+                        phones: phones.trim() ? [phones.trim()] : [],
+                      });
+                      coordinatesSaved = true;
+                    }
+                    const nextAnimals = pendingAnimals();
+                    if (
+                      JSON.stringify(nextAnimals) !==
+                      JSON.stringify(contact.animals)
+                    ) {
+                      const result = (await model.mutation(
+                        '/api/contact-animals',
+                        'PATCH',
+                        {
+                          id: contact.id,
+                          version: contact.animalsVersion ?? '',
+                          animals: nextAnimals,
+                        }
+                      )) as { animals: string[] };
+                      setAnimals(result.animals);
+                      setAnimalDraft('');
+                    }
                     const refreshed = await model.refresh();
                     setRequiresRefresh(!refreshed);
                     setSaved(true);
                     setFeedback(
                       refreshed
                         ? source === 'demo'
-                          ? 'Coordonnées fictives enregistrées.'
+                          ? 'Fiche fictive enregistrée.'
                           : source === 'copy'
-                            ? 'Coordonnées enregistrées dans la copie en preview.'
-                            : 'Coordonnées enregistrées dans Google Contacts.'
-                        : 'Coordonnées enregistrées. Actualisez les contacts avant une nouvelle modification.'
+                            ? 'Fiche enregistrée dans la copie en preview.'
+                            : 'Fiche enregistrée.'
+                        : 'Fiche enregistrée. Actualisez les contacts avant une nouvelle modification.'
                     );
                   } catch (error) {
                     setSaved(false);
+                    const refreshed = await model.refresh();
+                    setRequiresRefresh(!refreshed);
                     setFeedback(
-                      errorMessage(
-                        error,
-                        'Enregistrement non confirmé. Actualisez la fiche avant de réessayer.'
-                      )
+                      coordinatesSaved
+                        ? 'Les coordonnées sont enregistrées, mais les animaux ne le sont pas. Réessayez l’enregistrement.'
+                        : errorMessage(
+                            error,
+                            'Enregistrement non confirmé. Actualisez la fiche avant de réessayer.'
+                          )
                     );
                   } finally {
                     setBusy(false);
@@ -213,31 +208,80 @@ export function ContactDialog({
                     </Field>
                   </div>
                   <Field disabled={busy}>
-                    <Label>E-mails</Label>
-                    <Textarea
+                    <Label>E-mail</Label>
+                    <Input
                       id="contact-emails"
-                      rows={2}
+                      type="email"
+                      maxLength={254}
                       value={emails}
                       onChange={(event) => setEmails(event.target.value)}
                     />
-                    <Description>Une adresse par ligne.</Description>
                   </Field>
                   <Field disabled={busy}>
-                    <Label>Téléphones</Label>
-                    <Textarea
+                    <Label>Téléphone</Label>
+                    <Input
                       id="contact-phones"
-                      rows={2}
+                      type="tel"
+                      maxLength={64}
                       value={phones}
                       onChange={(event) => setPhones(event.target.value)}
                     />
-                    <Description>Un numéro par ligne.</Description>
+                  </Field>
+                  <Field disabled={busy}>
+                    <Label>Animal / animaux</Label>
+                    <div className="mt-2 flex min-h-10 flex-wrap items-center gap-1.5 rounded-lg border border-zinc-950/10 bg-white px-2 py-1.5 shadow-sm focus-within:ring-2 focus-within:ring-blue-500">
+                      {animals.map((animal, index) => (
+                        <span
+                          key={`${animal}-${index}`}
+                          className="group inline-flex max-w-full items-center gap-1 rounded-full bg-zinc-100 py-0.5 pl-2.5 pr-1 text-sm text-zinc-700"
+                        >
+                          <span className="break-words">{animal}</span>
+                          <button
+                            type="button"
+                            aria-label={`Retirer ${animal}`}
+                            disabled={busy}
+                            onClick={() =>
+                              setAnimals(
+                                animals.filter(
+                                  (_, itemIndex) => itemIndex !== index
+                                )
+                              )
+                            }
+                            className="flex size-5 shrink-0 items-center justify-center rounded-full text-zinc-500 opacity-0 transition-opacity hover:bg-zinc-200 hover:text-zinc-900 focus:opacity-100 focus:outline-2 focus:outline-blue-500 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+                          >
+                            <XMarkIcon
+                              className="size-3.5"
+                              aria-hidden="true"
+                            />
+                          </button>
+                        </span>
+                      ))}
+                      <input
+                        id="contact-animals"
+                        aria-label="Animal / animaux"
+                        placeholder="Ajouter un animal…"
+                        className="min-w-32 flex-1 border-0 bg-transparent px-1 py-0.5 text-sm outline-none placeholder:text-zinc-400"
+                        value={animalDraft}
+                        disabled={busy}
+                        maxLength={200}
+                        onChange={(event) => setAnimalDraft(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (
+                            event.key === 'Enter' &&
+                            !event.nativeEvent.isComposing
+                          ) {
+                            event.preventDefault();
+                            setAnimals(pendingAnimals());
+                            setAnimalDraft('');
+                          }
+                        }}
+                      />
+                    </div>
+                    <Description>
+                      Appuyez sur Entrée pour ajouter un animal.
+                    </Description>
                   </Field>
                 </FieldGroup>
-                <Text className="mt-4 text-xs/5">
-                  Les animaux et rendez-vous connus proviennent de Calendly. Les
-                  coordonnées issues de cet historique peuvent être ajoutées à
-                  nouveau lors d’une synchronisation.
-                </Text>
                 {feedback && (
                   <div className="mt-4">
                     <Notice success={saved}>{feedback}</Notice>
@@ -257,97 +301,18 @@ export function ContactDialog({
                     disabled={busy || !contact.etag || requiresRefresh}
                     id="contact-save"
                   >
-                    {busy ? 'Enregistrement…' : 'Enregistrer les coordonnées'}
+                    {busy ? 'Enregistrement…' : 'Enregistrer'}
                   </Button>
                 </DialogActions>
               </form>
             </TabPanel>
             <TabPanel>
-              <form
-                onSubmit={async (event) => {
-                  event.preventDefault();
-                  setBusy(true);
-                  setFeedback('');
-                  try {
-                    const memberships = model.lists.lists.flatMap((list) => {
-                      const status = statuses[list.id];
-                      return status && status !== 'none'
-                        ? [{ listId: list.id, status }]
-                        : [];
-                    });
-                    await model.mutation('/api/list-memberships', 'PUT', {
-                      contactId: contact.id,
-                      memberships,
-                    });
-                    await model.reloadLists();
-                    setSaved(true);
-                    setFeedback('Affectations et accords enregistrés.');
-                  } catch (error) {
-                    setSaved(false);
-                    setFeedback(
-                      errorMessage(
-                        error,
-                        'Enregistrement des listes non confirmé. Actualisez avant de réessayer.'
-                      )
-                    );
-                  } finally {
-                    setBusy(false);
-                  }
-                }}
-              >
-                <Text className="mb-5">
-                  Indiquez l’accord du contact pour chaque liste avant les
-                  futurs envois.
-                </Text>
-                <FieldGroup className="space-y-5">
-                  {model.lists.lists.map((list) => (
-                    <Field key={list.id} disabled={busy || !model.listsReady}>
-                      <Label>{list.name}</Label>
-                      <Select
-                        data-list-id={list.id}
-                        value={statuses[list.id] ?? 'none'}
-                        onChange={(event) =>
-                          setStatuses({
-                            ...statuses,
-                            [list.id]: event.target.value as
-                              SubscriptionStatus | 'none',
-                          })
-                        }
-                      >
-                        <option value="none">Hors de cette liste</option>
-                        <option value="pending">Accord à confirmer</option>
-                        <option value="confirmed">Accord confirmé</option>
-                        <option value="unsubscribed">Désinscrit</option>
-                      </Select>
-                    </Field>
-                  ))}
-                </FieldGroup>
-                {!model.lists.lists.length && (
-                  <Text>
-                    Créez une liste depuis « Listes de diffusion » pour y
-                    affecter ce contact.
-                  </Text>
-                )}
-                {feedback && (
-                  <div className="mt-4">
-                    <Notice success={saved}>{feedback}</Notice>
-                  </div>
-                )}
-                <DialogActions>
-                  <Button outline onClick={onClose} disabled={busy}>
-                    Fermer
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={
-                      busy || !model.listsReady || !model.lists.lists.length
-                    }
-                    id="contact-lists-save"
-                  >
-                    {busy ? 'Enregistrement…' : 'Enregistrer les listes'}
-                  </Button>
-                </DialogActions>
-              </form>
+              <ContactHistory contact={contact} />
+              <DialogActions>
+                <Button outline onClick={onClose} disabled={busy}>
+                  Fermer
+                </Button>
+              </DialogActions>
             </TabPanel>
           </TabPanels>
         </TabGroup>

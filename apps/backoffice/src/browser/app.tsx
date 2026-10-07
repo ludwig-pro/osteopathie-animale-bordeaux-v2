@@ -267,6 +267,7 @@ export function App({
   initial,
   preview,
   hostedPreview = false,
+  localPreviewCopy = false,
   transport,
   offline,
 }: {
@@ -274,6 +275,7 @@ export function App({
   initial: 'home' | 'contacts';
   preview: boolean;
   hostedPreview?: boolean;
+  localPreviewCopy?: boolean;
   offline: boolean;
   transport: ContactsTransport;
 }) {
@@ -497,14 +499,6 @@ export function App({
         }
       >
         <div id="main" tabIndex={-1}>
-          {(preview || hostedPreview) && (
-            <div className="mb-7 flex flex-wrap items-center gap-2 rounded-lg bg-zinc-50 px-3.5 py-2.5 text-xs/5 text-zinc-600">
-              <Badge color="zinc">{hostedPreview ? 'Preview' : 'Aperçu'}</Badge>
-              {hostedPreview
-                ? 'Espace de test · Copie des contacts Google · Modifications conservées ici uniquement'
-                : 'Données fictives · Modifications temporaires'}
-            </div>
-          )}
           <div className="mb-6 flex items-center gap-2 text-xs/5 text-zinc-500">
             <HomeIcon className="size-3.5" aria-hidden="true" />
             <span>Espace de gestion</span>
@@ -532,13 +526,18 @@ export function App({
               onCopy={
                 !preview && !hostedPreview ? () => setCopyOpen(true) : undefined
               }
-              source={preview ? 'demo' : hostedPreview ? 'copy' : 'google'}
+              source={
+                localPreviewCopy || hostedPreview
+                  ? 'copy'
+                  : preview
+                    ? 'demo'
+                    : 'google'
+              }
               model={model}
               listFilter={listFilter}
               onListFilter={setListFilter}
               onContact={setContact}
               onBulk={(ids, done) => setBulk({ ids, done })}
-              onLists={() => navigate('lists')}
               notice={notice}
             />
           )}
@@ -571,7 +570,13 @@ export function App({
       <form id="logout-form" method="post" action="/logout" hidden />
       {contact && (
         <ContactDialog
-          source={preview ? 'demo' : hostedPreview ? 'copy' : 'google'}
+          source={
+            localPreviewCopy || hostedPreview
+              ? 'copy'
+              : preview
+                ? 'demo'
+                : 'google'
+          }
           key={contact.id}
           original={contact}
           model={model}
