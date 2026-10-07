@@ -1,10 +1,9 @@
 export const contactColumns = [
   { id: 'name', label: 'Nom et e-mail', width: 280, min: 160 },
   { id: 'phone', label: 'Téléphone', width: 160, min: 120 },
-  { id: 'animals', label: 'Animal / animaux', width: 180, min: 120 },
-  { id: 'animalTypes', label: 'Type d’animal', width: 140, min: 100 },
+  { id: 'animals', label: 'Animal', width: 180, min: 120 },
+  { id: 'animalTypes', label: 'Type', width: 140, min: 100 },
   { id: 'appointment', label: 'Dernier rendez-vous', width: 200, min: 160 },
-  { id: 'lists', label: 'Listes', width: 144, min: 100 },
 ] as const;
 
 export type ContactColumn = (typeof contactColumns)[number];

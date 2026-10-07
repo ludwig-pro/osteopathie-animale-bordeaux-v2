@@ -24,7 +24,7 @@ test('invalid or missing browser preferences cannot hide a contact column', () =
   assert.equal(restored.phone, contactColumns[1].min);
   assert.equal(restored.animals, maximumColumnWidth);
   assert.equal(restored.appointment, defaults.appointment);
-  assert.equal(restored.lists, defaults.lists);
+  assert.equal('lists' in restored, false);
   assert.equal(Object.keys(restored).length, contactColumns.length);
 });
 
