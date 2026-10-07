@@ -15,6 +15,7 @@ export interface Env {
   GOOGLE_CONTACTS?: { fetch(request: Request): Promise<Response> };
   DB?: D1Database;
   PREVIEW_DB?: D1Database;
+  REPORTS?: Pick<R2Bucket, 'get'>;
 }
 
 export interface AccessConfig {

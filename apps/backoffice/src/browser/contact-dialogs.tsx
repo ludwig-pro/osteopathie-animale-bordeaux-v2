@@ -5,6 +5,7 @@ import {
   UserIcon,
   ClockIcon,
   CheckIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/20/solid';
 import type { GoogleContact, MailingList } from '../contact-types';
 import {
@@ -105,7 +106,11 @@ export function ContactDialog({
           </DescriptionDetails>
         </DescriptionList>
         <TabGroup onChange={() => setFeedback('')}>
-          <TabList className="mb-6 flex gap-5 border-b border-zinc-950/10">
+          <TabList className="mb-6 flex gap-4 overflow-x-auto border-b border-zinc-950/10 sm:gap-5">
+            <Tab className="contact-tab shrink-0">
+              <DocumentTextIcon className="size-4" aria-hidden="true" />
+              Résumé
+            </Tab>
             <Tab className="contact-tab">
               <UserIcon className="size-4" aria-hidden="true" />
               Coordonnées
@@ -116,6 +121,26 @@ export function ContactDialog({
             </Tab>
           </TabList>
           <TabPanels>
+            <TabPanel>
+              <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-5 py-8 text-center">
+                <DocumentTextIcon
+                  className="mx-auto mb-3 size-7 text-zinc-400"
+                  aria-hidden="true"
+                />
+                <h3 className="text-sm font-medium text-zinc-900">
+                  Le résumé du suivi apparaîtra ici
+                </h3>
+                <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-500">
+                  Les informations collectées au fil du temps permettront de
+                  retrouver l’essentiel du suivi du patient en un coup d’œil.
+                </p>
+              </div>
+              <DialogActions>
+                <Button outline onClick={onClose} disabled={busy}>
+                  Fermer
+                </Button>
+              </DialogActions>
+            </TabPanel>
             <TabPanel>
               <form
                 onSubmit={async (event) => {
@@ -307,7 +332,11 @@ export function ContactDialog({
               </form>
             </TabPanel>
             <TabPanel>
-              <ContactHistory contact={contact} />
+              <ContactHistory
+                key={contact.id}
+                contact={contact}
+                loadReports={model.consultationReports}
+              />
               <DialogActions>
                 <Button outline onClick={onClose} disabled={busy}>
                   Fermer

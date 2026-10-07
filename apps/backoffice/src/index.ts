@@ -16,6 +16,10 @@ import {
 } from './identity-review.ts';
 import { jsonBody } from './request-body.ts';
 import { copyContactsToPreview } from './preview-copy.ts';
+import {
+  consultationReports,
+  consultationPdf,
+} from './consultation-reports.ts';
 
 const json = (value: unknown, status = 200) =>
   new Response(JSON.stringify(value), {
@@ -143,6 +147,15 @@ export function createBackofficeHandler(
           request.method === 'HEAD'
             ? json(null)
             : json(await contactsPage(url, env));
+      } else if (url.pathname === '/api/consultation-reports') {
+        response = json(
+          await consultationReports(
+            url.searchParams.get('contactId') ?? '',
+            env
+          )
+        );
+      } else if (url.pathname === '/api/consultation-pdf') {
+        response = await consultationPdf(url.searchParams.get('id') ?? '', env);
       } else if (url.pathname === '/api/contact-identity') {
         response = json(
           await identityHistory(url.searchParams.get('id') ?? '', env)
