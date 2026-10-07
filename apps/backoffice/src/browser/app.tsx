@@ -28,8 +28,8 @@ import {
   ListDialog,
 } from './contact-dialogs';
 import { ContactsPage } from './contacts-page';
-import { PreviewCopyDialog } from './preview-copy-dialog';
 import { ListsPage } from './lists-page';
+import { NextAppointment } from './next-appointment';
 import { Notice } from './common';
 import { Avatar } from './ui/avatar';
 import { Badge } from './ui/badge';
@@ -108,6 +108,7 @@ function Home({
           <ArrowRightIcon />
         </Button>
       </div>
+      <NextAppointment model={model} />
       <div className="mt-8 grid gap-6 sm:grid-cols-3">
         {[
           {
@@ -293,7 +294,6 @@ export function App({
   );
   const [listFilter, setListFilter] = useState('');
   const [signedOut, setSignedOut] = useState(false);
-  const [copyOpen, setCopyOpen] = useState(false);
   const href = (target: View) =>
     preview
       ? `#${target === 'lists' ? 'listes' : target}`
@@ -523,9 +523,6 @@ export function App({
           )}
           {view === 'contacts' && (
             <ContactsPage
-              onCopy={
-                !preview && !hostedPreview ? () => setCopyOpen(true) : undefined
-              }
               source={
                 localPreviewCopy || hostedPreview
                   ? 'copy'
@@ -561,12 +558,6 @@ export function App({
           </footer>
         </div>
       </SidebarLayout>
-      {copyOpen && (
-        <PreviewCopyDialog
-          transport={transport}
-          onClose={() => setCopyOpen(false)}
-        />
-      )}
       <form id="logout-form" method="post" action="/logout" hidden />
       {contact && (
         <ContactDialog

@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "yarn assets:build && wrangler dev --port 8788",
     "preview": "yarn assets:build && node --watch --experimental-strip-types scripts/preview.mjs",
-    "preview:pull": "node scripts/pull-preview.mjs",
+    "preview:pull": "node --experimental-strip-types scripts/pull-preview.mjs",
+    "preview:copy": "node --experimental-strip-types scripts/copy-preview.mjs",
     "preview:export": "yarn assets:build && node --experimental-strip-types scripts/export-preview.mjs",
     "assets:build": "node scripts/build-assets.mjs",
     "build": "yarn assets:build && wrangler deploy --dry-run --env production --outdir dist/worker/production && wrangler deploy --dry-run --env preview --outdir dist/worker/preview",
@@ -17,6 +18,7 @@
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "configure": "node scripts/configure.mjs",
     "access:check": "node scripts/check-access.mjs",
+    "summaries:admin": "node scripts/summary-admin.mjs",
     "provision": "node scripts/provision.mjs",
     "deploy": "node scripts/deploy.mjs"
   },

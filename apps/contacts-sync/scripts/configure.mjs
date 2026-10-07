@@ -27,6 +27,11 @@ config.account_id = process.env.CLOUDFLARE_ACCOUNT_ID;
 config.env[env].d1_databases[0].database_id = process.env.CONTACTS_SYNC_D1_ID;
 for (const key of required.slice(2))
   config.env[env].vars[key] = process.env[key];
+if (process.env.GOOGLE_CALENDAR_ID) {
+  if (!/^[A-Za-z0-9_.+@-]{1,1024}$/.test(process.env.GOOGLE_CALENDAR_ID))
+    throw new Error('Identifiant Google Calendar invalide.');
+  config.env[env].vars.GOOGLE_CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID;
+}
 writeFileSync('wrangler.local.json', JSON.stringify(config, null, 2) + '\n', {
   mode: 0o600,
 });

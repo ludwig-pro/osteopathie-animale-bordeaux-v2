@@ -8,6 +8,8 @@ import type {
   ListMembership,
   MailingListsData,
 } from '../contact-types';
+import type { ContactSummaryView } from '../summary-types';
+import type { NextAppointmentView } from '../calendar-types';
 
 export type ContactsTransport = (
   path: string,
@@ -233,6 +235,20 @@ export function useContacts(transport: ContactsTransport) {
       ) as Promise<{ reports: ConsultationReport[] }>,
     [transport]
   );
+  const summary = useCallback(
+    (id: string, signal?: AbortSignal) =>
+      transport(`/api/contact-summary?id=${encodeURIComponent(id)}`, {
+        signal,
+      }) as Promise<ContactSummaryView>,
+    [transport]
+  );
+  const nextAppointment = useCallback(
+    (signal?: AbortSignal) =>
+      transport('/api/next-appointment', {
+        signal,
+      }) as Promise<NextAppointmentView>,
+    [transport]
+  );
 
   const memberships = useMemo(() => {
     const result = new Map<string, ListMembership[]>();
@@ -258,6 +274,8 @@ export function useContacts(transport: ContactsTransport) {
     mutation,
     identityHistory,
     consultationReports,
+    summary,
+    nextAppointment,
   };
 }
 

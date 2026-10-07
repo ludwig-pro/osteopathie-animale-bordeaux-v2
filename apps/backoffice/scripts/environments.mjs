@@ -18,6 +18,16 @@ export function environmentProfile(environment) {
     throw new Error('Préciser preview ou production.');
   return profiles[environment];
 }
+function deploymentHostname(profile, hostname = profile.hostname) {
+  if (
+    hostname !== profile.hostname &&
+    !new RegExp(`^${profile.name}\\.[a-z0-9][a-z0-9-]*\\.workers\\.dev$`).test(
+      hostname
+    )
+  )
+    throw new Error('Le domaine ne correspond pas à cet environnement.');
+  return hostname;
+}
 export function configurationValues(environment) {
   environmentProfile(environment);
   const path = `.credentials/backoffice-${environment}.json`;
@@ -30,11 +40,7 @@ export function deploymentConfig(template, environment, values) {
   const databaseId = values.BACKOFFICE_D1_ID;
   if (!/^[a-f0-9]{32}$/i.test(accountId ?? ''))
     throw new Error('Configurer CLOUDFLARE_ACCOUNT_ID.');
-  if (
-    values.BACKOFFICE_HOSTNAME &&
-    values.BACKOFFICE_HOSTNAME !== profile.hostname
-  )
-    throw new Error('Le domaine ne correspond pas à cet environnement.');
+  const hostname = deploymentHostname(profile, values.BACKOFFICE_HOSTNAME);
   if (
     !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(databaseId ?? '') ||
     databaseId.startsWith('00000000-')
@@ -48,7 +54,7 @@ export function deploymentConfig(template, environment, values) {
     throw new Error('Le service Google est réservé à la production.');
   const vars = {
     APP_ENVIRONMENT: environment,
-    APP_ORIGIN: `https://${profile.hostname}`,
+    APP_ORIGIN: `https://${hostname}`,
     ACCESS_TEAM_DOMAIN: values.ACCESS_TEAM_DOMAIN,
     ACCESS_AUD: values.ACCESS_AUD,
   };
@@ -56,8 +62,13 @@ export function deploymentConfig(template, environment, values) {
   const config = structuredClone(template);
   const target = config.env[environment];
   config.account_id = accountId;
-  target.vars = vars;
+  target.vars = { ...target.vars, ...vars };
   target.d1_databases[0].database_id = databaseId;
+  const reportsBucket =
+    values.BACKOFFICE_REPORTS_BUCKET ?? `${profile.name}-reports`;
+  if (!/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(reportsBucket))
+    throw new Error('Configurer le bucket privé des comptes rendus.');
+  target.r2_buckets[0].bucket_name = reportsBucket;
   if (environment === 'production') {
     const previewId = values.PREVIEW_D1_ID;
     if (
@@ -69,9 +80,21 @@ export function deploymentConfig(template, environment, values) {
         'Configurer PREVIEW_D1_ID avec une base différente de la production.'
       );
     target.d1_databases[1].database_id = previewId;
+    const previewBucket =
+      values.PREVIEW_REPORTS_BUCKET ?? 'osteo-backoffice-preview-reports';
+    if (
+      !/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(previewBucket) ||
+      previewBucket === reportsBucket
+    )
+      throw new Error(
+        'Le bucket de preview doit être distinct de la production.'
+      );
+    target.r2_buckets[1].bucket_name = previewBucket;
   }
-  target.workers_dev = false;
-  target.routes = [{ pattern: profile.hostname, custom_domain: true }];
+  target.workers_dev = hostname.endsWith('.workers.dev');
+  target.routes = target.workers_dev
+    ? []
+    : [{ pattern: hostname, custom_domain: true }];
   config.env = { [environment]: target };
   assertDeploymentConfig(config, environment);
   return config;
@@ -79,18 +102,31 @@ export function deploymentConfig(template, environment, values) {
 export function assertDeploymentConfig(config, environment) {
   const profile = environmentProfile(environment);
   const target = config.env?.[environment];
+  const hostname = deploymentHostname(
+    profile,
+    new URL(target?.vars?.APP_ORIGIN).hostname
+  );
+  const workersDev = hostname.endsWith('.workers.dev');
   if (
     !target ||
     target.name !== profile.name ||
     (target.main ?? config.main) !== profile.main ||
     target.vars?.APP_ENVIRONMENT !== environment ||
-    target.vars?.APP_ORIGIN !== `https://${profile.hostname}` ||
+    target.vars?.APP_ORIGIN !== `https://${hostname}` ||
     config.assets?.run_worker_first !== true ||
-    target.workers_dev !== false ||
+    target.workers_dev !== workersDev ||
     target.preview_urls !== false ||
-    target.routes?.length !== 1 ||
-    target.routes[0].pattern !== profile.hostname ||
-    target.routes[0].custom_domain !== true ||
+    (workersDev
+      ? target.routes?.length !== 0
+      : target.routes?.length !== 1 ||
+        target.routes[0].pattern !== hostname ||
+        target.routes[0].custom_domain !== true) ||
+    target.r2_buckets?.length !== (environment === 'production' ? 2 : 1) ||
+    target.r2_buckets[0].binding !== 'REPORTS' ||
+    (environment === 'production' &&
+      (target.r2_buckets[1].binding !== 'PREVIEW_REPORTS' ||
+        target.r2_buckets[1].bucket_name ===
+          target.r2_buckets[0].bucket_name)) ||
     target.d1_databases?.length !== (environment === 'production' ? 2 : 1) ||
     target.d1_databases[0].binding !== 'DB' ||
     target.d1_databases[0].database_name !== profile.name ||
@@ -100,7 +136,8 @@ export function assertDeploymentConfig(config, environment) {
         target.d1_databases[1].database_id ===
           target.d1_databases[0].database_id)) ||
     (environment === 'preview'
-      ? (target.services?.length ?? 0) !== 0
+      ? (target.services?.length ?? 0) !== 0 ||
+        (target.triggers?.crons?.length ?? 0) !== 0
       : target.services?.length !== 1 ||
         target.services[0].binding !== 'GOOGLE_CONTACTS' ||
         target.services[0].service !== 'osteo-contacts-sync' ||

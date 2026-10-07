@@ -8,10 +8,12 @@ import { CONTACTS_ACCOUNT_EMAIL } from '../src/config.ts';
 import { renderFrame } from '../src/views.ts';
 import { createDemoData, createDemoTransport } from './preview-data.mjs';
 import { createLocalTransport } from './local-database.mjs';
-import { readLocalPreview } from './local-preview-data.mjs';
+import { loadLocalPreview } from './local-preview-data.mjs';
 
-const localData = await readLocalPreview();
-const demoTransport = localData
+const localData = await loadLocalPreview({
+  demo: process.env['BACKOFFICE_PREVIEW_DEMO'] === '1',
+});
+const transport = localData
   ? createLocalTransport(localData)
   : createDemoTransport(createDemoData());
 
@@ -103,8 +105,8 @@ const server = createServer(async (request, response) => {
         chunks.push(chunk);
       }
       try {
-        if (demoTransport.fetchResponse) {
-          const result = await demoTransport.fetchResponse(
+        if (transport.fetchResponse) {
+          const result = await transport.fetchResponse(
             url.pathname + url.search,
             {
               method: request.method,
@@ -121,7 +123,7 @@ const server = createServer(async (request, response) => {
           );
           return;
         }
-        const result = await demoTransport(url.pathname + url.search, {
+        const result = await transport(url.pathname + url.search, {
           method: request.method,
           body: chunks.length ? Buffer.concat(chunks).toString() : undefined,
         });
@@ -150,7 +152,7 @@ const server = createServer(async (request, response) => {
       contentType = 'text/html; charset=utf-8';
     } else if (url.pathname === '/_preview/signed-out') {
       body =
-        '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Aperçu — Agathe Lescout</title><link rel="stylesheet" href="/assets/backoffice.css"></head><body><main class="mx-auto max-w-md px-6 py-24"><h1 class="font-display text-3xl">Session de démonstration terminée.</h1><p class="mt-4">La connexion Google sera disponible après sa configuration.</p><a class="mt-6 block underline" href="/">Revenir à l’aperçu</a></main></body></html>';
+        '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Aperçu — Agathe Lescout</title><link rel="stylesheet" href="/assets/backoffice.css"></head><body><main class="mx-auto max-w-md px-6 py-24"><h1 class="font-display text-3xl">Session locale terminée.</h1><a class="mt-6 block underline" href="/">Revenir à l’aperçu</a></main></body></html>';
       contentType = 'text/html; charset=utf-8';
     } else {
       const asset = assets.get(url.pathname);
@@ -171,7 +173,7 @@ server.listen(port, '127.0.0.1', () => {
   console.log(`Aperçu local du backoffice : http://localhost:${port}`);
   console.log(
     localData
-      ? `Copie isolée de la preview : ${localData.contacts.length} contacts. Modifications locales conservées dans SQLite.`
+      ? `Copie locale des données réelles : ${localData.contacts.length} contacts. Modifications locales conservées dans SQLite.`
       : 'Interface de démonstration, sans connexion Google ni contacts réels.'
   );
 });

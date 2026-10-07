@@ -29,6 +29,9 @@ test('preview and production use separate entrypoints, domains, bindings and dat
   assert.equal(preview.env.preview.services.length, 0);
   assert.equal(preview.env.preview.d1_databases.length, 1);
   const production = deploymentConfig(template, 'production', values);
+  assert.equal(production.env.production.vars.SUMMARY_REFRESH_MINUTES, '60');
+  assert.equal(production.env.production.triggers.crons.length, 1);
+  assert.equal(preview.env.preview.triggers, undefined);
   assert.equal(
     production.env.production.services[0].service,
     'osteo-contacts-sync'
@@ -132,4 +135,30 @@ test('public alternative routes and version URLs cannot be enabled', () => {
     Object.assign(config.env.preview, change);
     assert.throws(() => assertDeploymentConfig(config, 'preview'));
   }
+});
+
+test('an existing Access-protected workers.dev origin remains the only route', () => {
+  for (const environment of ['preview', 'production']) {
+    const name =
+      environment === 'preview'
+        ? 'osteo-backoffice-preview'
+        : 'osteo-backoffice';
+    const config = deploymentConfig(template, environment, {
+      ...values,
+      BACKOFFICE_HOSTNAME: `${name}.fictitious-tests.workers.dev`,
+    });
+    assert.equal(config.env[environment].workers_dev, true);
+    assert.deepEqual(config.env[environment].routes, []);
+    assert.equal(config.env[environment].preview_urls, false);
+    config.env[environment].routes = [
+      { pattern: 'another.example.test', custom_domain: true },
+    ];
+    assert.throws(() => assertDeploymentConfig(config, environment));
+  }
+  assert.throws(() =>
+    deploymentConfig(template, 'preview', {
+      ...values,
+      BACKOFFICE_HOSTNAME: 'osteo-backoffice.fictitious-tests.workers.dev',
+    })
+  );
 });

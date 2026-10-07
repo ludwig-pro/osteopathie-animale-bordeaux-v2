@@ -10,8 +10,9 @@ Le domaine retenu est **admin.osteopathie-animale-bordeaux.fr**.
 Le site public Astro et le service Calendly → Google Contacts gardent leurs
 déploiements indépendants. Le backoffice consulte tous les contacts Google,
 permet de modifier leurs coordonnées et gère des listes de diffusion dans une
-base D1 dédiée. En production, cette base contient uniquement les listes et accords.
-La preview conserve une copie modifiable des coordonnées dans sa propre base D1.
+base D1 dédiée. En production, D1 conserve les listes, accords, corrections, sources et synthèses ;
+les PDF originaux sont privés dans R2. La preview et le développement local
+utilisent une copie exacte et indépendante des données métier de production.
 La livraison du code ne déploie aucun service et ne lit aucun contact réel.
 
 ```mermaid
@@ -25,8 +26,8 @@ flowchart LR
   W -->|Service Binding privé| C[GoogleContactsService du Worker contacts-sync]
   C --> P[Google People API]
   C --> B[(D1 existant : historique Calendly)]
-  W --> L[(D1 production : listes et affectations)]
-  W -->|Copie manuelle en lecture seule de Google| PDB[(D1 preview : copie et listes de test)]
+  W --> L[(D1 production : données métier)]
+  W -->|Copie privée des données de production| PDB[(D1 preview : copie indépendante)]
   U --> PA[Access preview : Google Agathe et Ludwig]
   PA --> PW[Worker preview]
   PW --> PDB
@@ -173,6 +174,12 @@ politiques Google, l’audience, le domaine et les noms réels des bases D1 avan
 les migrations ou la publication. Une inversion des bases bloque le déploiement.
 Les noms de Workers et domaines sont fixés dans `scripts/environments.mjs`.
 
+Pour conserver un déploiement existant protégé sur `workers.dev`, renseigner
+`BACKOFFICE_HOSTNAME` avec `<nom-du-worker>.<sous-domaine>.workers.dev` dans
+la configuration privée correspondante. Seul ce domaine est alors activé,
+sans route supplémentaire ni URL de version ; le même contrôle Access reste
+requis. C’est le mode actuellement utilisé avec le sous-domaine `lvantours`.
+
 ## 4. Publier et travailler dans la preview
 
 Les vérifications locales restent sans secret ni donnée réelle :
@@ -194,11 +201,13 @@ yarn deploy production
 
 Chaque publication prépare la configuration, contrôle Access et l’isolation D1,
 compile les assets et le Worker, applique les migrations à la base principale
-ciblée puis déploie le Worker sur son domaine personnalisé. Déployer la preview en premier pour que
+ciblée puis déploie le Worker sur son domaine configuré. Déployer la preview en premier pour que
 sa base et ses tables de copie existent avant la production. Les deux bases
 partagent les mêmes migrations ; les tables de copie restent vides en production.
-Les deux domaines personnalisés sont protégés par Access. Les adresses `workers.dev`
-et les URL de version Cloudflare (`preview_urls`) sont désactivées. Le domaine
+Les deux domaines configurés sont protégés par Access. Avec des domaines personnalisés,
+les adresses `workers.dev` sont désactivées ; avec le mode `workers.dev` explicite,
+elles constituent l’unique origine protégée. Les URL de version Cloudflare
+(`preview_urls`) restent désactivées. Le domaine
 reste enregistré chez OVH ; sa zone DNS est gérée par Cloudflare. Le site public
 reste sur Netlify avec des enregistrements DNS sans proxy.
 
@@ -218,26 +227,30 @@ Un redéploiement conserve les données D1 et les essais en cours.
 
 ### Copier les vrais contacts pour les essais
 
-1. Se connecter à la **production** avec le compte Google d’Agathe.
-2. Ouvrir Contacts → **Copier en preview**.
-3. Confirmer le remplacement, puis garder la fenêtre ouverte pendant la copie.
-4. Ouvrir la preview et actualiser les contacts.
+La copie est une opération technique, sans interface dans le backoffice. Avec
+la session Wrangler autorisée et les configurations privées des deux environnements :
 
-Cette action lit les contacts Google via le service privé de production et
-écrit uniquement dans `PREVIEW_DB`. La copie inclut les champs affichés (noms,
-e-mails, téléphones, animaux, dernier rendez-vous connu et libellés), jamais
-les biographies, notes de consultation ou réponses API brutes. Elle contient
-des données personnelles réelles : elle bénéficie du même accès privé que la
-production et ne doit jamais être utilisée dans les tests, captures publiques,
-exports HTML de démonstration ou journaux. La démo locale conserve ses données
-fictives.
+```sh
+yarn preview:copy:backoffice
+```
 
-La copie avance par pages, reprend après une interruption et reste invisible
-tant qu’elle n’est pas complète. Une seule copie peut avancer à la fois.
-La version précédente reste consultable si Google est indisponible. Les anciennes
-copies sont supprimées après activation de la nouvelle. Relancer une copie
-remplace les coordonnées modifiées en preview ; ses listes et accords restent
-conservés. Aucun renouvellement automatique ne vient écraser les essais.
+Relancer la même commande reprend une copie interrompue. Elle utilise les bindings
+distants D1/R2 et le service privé Google ; elle ne déploie pas de nouvelle route publique.
+
+Cette action copie les données métier de production : contacts, libellés, animaux
+et corrections, notes et historique, synthèses, listes et accords, comptes rendus
+originaux et prochain rendez-vous Calendar observé. Les notes restent séparées
+de la liste générale. Les secrets Google et OpenAI ne sont jamais copiés. Les
+données réelles restent privées et exclues des tests, captures publiques, exports
+HTML de démonstration et journaux. Le local charge le même jeu de données via
+`preview:pull:backoffice`.
+
+La copie avance par pages, reprend après interruption et reste invisible tant
+qu’elle est incomplète. Les données D1 sont vérifiées avant activation ; une
+source indisponible ou un PDF manquant conserve la version précédente. Chaque
+renouvellement remplace les données métier par celles de production et archive
+la copie précédente avec ses corrections. Aucun renouvellement automatique
+n’écrase les essais. Voir le [contrat des environnements](backoffice-data-environments.md).
 
 La publication ne prouve pas le fonctionnement du SSO réel. Vérifier sur chaque
 domaine : redirection Google sans session, admission des comptes d’Agathe et Ludwig, refus

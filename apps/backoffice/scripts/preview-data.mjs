@@ -47,7 +47,7 @@ export function createDemoData() {
     const [givenName, familyName] = names[index % names.length];
     const suffix =
       index >= names.length ? ` ${Math.floor(index / names.length) + 1}` : '';
-    return {
+    const contact = {
       id: `people/demo${index + 1}`,
       name: `${givenName} ${familyName}${suffix}`,
       givenName,
@@ -77,6 +77,18 @@ export function createDemoData() {
           ? null
           : `2026-09-${String((index % 28) + 1).padStart(2, '0')}T10:00:00Z`,
     };
+    contact.history = contact.lastAppointment
+      ? [
+          {
+            id: `demo:appointment${index + 1}`,
+            type: 'appointment',
+            date: contact.lastAppointment,
+            animal: contact.animals[0] ?? '',
+            status: 'active',
+          },
+        ]
+      : [];
+    return contact;
   });
   return {
     contacts,
@@ -119,13 +131,107 @@ export function createDemoTransport(initial) {
   data.archivedLists ??= [];
   let revision = 0;
   const demoId = () => `demo-${Date.now().toString(36)}-${++revision}`;
+  const appointmentDate = new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'long',
+    timeZone: 'Europe/Paris',
+  });
   return async (path, init = {}) => {
     if (init.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     const url = new URL(path, 'https://preview.invalid');
     const method = init.method ?? 'GET';
     const input = init.body ? JSON.parse(init.body) : null;
     if (method === 'GET') {
+      if (url.pathname === '/api/next-appointment') {
+        const fictitious =
+          data.contacts.some((contact) =>
+            contact.id.startsWith('people/demo')
+          ) &&
+          data.contacts.every((contact) =>
+            contact.id.startsWith('people/demo')
+          );
+        const start = new Date(Date.now() + 86400000);
+        start.setUTCHours(12, 0, 0, 0);
+        return {
+          state: fictitious ? 'ready' : 'not_connected',
+          appointment: fictitious
+            ? {
+                id: 'demo-calendar-appointment',
+                title: 'Consultation de Moka — Alice Lefebvre',
+                startsAt: start.toISOString(),
+                endsAt: new Date(start.getTime() + 3600000).toISOString(),
+                location: 'Cabinet de Bordeaux (exemple fictif)',
+                url: null,
+                status: 'confirmed',
+              }
+            : null,
+          checkedAt: fictitious ? new Date().toISOString() : null,
+          demo: fictitious,
+        };
+      }
       if (url.pathname === '/api/consultation-reports') return { reports: [] };
+      if (url.pathname === '/api/contact-summary') {
+        const contact = data.contacts.find(
+          (item) => item.id === url.searchParams.get('id')
+        );
+        if (!contact) throw new Error('contact_not_found');
+        // Offline exports with real copied contacts must never invent a summary.
+        const fictitious = contact.id.startsWith('people/demo');
+        const appointment =
+          fictitious && contact.history?.[0]
+            ? {
+                ...contact.history[0],
+                kind: 'appointment',
+                animalType: '',
+                breed: '',
+                birth: '',
+                reason: 'Mobilité',
+                oldInvitee: null,
+                newInvitee: null,
+              }
+            : null;
+        const sources = fictitious
+          ? {
+              id: contact.id,
+              notes: [],
+              appointments: appointment ? [appointment] : [],
+              notesState: 'ready',
+              observedAt: '2026-10-07T10:00:00Z',
+              contextualAnimals: contact.animals,
+            }
+          : null;
+        return {
+          state: fictitious
+            ? appointment
+              ? 'ready'
+              : 'insufficient'
+            : 'unavailable',
+          stale: false,
+          summary: appointment
+            ? {
+                sentences: [
+                  {
+                    text: `Une réservation pour ${appointment.animal} est enregistrée le ${appointmentDate.format(new Date(appointment.date))}.`,
+                    sourceIds: [appointment.id],
+                  },
+                  {
+                    text: 'Le motif renseigné concerne la mobilité.',
+                    sourceIds: [appointment.id],
+                  },
+                  {
+                    text: 'Les informations disponibles ne précisent pas le résultat de la consultation.',
+                    sourceIds: [appointment.id],
+                  },
+                ],
+              }
+            : null,
+          sources,
+          summarySources: sources,
+          checkedAt: sources?.observedAt ?? null,
+          generatedAt: appointment ? sources.observedAt : null,
+          model: fictitious ? 'demo' : null,
+          generationPaused: true,
+        };
+      }
       if (url.pathname === '/api/contacts') {
         const offset = Number(url.searchParams.get('pageToken') ?? 0);
         return structuredClone({
@@ -146,6 +252,8 @@ export function createDemoTransport(initial) {
           ),
         });
     }
+    if (url.pathname === '/api/contact-summary/refresh' && method === 'POST')
+      return { queued: true };
     if (url.pathname === '/api/contact' && method === 'PATCH') {
       const contact = data.contacts.find((item) => item.id === input.id);
       if (!contact) throw new Error('contact_not_found');

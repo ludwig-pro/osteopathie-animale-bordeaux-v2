@@ -112,13 +112,33 @@ export function automaticIdentity(
   contact: GoogleContact
 ): IdentityCorrection | null {
   const annotations: string[] = [];
-  const strip = (value: string) =>
-    cleanName(
-      value.replace(/\(([^()]*)\)/gu, (_, animal: string) => {
-        if (cleanName(animal)) annotations.push(cleanName(animal));
-        return ' ';
-      })
-    );
+  const strip = (value: string) => {
+    let result = '';
+    let start = 0;
+    let depth = 0;
+    let nested = false;
+    for (let index = 0; index < value.length; index++) {
+      if (value[index] === '(') {
+        if (depth === 0) {
+          result += value.slice(start, index);
+          start = index;
+          nested = false;
+        } else nested = true;
+        depth++;
+      } else if (value[index] === ')' && depth > 0 && --depth === 0) {
+        // Preserve ambiguous nested annotations as a whole. Extracting just
+        // their inner group would invent another animal on the next read.
+        if (nested) result += value.slice(start, index + 1);
+        else {
+          const animal = cleanName(value.slice(start + 1, index));
+          if (animal) annotations.push(animal);
+          result += ' ';
+        }
+        start = index + 1;
+      }
+    }
+    return cleanName(result + value.slice(start));
+  };
   const label = strip(contact.name);
   const given = strip(contact.givenName);
   const family = strip(contact.familyName);

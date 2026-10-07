@@ -10,6 +10,7 @@ import {
 import { fileURLToPath } from 'node:url';
 import { createBackofficeHandler } from '../src/index.ts';
 import { previewContacts } from '../src/preview-contacts.ts';
+import { copyTables } from '../src/copy-data.ts';
 
 export function createLocalTransport(
   data,
@@ -50,9 +51,14 @@ export function createLocalTransport(
     try {
       sqlite
         .prepare(
-          'INSERT INTO contact_snapshots(id,appointments_available) VALUES (?,?)'
+          'INSERT INTO contact_snapshots(id,appointments_available,data_version,created_at) VALUES (?,?,?,?)'
         )
-        .run(snapshot, data.appointmentsAvailable === false ? 0 : 1);
+        .run(
+          snapshot,
+          data.appointmentsAvailable === false ? 0 : 1,
+          data.dataVersion ?? 0,
+          data.copiedAt ?? data.importedAt ?? new Date().toISOString()
+        );
       sqlite
         .prepare('UPDATE preview_state SET active_snapshot=? WHERE id=1')
         .run(snapshot);
@@ -64,63 +70,80 @@ export function createLocalTransport(
         sqlite
           .prepare('INSERT INTO copied_labels VALUES (?,?,?)')
           .run(snapshot, l.id, JSON.stringify(l));
-      for (const l of [...data.lists, ...(data.archivedLists ?? [])])
-        sqlite
-          .prepare(
-            'INSERT INTO mailing_lists(id,name,description,archived_at) VALUES (?,?,?,?)'
-          )
-          .run(
-            l.id,
-            l.name,
-            l.description,
-            (data.archivedLists ?? []).some((a) => a.id === l.id)
-              ? new Date().toISOString()
-              : null
+      if (data.dataVersion === 1) {
+        sqlite.exec('UPDATE preview_state SET importing_business=1 WHERE id=1');
+        for (const table of copyTables) {
+          const insert = sqlite.prepare(
+            `INSERT INTO ${table.name}(${table.columns.join(',')}) VALUES (${table.columns.map(() => '?').join(',')})`
           );
-      for (const m of data.memberships)
+          for (const row of data.businessRows.filter(
+            (row) => row.table_name === table.name
+          )) {
+            const value = JSON.parse(row.document);
+            insert.run(...table.columns.map((column) => value[column]));
+          }
+        }
+        for (const source of data.contactSources)
+          sqlite
+            .prepare('INSERT INTO copied_contact_sources VALUES (?,?,?)')
+            .run(snapshot, source.id, JSON.stringify(source));
         sqlite
-          .prepare('INSERT INTO mailing_list_contacts VALUES (?,?,?)')
-          .run(m.listId, m.contactId, m.status);
-      // Imported history is retained without replaying the correction trigger.
-      sqlite.exec('DROP TRIGGER apply_identity_review');
-      for (const r of data.identityReviews ?? [])
-        sqlite
-          .prepare(
-            'INSERT INTO identity_reviews(id,contact_id,snapshot_id,actor,action,before_document,after_document,created_at) VALUES (?,?,?,?,?,?,?,?)'
-          )
-          .run(
-            r.id,
-            r.contact_id,
-            r.snapshot_id,
-            r.actor,
-            r.action,
-            r.before_document,
-            r.after_document,
-            r.created_at
-          );
-      for (const a of data.contactAnimals ?? [])
-        sqlite
-          .prepare('INSERT INTO contact_animals VALUES (?,?,?,?,?)')
-          .run(a.contact_id, a.id, a.name, a.source, a.review_id);
-      for (const a of data.knownAnimals ?? [])
-        sqlite
-          .prepare('INSERT INTO known_contact_animals VALUES (?,?,?)')
-          .run(a.contact_id, a.animal_key, a.name);
-      for (const a of data.animalOverrides ?? [])
-        sqlite
-          .prepare('INSERT INTO contact_animal_overrides VALUES (?,?,?)')
-          .run(a.contact_id, a.names, a.version);
-      const migration = readFileSync(
-        new URL('0003_contact_identity.sql', migrations),
-        'utf8'
-      );
-      sqlite.exec(
-        migration.slice(
-          migration.indexOf('CREATE TRIGGER apply_identity_review'),
-          migration.indexOf('-- Also protects')
-        )
-      );
-      sqlite.exec('COMMIT');
+          .prepare('INSERT INTO copied_calendar VALUES (?,?)')
+          .run(snapshot, JSON.stringify(data.calendar[0]));
+        sqlite.exec(
+          'UPDATE preview_state SET importing_business=0 WHERE id=1; COMMIT'
+        );
+      } else {
+        for (const l of [...data.lists, ...(data.archivedLists ?? [])])
+          sqlite
+            .prepare(
+              'INSERT INTO mailing_lists(id,name,description,archived_at) VALUES (?,?,?,?)'
+            )
+            .run(
+              l.id,
+              l.name,
+              l.description,
+              (data.archivedLists ?? []).some((a) => a.id === l.id)
+                ? new Date().toISOString()
+                : null
+            );
+        for (const m of data.memberships)
+          sqlite
+            .prepare('INSERT INTO mailing_list_contacts VALUES (?,?,?)')
+            .run(m.listId, m.contactId, m.status);
+        // Imported history is retained without replaying the correction trigger.
+        sqlite.exec('UPDATE preview_state SET importing_business=1 WHERE id=1');
+        for (const r of data.identityReviews ?? [])
+          sqlite
+            .prepare(
+              'INSERT INTO identity_reviews(id,contact_id,snapshot_id,actor,action,before_document,after_document,created_at) VALUES (?,?,?,?,?,?,?,?)'
+            )
+            .run(
+              r.id,
+              r.contact_id,
+              r.snapshot_id,
+              r.actor,
+              r.action,
+              r.before_document,
+              r.after_document,
+              r.created_at
+            );
+        for (const a of data.contactAnimals ?? [])
+          sqlite
+            .prepare('INSERT INTO contact_animals VALUES (?,?,?,?,?)')
+            .run(a.contact_id, a.id, a.name, a.source, a.review_id);
+        for (const a of data.knownAnimals ?? [])
+          sqlite
+            .prepare('INSERT INTO known_contact_animals VALUES (?,?,?)')
+            .run(a.contact_id, a.animal_key, a.name);
+        for (const a of data.animalOverrides ?? [])
+          sqlite
+            .prepare('INSERT INTO contact_animal_overrides VALUES (?,?,?)')
+            .run(a.contact_id, a.names, a.version);
+        sqlite.exec(
+          'UPDATE preview_state SET importing_business=0 WHERE id=1; COMMIT'
+        );
+      }
     } catch (error) {
       sqlite.exec('ROLLBACK');
       throw error;

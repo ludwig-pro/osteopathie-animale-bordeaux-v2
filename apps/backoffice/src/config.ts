@@ -16,6 +16,9 @@ export interface Env {
   DB?: D1Database;
   PREVIEW_DB?: D1Database;
   REPORTS?: Pick<R2Bucket, 'get'>;
+  PREVIEW_REPORTS?: Pick<R2Bucket, 'put'>;
+  OPENAI_API_KEY?: string;
+  SUMMARY_REFRESH_MINUTES?: string;
 }
 
 export interface AccessConfig {

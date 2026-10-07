@@ -10,6 +10,7 @@ import {
   snapshotFromRows,
   saveLocalPreview,
   readLocalPreview,
+  loadLocalPreview,
 } from '../scripts/local-preview-data.mjs';
 import { createDemoTransport } from '../scripts/preview-data.mjs';
 
@@ -78,6 +79,31 @@ test('local copy uses only the active snapshot, preserves archived lists and nev
     );
   } finally {
     f.sqlite.close();
+  }
+});
+
+test('local development requires a real copy; demo data is always an explicit choice', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'osteo-local-mode-test-'));
+  const path = pathToFileURL(join(directory, 'copy.json'));
+  try {
+    await assert.rejects(
+      loadLocalPreview({ path }),
+      /Copie de production absente/
+    );
+    assert.equal(await loadLocalPreview({ path, demo: true }), null);
+    const data = snapshotFromRows([
+      {
+        kind: 'state',
+        document: '{"snapshotId":null,"appointmentsAvailable":1}',
+      },
+    ]);
+    await saveLocalPreview(data, path);
+    assert.deepEqual(await loadLocalPreview({ path }), data);
+    assert.equal(await loadLocalPreview({ path, demo: true }), null);
+    await writeFile(path, 'invalid-private-test-content');
+    await assert.rejects(loadLocalPreview({ path }), /Copie locale invalide/);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
   }
 });
 

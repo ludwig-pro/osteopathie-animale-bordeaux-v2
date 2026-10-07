@@ -8,7 +8,11 @@ import {
   rm,
   rename,
   access,
+  mkdir,
+  chmod,
+  copyFile,
 } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { createConnection } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -114,6 +118,99 @@ try {
   if (output.length !== 1 || output[0].success !== true)
     throw new Error('Lecture de la preview incomplète.');
   const data = snapshotFromRows(output[0].results);
+  if (data.dataVersion !== 1)
+    throw new Error(
+      'La preview contient une ancienne copie partielle. Relancer la copie complète depuis la production avant preview:pull.'
+    );
+  const reports = new Map(
+    data.businessRows
+      .filter((row) => row.table_name === 'consultation_reports')
+      .map((row) => {
+        const report = JSON.parse(row.document);
+        return [report.sha256, report];
+      })
+  );
+  const reportsDirectory = new URL(
+    '../.credentials/consultation-reports/',
+    import.meta.url
+  );
+  await mkdir(reportsDirectory, { recursive: true, mode: 0o700 });
+  const bucket =
+    configuration.BACKOFFICE_REPORTS_BUCKET ??
+    'osteo-backoffice-preview-reports';
+  if (!/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(bucket))
+    throw new Error('Configurer le bucket privé de la preview.');
+  for (const [sha, report] of reports) {
+    if (
+      !/^[a-f0-9]{64}$/.test(sha) ||
+      !Number.isSafeInteger(report.size) ||
+      report.size <= 0
+    )
+      throw new Error('Métadonnées de compte rendu invalides.');
+    const target = new URL(`${sha}.pdf`, reportsDirectory);
+    let existing;
+    try {
+      existing = await readFile(target);
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+    if (
+      existing &&
+      existing.length === report.size &&
+      createHash('sha256').update(existing).digest('hex') === sha
+    )
+      continue;
+    const temporary = join(directory, `${sha}.pdf`);
+    try {
+      await promisify(execFile)(
+        process.execPath,
+        [
+          fileURLToPath(
+            new URL(
+              '../../../node_modules/wrangler/bin/wrangler.js',
+              import.meta.url
+            )
+          ),
+          'r2',
+          'object',
+          'get',
+          `${bucket}/${sha}.pdf`,
+          '--config',
+          path,
+          '--remote',
+          '--file',
+          temporary,
+        ],
+        {
+          cwd: workspace,
+          env: {
+            ...process.env,
+            WRANGLER_SEND_METRICS: 'false',
+            WRANGLER_WRITE_LOGS: 'false',
+          },
+        }
+      );
+    } catch {
+      throw new Error(
+        'Compte rendu indisponible dans la copie de production. Import local interrompu.'
+      );
+    }
+    const content = await readFile(temporary);
+    if (
+      content.length !== report.size ||
+      createHash('sha256').update(content).digest('hex') !== sha
+    )
+      throw new Error(
+        'Copie du compte rendu invalide. Import local interrompu.'
+      );
+    if (existing)
+      await rename(
+        target,
+        new URL(`${sha}.${Date.now()}.backup.pdf`, reportsDirectory)
+      );
+    await copyFile(temporary, target);
+    await chmod(target, 0o600);
+  }
   await saveLocalPreview(data);
   if (resetLocal) {
     try {
@@ -141,7 +238,7 @@ try {
     }
   }
   console.log(
-    `Copie locale : ${data.contacts.length} contacts, ${data.labels.length} libellés, ${data.lists.length} listes actives.`
+    `Copie locale : ${data.contacts.length} contacts, ${data.labels.length} libellés, ${data.lists.length} listes actives, ${reports.size} comptes rendus.`
   );
   console.log(
     'Redémarrer preview:backoffice pour charger cette copie. Les modifications locales restent isolées.'

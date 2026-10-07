@@ -16,6 +16,7 @@ import {
 } from './contacts-model';
 import { Notice } from './common';
 import { ContactHistory } from './contact-history';
+import { ContactSummary } from './contact-summary';
 import { Alert, AlertTitle, AlertDescription, AlertActions } from './ui/alert';
 import { Button } from './ui/button';
 import { Checkbox, CheckboxField, CheckboxGroup } from './ui/checkbox';
@@ -122,19 +123,7 @@ export function ContactDialog({
           </TabList>
           <TabPanels>
             <TabPanel>
-              <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-5 py-8 text-center">
-                <DocumentTextIcon
-                  className="mx-auto mb-3 size-7 text-zinc-400"
-                  aria-hidden="true"
-                />
-                <h3 className="text-sm font-medium text-zinc-900">
-                  Le résumé du suivi apparaîtra ici
-                </h3>
-                <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-500">
-                  Les informations collectées au fil du temps permettront de
-                  retrouver l’essentiel du suivi du patient en un coup d’œil.
-                </p>
-              </div>
+              <ContactSummary key={contact.id} id={contact.id} model={model} />
               <DialogActions>
                 <Button outline onClick={onClose} disabled={busy}>
                   Fermer

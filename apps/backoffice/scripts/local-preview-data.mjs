@@ -1,4 +1,5 @@
 import { readFile, mkdir, writeFile, rename } from 'node:fs/promises';
+import { businessSnapshotQuery } from '../src/copy-data.ts';
 
 export const localPreviewPath = new URL(
   '../.credentials/local-preview-data.json',
@@ -10,7 +11,9 @@ export const previewSnapshotQuery = `
 SELECT * FROM (
 SELECT 'state' AS kind, json_object(
   'snapshotId', p.active_snapshot,
-  'appointmentsAvailable', coalesce(s.appointments_available, 1)
+  'appointmentsAvailable', coalesce(s.appointments_available, 1),
+  'dataVersion', coalesce(s.data_version, 0),
+  'copiedAt', s.created_at
 ) AS document FROM preview_state p
 LEFT JOIN contact_snapshots s ON s.id = p.active_snapshot WHERE p.id = 1
 UNION ALL
@@ -36,6 +39,12 @@ SELECT 'knownAnimals', json_object('contact_id',contact_id,'animal_key',animal_k
 UNION ALL
 SELECT 'animalOverrides', json_object('contact_id',contact_id,'names',names,'version',version) FROM contact_animal_overrides
 )
+UNION ALL
+SELECT 'businessRows', json_object('table_name',table_name,'row_id',row_id,'document',document) FROM (${businessSnapshotQuery})
+UNION ALL
+SELECT 'contactSources', document FROM copied_contact_sources WHERE snapshot_id=(SELECT active_snapshot FROM preview_state WHERE id=1)
+UNION ALL
+SELECT 'calendar', document FROM copied_calendar WHERE snapshot_id=(SELECT active_snapshot FROM preview_state WHERE id=1)
 `;
 
 export function snapshotFromRows(rows) {
@@ -59,12 +68,19 @@ export function snapshotFromRows(rows) {
     contactAnimals: [],
     knownAnimals: [],
     animalOverrides: [],
+    businessRows: [],
+    contactSources: [],
+    calendar: [],
+    dataVersion: 0,
+    copiedAt: null,
   };
   const state = rows.find((row) => row.kind === 'state');
   if (!state) throw new Error('État de la preview indisponible.');
   const metadata = JSON.parse(state.document);
   data.snapshotId = metadata.snapshotId;
   data.appointmentsAvailable = metadata.appointmentsAvailable === 1;
+  data.dataVersion = metadata.dataVersion ?? 0;
+  data.copiedAt = metadata.copiedAt ?? null;
   for (const row of rows) {
     if (row.kind === 'state') continue;
     if (!Array.isArray(data[row.kind]))
@@ -105,5 +121,28 @@ export async function readLocalPreview(path = localPreviewPath) {
     )
   )
     throw new Error('Copie locale invalide. Relancer preview:pull.');
+  if (
+    data.dataVersion === 1 &&
+    (!Array.isArray(data.businessRows) ||
+      !Array.isArray(data.contactSources) ||
+      !Array.isArray(data.calendar) ||
+      data.calendar.length !== 1)
+  )
+    throw new Error(
+      'Copie de production incomplète. Relancer la copie avant preview:pull.'
+    );
+  return data;
+}
+
+export async function loadLocalPreview({
+  demo = false,
+  path = localPreviewPath,
+} = {}) {
+  if (demo) return null;
+  const data = await readLocalPreview(path);
+  if (!data)
+    throw new Error(
+      'Copie de production absente. Lancer yarn preview:pull:backoffice avant le serveur local. Le mode fictif doit être demandé explicitement avec BACKOFFICE_PREVIEW_DEMO=1.'
+    );
   return data;
 }

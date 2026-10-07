@@ -7,6 +7,7 @@ export interface Env {
   CALENDLY_TOKEN: string;
   CALENDLY_SIGNING_KEY: string;
   GOOGLE_OAUTH: string;
+  GOOGLE_CALENDAR_ID?: string;
 }
 export type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 export interface Settings {
