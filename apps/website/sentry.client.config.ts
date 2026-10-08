@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/astro';
 
+import { BROWSER_EXTENSION_IGNORE_ERRORS } from './src/lib/observability/browserExtensionNoise.js';
 import { sanitizeModuleDiagnosticEvent } from './src/lib/observability/sanitizeTelemetryUrl.js';
 
 const MODULE_SCRIPT_ERROR_MESSAGE = 'Importing a module script failed.';
@@ -62,6 +63,7 @@ Sentry.init({
     graphQL: { document: false, variables: false },
   },
   tracesSampleRate: 1,
+  ignoreErrors: BROWSER_EXTENSION_IGNORE_ERRORS,
   beforeSend(event) {
     const message = event.message ?? event.exception?.values?.[0]?.value;
 
