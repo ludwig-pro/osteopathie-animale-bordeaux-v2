@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { nextAppointment } from '../src/calendar.ts';
+import { nextAppointment, calendarAgenda } from '../src/calendar.ts';
 import {
   CONTACTS_ACCOUNT_EMAIL,
   AccessError,
@@ -223,4 +223,119 @@ test('offline demos show a clearly fictitious future appointment and copied cont
     checkedAt: null,
     demo: false,
   });
+});
+
+test('authenticated calendar windows validate input and strip private upstream fields', async () => {
+  const from = '2099-10-01',
+    to = '2099-11-01';
+  const f = fixture({
+    from,
+    to,
+    checkedAt,
+    appointments: [
+      {
+        ...appointment,
+        attendeeEmails: ['CLIENT@example.test'],
+        description: 'private-note',
+      },
+    ],
+    token: 'private-token',
+  });
+  const path = `${origin}/api/calendar-appointments?from=${from}&to=${to}`;
+  const response = await f.handle(new Request(path), f.env);
+  assert.equal(response.status, 200);
+  const data = (await response.json()) as {
+    appointments: Record<string, unknown>[];
+  };
+  assert.deepEqual(data.appointments, [
+    { ...appointment, attendeeEmails: ['client@example.test'] },
+  ]);
+  assert.doesNotMatch(JSON.stringify(data), /private-note|private-token/);
+  assert.equal(
+    f.calls[0]!.headers.get('X-Contacts-Account'),
+    CONTACTS_ACCOUNT_EMAIL
+  );
+  const before = f.calls.length;
+  assert.equal(
+    (await f.handle(new Request(path, { method: 'HEAD' }), f.env)).status,
+    200
+  );
+  for (const query of [
+    'from=2099-02-30&to=2099-03-02',
+    'from=2099-01-01&to=2099-11-01',
+    'from=2099-10-01&to=2099-11-01&calendar=other',
+  ]) {
+    assert.equal(
+      (
+        await f.handle(
+          new Request(`${origin}/api/calendar-appointments?${query}`),
+          f.env
+        )
+      ).status,
+      400
+    );
+  }
+  const unauthenticated = createBackofficeHandler(async () => {
+    throw new AccessError(401, 'authentication_required');
+  });
+  assert.equal((await unauthenticated(new Request(path), f.env)).status, 401);
+  assert.equal(f.calls.length, before);
+});
+
+test('calendar windows use only the active bounded copy in preview and never a real binding', async () => {
+  const f = fixture();
+  const db = database();
+  try {
+    const env = { ...f.env, APP_ENVIRONMENT: 'preview' as const, DB: db.db };
+    assert.equal(
+      (await calendarAgenda(env, '2099-10-01', '2099-11-01')).state,
+      'unavailable'
+    );
+    db.sqlite.exec(
+      "INSERT INTO contact_snapshots(id,data_version) VALUES ('copy',1); UPDATE preview_state SET active_snapshot='copy' WHERE id=1;"
+    );
+    const view = { state: 'ready', appointment, checkedAt, demo: false };
+    db.sqlite
+      .prepare('INSERT INTO copied_calendar VALUES (?,?)')
+      .run('copy', JSON.stringify(view));
+    // A legacy copy of one next event must not become a full or empty calendar.
+    assert.equal(
+      (await calendarAgenda(env, '2099-10-01', '2099-11-01')).state,
+      'unavailable'
+    );
+    const agenda = {
+      state: 'ready',
+      appointments: [
+        {
+          ...appointment,
+          description: 'private-note',
+          attendeeEmails: ['client@example.test'],
+        },
+      ],
+      from: '2099-09-01',
+      to: '2099-12-01',
+      checkedAt,
+      demo: false,
+      token: 'private-token',
+    };
+    db.sqlite
+      .prepare('UPDATE copied_calendar SET document=?')
+      .run(JSON.stringify({ ...view, agenda }));
+    const data = await calendarAgenda(env, '2099-10-01', '2099-11-01');
+    assert.equal(data.state, 'ready');
+    assert.ok(data.copiedAt);
+    assert.equal(data.appointments.length, 1);
+    assert.doesNotMatch(JSON.stringify(data), /private-note|private-token/);
+    assert.equal(
+      (await calendarAgenda(env, '2099-08-01', '2099-09-01')).state,
+      'unavailable'
+    );
+    db.sqlite
+      .prepare('UPDATE copied_calendar SET document=?')
+      .run(JSON.stringify({ ...view, agenda: { ...agenda, checkedAt: null } }));
+    await assert.rejects(() => calendarAgenda(env, '2099-10-01', '2099-11-01'));
+    assert.equal(f.calls.length, 0);
+  } finally {
+    db.sqlite.close();
+  }
 });

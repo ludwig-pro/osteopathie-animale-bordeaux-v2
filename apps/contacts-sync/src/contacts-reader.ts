@@ -5,7 +5,10 @@ import { normalizeEmail } from './model.ts';
 import type { Env, Fetcher } from './types.ts';
 import { editGoogleContact } from './contact-editor.ts';
 import { readContactSources } from './contact-sources.ts';
-import { readNextAppointment } from './google-calendar.ts';
+import {
+  readNextAppointment,
+  readCalendarAppointments,
+} from './google-calendar.ts';
 
 const CONTACT_FIELDS = 'names,emailAddresses,phoneNumbers,memberships,metadata';
 interface GoogleContact {
@@ -69,6 +72,7 @@ export async function readGoogleContacts(
       '/sources',
       '/source',
       '/next-appointment',
+      '/calendar-appointments',
     ].includes(url.pathname)
   ) {
     return reply({ error: 'not_found' }, 404);
@@ -84,6 +88,8 @@ export async function readGoogleContacts(
     return readContactSources(request, env, fetcher);
   if (url.pathname === '/next-appointment')
     return readNextAppointment(request, env, fetcher);
+  if (url.pathname === '/calendar-appointments')
+    return readCalendarAppointments(request, env, fetcher);
   if (url.pathname === '/contact') {
     return request.method === 'PATCH' && !url.search
       ? editGoogleContact(request, env, fetcher)

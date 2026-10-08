@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRightIcon,
+  ArrowTopRightOnSquareIcon,
+  BuildingOffice2Icon,
   CalendarDaysIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  HomeIcon,
+  MapPinIcon,
 } from '@heroicons/react/20/solid';
 import type { GoogleContact } from '../contact-types';
 import {
@@ -21,6 +25,7 @@ import { contactName, type ContactsModel } from './contacts-model';
 import { Notice } from './common';
 import { LatestConsultationReport } from './latest-consultation-report';
 import { useAgendaRefresh } from './use-agenda-refresh';
+import { useCalendarAgenda } from './use-calendar-agenda';
 import { Button } from './ui/button';
 
 const timeFormat = new Intl.DateTimeFormat('fr-FR', {
@@ -36,7 +41,32 @@ const shortDayFormat = new Intl.DateTimeFormat('fr-FR', {
 const time = (appointment: AgendaAppointment) =>
   timeFormat.format(appointment.startsAt);
 const animalName = (appointment: AgendaAppointment) =>
-  appointment.animal || 'Animal non renseigné';
+  appointment.animal || appointment.title || 'Animal non renseigné';
+
+function AppointmentVenue({ venue }: { venue: AgendaAppointment['venue'] }) {
+  const Icon =
+    venue === 'home'
+      ? HomeIcon
+      : venue === 'practice'
+        ? BuildingOffice2Icon
+        : MapPinIcon;
+  const label =
+    venue === 'home'
+      ? 'Rendez-vous à domicile'
+      : venue === 'practice'
+        ? 'Rendez-vous au cabinet'
+        : 'Lieu non renseigné';
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className="mt-1 shrink-0 text-zinc-500"
+    >
+      <Icon className="size-5" aria-hidden="true" />
+    </span>
+  );
+}
 
 function useNow() {
   const [now, setNow] = useState(() => Date.now());
@@ -145,28 +175,39 @@ function NextAppointment({
             </time>
           </div>
         </div>
-        <section
-          aria-label="Repères du suivi"
-          className="mt-5 rounded-xl border border-white/15 bg-white/5 px-4 py-3"
-        >
-          <p className="text-sm/6 text-white">
-            {previous ? (
-              <>
-                {previousAppointments.length} rendez-vous antérieur
-                {previousAppointments.length > 1 ? 's' : ''}
-                {appointment.animal
-                  ? ` pour ${appointment.animal}`
-                  : ' sur cette fiche'}
-                . Dernier le {shortDayFormat.format(calendarDate(previous.day))}{' '}
-                {calendarDate(previous.day).getUTCFullYear()}.
-              </>
-            ) : appointment.contacts.some((contact) => !contact.history) ? (
-              'L’historique du suivi n’est pas encore disponible.'
-            ) : (
-              `Aucun rendez-vous antérieur retrouvé${appointment.animal ? ` pour ${appointment.animal}` : ' sur cette fiche'}.`
-            )}
+        {appointment.calendar?.location && (
+          <p className="mt-3 break-words text-sm text-green-100">
+            {appointment.calendar.location}
           </p>
-        </section>
+        )}
+        {appointment.calendar?.status === 'tentative' && (
+          <p className="mt-2 text-xs text-green-100">À confirmer</p>
+        )}
+        {appointment.contacts.length > 0 && (
+          <section
+            aria-label="Repères du suivi"
+            className="mt-5 rounded-xl border border-white/15 bg-white/5 px-4 py-3"
+          >
+            <p className="text-sm/6 text-white">
+              {previous ? (
+                <>
+                  {previousAppointments.length} rendez-vous antérieur
+                  {previousAppointments.length > 1 ? 's' : ''}
+                  {appointment.animal
+                    ? ` pour ${appointment.animal}`
+                    : ' sur cette fiche'}
+                  . Dernier le{' '}
+                  {shortDayFormat.format(calendarDate(previous.day))}{' '}
+                  {calendarDate(previous.day).getUTCFullYear()}.
+                </>
+              ) : appointment.contacts.some((contact) => !contact.history) ? (
+                'L’historique du suivi n’est pas encore disponible.'
+              ) : (
+                `Aucun rendez-vous antérieur retrouvé${appointment.animal ? ` pour ${appointment.animal}` : ' sur cette fiche'}.`
+              )}
+            </p>
+          </section>
+        )}
         <div className="mt-4 space-y-4">
           {appointment.contacts.map((contact) => (
             <div
@@ -194,6 +235,18 @@ function NextAppointment({
             </div>
           ))}
         </div>
+        {appointment.calendar?.url && (
+          <div className="mt-4 flex justify-end">
+            <Button
+              color="white"
+              href={appointment.calendar.url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Voir dans l’agenda <ArrowTopRightOnSquareIcon />
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -316,7 +369,23 @@ function DayAgenda({
                       />
                     </button>
                   ))}
+                  {!appointment.contacts.length &&
+                    appointment.calendar?.url && (
+                      <a
+                        href={appointment.calendar.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 inline-flex items-center gap-2 rounded text-sm/6 text-zinc-500 hover:text-green-800 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-green-700"
+                      >
+                        Voir dans l’agenda{' '}
+                        <ArrowTopRightOnSquareIcon
+                          className="size-4"
+                          aria-hidden="true"
+                        />
+                      </a>
+                    )}
                 </div>
+                <AppointmentVenue venue={appointment.venue} />
               </li>
             );
           })}
@@ -363,15 +432,21 @@ export function HomePage({
   const [chosenDay, setChosenDay] = useState<string | null>(null);
   const [browsedMonth, setBrowsedMonth] = useState<string | null>(null);
   const selectedDay = chosenDay ?? today;
+  const month = browsedMonth ?? shiftMonth(selectedDay, 0);
+  const calendar = useCalendarAgenda(model, today, month, refreshEnabled);
   const selectDay = (day: string) => {
     setChosenDay(day === today ? null : day);
     setBrowsedMonth(null);
   };
-  const agenda = useMemo(() => buildAgenda(model.contacts), [model.contacts]);
+  const agenda = useMemo(
+    () => buildAgenda(model.contacts, calendar.appointments),
+    [model.contacts, calendar.appointments]
+  );
   const available =
     model.ready &&
-    agenda.coverage !== 'unavailable' &&
-    (model.appointmentsAvailable || agenda.appointments.length > 0);
+    ((model.appointmentsAvailable && agenda.coverage !== 'unavailable') ||
+      (calendar.state === 'ready' && !calendar.loading) ||
+      agenda.appointments.length > 0);
   const appointments = useMemo(
     () => (available ? agenda.appointments : []),
     [available, agenda.appointments]
@@ -410,6 +485,15 @@ export function HomePage({
             {model.error}
             {model.ready &&
               ' Les dernières données chargées restent affichées.'}
+          </Notice>
+        </div>
+      )}
+      {model.ready && !calendar.loading && calendar.state !== 'ready' && (
+        <div className="mt-5">
+          <Notice>
+            {calendar.state === 'not_connected'
+              ? 'Google Calendar n’est pas connecté : les rendez-vous à domicile ne sont pas disponibles.'
+              : 'La lecture de Google Calendar est indisponible ou la copie ne couvre pas cette période. Les rendez-vous à domicile peuvent manquer.'}
           </Notice>
         </div>
       )}
@@ -514,7 +598,7 @@ export function HomePage({
               today={today}
               counts={dayCounts}
               onSelect={selectDay}
-              month={browsedMonth ?? shiftMonth(selectedDay, 0)}
+              month={month}
               onMonthChange={setBrowsedMonth}
             />
           </aside>

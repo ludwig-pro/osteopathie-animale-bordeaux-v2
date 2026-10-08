@@ -9,7 +9,10 @@ import type {
   MailingListsData,
 } from '../contact-types';
 import type { ContactSummaryView } from '../summary-types';
-import type { NextAppointmentView } from '../calendar-types';
+import type {
+  NextAppointmentView,
+  CalendarAgendaView,
+} from '../calendar-types';
 
 export type ContactsTransport = (
   path: string,
@@ -256,6 +259,14 @@ export function useContacts(transport: ContactsTransport) {
       }) as Promise<NextAppointmentView>,
     [transport]
   );
+  const calendarAppointments = useCallback(
+    (from: string, to: string, signal?: AbortSignal) =>
+      transport(
+        `/api/calendar-appointments?${new URLSearchParams({ from, to })}`,
+        { signal }
+      ) as Promise<CalendarAgendaView>,
+    [transport]
+  );
 
   const memberships = useMemo(() => {
     const result = new Map<string, ListMembership[]>();
@@ -284,6 +295,7 @@ export function useContacts(transport: ContactsTransport) {
     consultationReports,
     summary,
     nextAppointment,
+    calendarAppointments,
   };
 }
 

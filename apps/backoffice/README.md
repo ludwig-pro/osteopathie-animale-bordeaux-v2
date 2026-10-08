@@ -8,8 +8,8 @@ et dans la politique Access. Le carnet Google reste celui d’Agathe.
 Le backoffice comprend l’accueil, le compte connecté, la déconnexion et l’onglet
 Contacts : recherche, filtres, édition des coordonnées Google, animaux et dernier
 rendez-vous connu, listes de diffusion et affectations individuelles ou groupées.
-L’accueil affiche aussi le prochain rendez-vous de l’agenda Google Calendar
-d’Agathe, avec son horaire, son lieu et un lien vers l’événement. La connexion
+L’accueil rassemble les réservations Calendly et les événements Google Calendar
+d’Agathe dans un briefing quotidien, avec le prochain rendez-vous en évidence. La connexion
 en lecture seule est décrite dans le [guide Calendar](../../docs/backoffice-google-calendar.md).
 Deux environnements hébergés sont prévus : `backoffice-preview` et `backoffice`,
 avec Workers, applications Access et bases D1 distincts. La preview travaille
@@ -49,13 +49,20 @@ pendant l’ouverture d’une fiche ; un chargement en cours est annulé avant
 l’édition pour ne pas remplacer la version de référence du formulaire.
 Les données déjà chargées restent visibles pendant les demandes en arrière-plan.
 
-L’agenda utilise les historiques Calendly déjà associés aux contacts : il ne
-constitue pas une lecture directe de toutes les réservations Calendly. Les
-annulations sont exclues, les doublons d’une même réservation sont regroupés
-et les horaires suivent Europe/Paris. Un historique absent, une journée vide
+L’agenda utilise les historiques Calendly déjà associés aux contacts et une
+lecture Google Calendar du mois courant et du mois consulté. Les rendez-vous
+Calendly sont au cabinet. Google Calendar contient aussi leurs copies, ainsi
+que les visites à domicile. Une heure et un client identiques permettent de
+regrouper une copie sans ambiguïté ; une heure seule ne suffit pas. L’icône maison
+est réservée aux événements mentionnant explicitement « domicile », l’icône
+cabinet aux réservations Calendly ou aux événements mentionnant « cabinet ».
+Sans indication fiable, l’icône de lieu indique « Lieu à confirmer ». Un événement
+sans invité associé conserve son titre et son lien Calendar, sans inventer de
+client ni d’animal. Les annulations sont exclues et les horaires suivent Europe/Paris. Un historique absent, une journée vide
 et un chargement partiel sont distingués. Sans heure de fin ni statut de
 consultation, un horaire passé n’est jamais présenté comme un soin terminé.
-Le lieu, la durée et le motif ne sont pas fournis par le contrat actuel.
+Le lieu Calendar est visible lorsqu’il est renseigné. La source Calendly reste
+l’historique associé aux contacts, sans lecture directe de toutes les réservations.
 
 La preview fictive propose des rendez-vous relatifs au jour courant et un PDF
 de démonstration ouvrable ; elle
@@ -66,6 +73,8 @@ doublons et la navigation entre mois et années.
 Vérification navigateur du 8 octobre 2026 : fiches et historique, navigation
 calendrier et clavier, journées vides, historiques partiels ou indisponibles,
 échec d’actualisation et affichage de 320 à 1 440 px.
+[Planning avec icônes sur ordinateur](../../docs/screenshots/backoffice-agenda-venues-desktop.png) et
+[sur mobile](../../docs/screenshots/backoffice-agenda-venues-mobile.png).
 [Avant](../../docs/screenshots/backoffice-home-before.png),
 [ordinateur](../../docs/screenshots/backoffice-home-desktop.png),
 [mobile](../../docs/screenshots/backoffice-home-mobile.png).

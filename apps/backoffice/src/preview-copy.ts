@@ -2,7 +2,7 @@ import type { Env } from './config.ts';
 import type { ContactPage, LabelPage } from './contact-types.ts';
 import { contactsPage, ContactsError } from './contacts.ts';
 import { fetchSummarySources } from './contact-summary.ts';
-import { nextAppointment } from './calendar.ts';
+import { nextAppointment, calendarAgenda } from './calendar.ts';
 import {
   activateBusinessCopy,
   businessCopyMatches,
@@ -171,6 +171,35 @@ export async function copyContactsToPreview(input: unknown, env: Env) {
         return { id, copied: state.copied, next: true };
       }
       const calendar = await nextAppointment(env);
+      const today = new Date();
+      const from = new Date(
+        Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), -7)
+      )
+        .toISOString()
+        .slice(0, 10);
+      const to = new Date(
+        Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 16)
+      )
+        .toISOString()
+        .slice(0, 10);
+      calendar.agenda =
+        calendar.state === 'not_connected'
+          ? {
+              state: 'not_connected',
+              appointments: [],
+              from,
+              to,
+              checkedAt: null,
+              demo: false,
+            }
+          : await calendarAgenda(env, from, to).catch(() => ({
+              state: 'unavailable' as const,
+              appointments: [],
+              from,
+              to,
+              checkedAt: null,
+              demo: false,
+            }));
       const result = await db.batch([
         db
           .prepare(

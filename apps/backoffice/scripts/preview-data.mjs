@@ -109,7 +109,8 @@ export function createDemoData(now = new Date()) {
         index % 13 === 0
           ? []
           : [
-              ['Moka', 'Nala', 'Oslo', 'Luna', 'Jazz', 'Plume'][index % 6],
+              ['Moka', 'Nala', 'Oslo', 'Luna', 'Jazz', 'Plume'][index % 6] ??
+                '',
               ...(index % 6 === 0 ? ['Poppy'] : []),
             ],
       animalTypes:
@@ -132,23 +133,12 @@ export function createDemoData(now = new Date()) {
       : [];
     return contact;
   });
-  for (const contact of contacts) {
-    if (contact.lastAppointment)
-      contact.history.push({
-        id: `${contact.id}/previous`,
-        type: 'appointment',
-        date: contact.lastAppointment,
-        animal: contact.animals[0] ?? '',
-        status: 'active',
-      });
-  }
   const currentMinute = today.hour * 60 + today.minute;
   const nextMinute = Math.max(
     11 * 60,
     Math.ceil((currentMinute + 45) / 30) * 30
   );
   const appointments = [
-    { contact: 1, day: 0, minute: currentMinute >= 9 * 60 ? 9 * 60 : 0 },
     ...[nextMinute, nextMinute + 90].map((minute, index) => ({
       contact: index + 2,
       day: minute < 24 * 60 ? 0 : 1,
@@ -180,6 +170,41 @@ export function createDemoData(now = new Date()) {
   }
   return {
     contacts,
+    calendarAppointments:
+      /** @type {import('../src/calendar-types.ts').CalendarAppointment[]} */ ([
+        {
+          id: 'demo-home-visit',
+          title: contacts[1].animals[0],
+          startsAt: appointmentDate(0, currentMinute >= 9 * 60 ? 9 * 60 : 0),
+          endsAt: appointmentDate(0, currentMinute >= 9 * 60 ? 10 * 60 : 60),
+          location: 'À domicile (adresse fictive)',
+          url: null,
+          status: 'confirmed',
+          attendeeEmails: contacts[1].emails,
+        },
+        {
+          id: 'demo-next-home-visit',
+          title: contacts[12].animals[0],
+          startsAt: appointmentDate(1, 12 * 60),
+          endsAt: appointmentDate(1, 13 * 60),
+          location: 'À domicile (adresse fictive)',
+          url: null,
+          status: 'confirmed',
+          attendeeEmails: contacts[12].emails,
+        },
+        {
+          id: 'demo-calendly-mirror',
+          title: 'Consultation au cabinet',
+          startsAt: contacts[2].history.at(-1).date,
+          endsAt: new Date(
+            Date.parse(contacts[2].history.at(-1).date) + 3600000
+          ).toISOString(),
+          location: null,
+          url: null,
+          status: 'confirmed',
+          attendeeEmails: contacts[2].emails,
+        },
+      ]),
     labels,
     lists: [
       {
@@ -233,6 +258,31 @@ export function createDemoTransport(initial, { reports = [] } = {}) {
     const method = init.method ?? 'GET';
     const input = init.body ? JSON.parse(init.body) : null;
     if (method === 'GET') {
+      if (url.pathname === '/api/calendar-appointments') {
+        const fictitious =
+          data.contacts.length > 0 &&
+          data.contacts.every((contact) =>
+            contact.id.startsWith('people/demo')
+          );
+        const from = url.searchParams.get('from') ?? '',
+          to = url.searchParams.get('to') ?? '';
+        return {
+          state: fictitious ? 'ready' : 'not_connected',
+          from,
+          to,
+          appointments: fictitious
+            ? structuredClone(
+                (data.calendarAppointments ?? []).filter(
+                  (event) =>
+                    event.startsAt >= `${from}T00:00:00` &&
+                    event.startsAt < `${to}T00:00:00`
+                )
+              )
+            : [],
+          checkedAt: fictitious ? new Date().toISOString() : null,
+          demo: fictitious,
+        };
+      }
       if (url.pathname === '/api/next-appointment') {
         const fictitious =
           data.contacts.some((contact) =>
@@ -241,21 +291,12 @@ export function createDemoTransport(initial, { reports = [] } = {}) {
           data.contacts.every((contact) =>
             contact.id.startsWith('people/demo')
           );
-        const start = new Date(Date.now() + 86400000);
-        start.setUTCHours(12, 0, 0, 0);
+        const next = (data.calendarAppointments ?? [])
+          .filter((event) => Date.parse(event.startsAt) > Date.now())
+          .sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0];
         return {
-          state: fictitious ? 'ready' : 'not_connected',
-          appointment: fictitious
-            ? {
-                id: 'demo-calendar-appointment',
-                title: 'Consultation de Moka — Alice Lefebvre',
-                startsAt: start.toISOString(),
-                endsAt: new Date(start.getTime() + 3600000).toISOString(),
-                location: 'Cabinet de Bordeaux (exemple fictif)',
-                url: null,
-                status: 'confirmed',
-              }
-            : null,
+          state: fictitious ? (next ? 'ready' : 'empty') : 'not_connected',
+          appointment: fictitious ? structuredClone(next ?? null) : null,
           checkedAt: fictitious ? new Date().toISOString() : null,
           demo: fictitious,
         };

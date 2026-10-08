@@ -81,6 +81,13 @@ function fixture(count = 1103) {
               offset + 100 < contacts.length ? String(offset + 100) : null,
           });
         }
+        if (url.pathname === '/calendar-appointments')
+          return Response.json({
+            appointments: [],
+            from: url.searchParams.get('from'),
+            to: url.searchParams.get('to'),
+            checkedAt: '2026-10-08T08:00:00Z',
+          });
         if (url.pathname === '/next-appointment')
           return Response.json({
             appointment: null,

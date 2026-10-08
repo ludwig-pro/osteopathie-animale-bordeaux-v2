@@ -1,4 +1,5 @@
 import type { GoogleContact } from '../contact-types';
+import type { CalendarAppointment } from '../calendar-types';
 
 export const AGENDA_TIME_ZONE = 'Europe/Paris';
 
@@ -8,8 +9,12 @@ export interface AgendaAppointment {
   startsAt: number;
   day: string;
   animal: string;
-  contact: GoogleContact;
+  venue?: 'home' | 'practice';
+  source: 'calendly' | 'calendar';
+  contact: GoogleContact | null;
   contacts: GoogleContact[];
+  title?: string;
+  calendar?: CalendarAppointment;
 }
 
 const dayFormatter = new Intl.DateTimeFormat('en-CA', {
@@ -60,7 +65,10 @@ function appointmentTime(date: string): number | null {
   return Number.isFinite(time) ? time : null;
 }
 
-export function buildAgenda(contacts: readonly GoogleContact[]): {
+export function buildAgenda(
+  contacts: readonly GoogleContact[],
+  calendar: readonly CalendarAppointment[] = []
+): {
   appointments: AgendaAppointment[];
   coverage: 'complete' | 'partial' | 'unavailable';
   contactsWithHistory: number;
@@ -99,10 +107,55 @@ export function buildAgenda(contacts: readonly GoogleContact[]): {
         startsAt,
         day: parisDay(startsAt),
         animal: event.animal.trim(),
+        venue: 'practice',
+        source: 'calendly',
         contact,
         contacts: [contact],
       });
     }
+  }
+
+  for (const id of canceled) appointments.delete(id);
+  const normalizedEmail = (value: string) => value.trim().toLowerCase();
+  for (const event of calendar) {
+    const startsAt = appointmentTime(event.startsAt);
+    if (startsAt === null || !['confirmed', 'tentative'].includes(event.status))
+      continue;
+    const emails = new Set((event.attendeeEmails ?? []).map(normalizedEmail));
+    const owners = contacts.filter((contact) =>
+      contact.emails.some((email) => emails.has(normalizedEmail(email)))
+    );
+    // A shared instant alone cannot link patients or collapse two bookings.
+    const matches = [...appointments.values()].filter(
+      (item) =>
+        item.source === 'calendly' &&
+        item.startsAt === startsAt &&
+        item.contacts.some((owner) =>
+          owners.some((contact) => contact.id === owner.id)
+        )
+    );
+    if (
+      matches.length === 1 &&
+      (!matches[0]!.calendar || matches[0]!.calendar.id === event.id)
+    ) {
+      matches[0]!.calendar = event;
+      continue;
+    }
+    appointments.set(`calendar:${event.id}`, {
+      id: `calendar:${event.id}`,
+      date: event.startsAt,
+      startsAt,
+      day: parisDay(startsAt),
+      animal: '',
+      title: event.title,
+      // The calendar also contains cabinet visits. Only explicit wording can
+      // classify an unmatched event; its source or patient's species cannot.
+      venue: calendarVenue(event),
+      source: 'calendar',
+      contact: owners[0] ?? null,
+      contacts: owners,
+      calendar: event,
+    });
   }
 
   return {
@@ -120,6 +173,16 @@ export function buildAgenda(contacts: readonly GoogleContact[]): {
     contactsWithHistory,
     totalContacts: contacts.length,
   };
+}
+
+function calendarVenue(event: CalendarAppointment): AgendaAppointment['venue'] {
+  const text = `${event.title} ${event.location ?? ''}`
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  const home = /\bdomicile\b/.test(text);
+  const practice = /\bcabinet\b/.test(text);
+  return home === practice ? undefined : home ? 'home' : 'practice';
 }
 
 export function appointmentsForDay(

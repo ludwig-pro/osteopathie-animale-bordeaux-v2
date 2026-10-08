@@ -6,6 +6,17 @@ export interface CalendarAppointment {
   location: string | null;
   url: string | null;
   status: 'confirmed' | 'tentative';
+  attendeeEmails?: string[];
+}
+
+export interface CalendarAgendaView {
+  state: 'ready' | 'not_connected' | 'unavailable';
+  appointments: CalendarAppointment[];
+  from: string;
+  to: string;
+  checkedAt: string | null;
+  demo: boolean;
+  copiedAt?: string;
 }
 
 export interface NextAppointmentView {
@@ -14,4 +25,5 @@ export interface NextAppointmentView {
   checkedAt: string | null;
   demo: boolean;
   copiedAt?: string;
+  agenda?: CalendarAgendaView;
 }

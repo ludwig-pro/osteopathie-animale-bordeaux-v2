@@ -177,3 +177,83 @@ test('calendar navigation never skips February or repeats a day at a daylight-sa
   assert.equal(shiftDay('2028-03-01', -1), '2028-02-29');
   assert.throws(() => monthDays('2026-02-30'), RangeError);
 });
+
+test('mixed calendars merge exact Calendly mirrors, preserve distinct visits and require evidence for venue', () => {
+  const first = {
+    ...contact('people/first', [
+      appointment('booking', '2026-10-08T09:00:00Z', { animal: 'Oslo' }),
+    ]),
+    emails: ['client@example.test'],
+  };
+  const other = {
+    ...contact('people/other', []),
+    emails: ['other@example.test'],
+  };
+  const calendarEvent = (
+    id: string,
+    title: string,
+    emails: string[] = []
+  ): import('../src/calendar-types.ts').CalendarAppointment => ({
+    id,
+    title,
+    startsAt: '2026-10-08T09:00:00+00:00',
+    endsAt: '2026-10-08T10:00:00Z',
+    location: null,
+    url: null,
+    status: 'confirmed',
+    attendeeEmails: emails,
+  });
+  const result = buildAgenda(
+    [first, other],
+    [
+      calendarEvent('mirror', 'Consultation', ['CLIENT@example.test']),
+      calendarEvent('home', 'Visite à domicile', ['other@example.test']),
+      calendarEvent('unknown', 'Consultation'),
+      calendarEvent('another', 'Visite à domicile', ['other@example.test']),
+      calendarEvent('practice', 'Consultation au cabinet'),
+      calendarEvent('conflicting', 'Cabinet / domicile à confirmer'),
+    ]
+  ).appointments;
+  assert.equal(result.length, 6);
+  const booking = result.find((event) => event.id === 'booking')!;
+  assert.equal(booking.calendar?.id, 'mirror');
+  assert.equal(booking.venue, 'practice');
+  assert.equal(booking.animal, 'Oslo');
+  assert.equal(
+    result.find((event) => event.id === 'calendar:home')!.venue,
+    'home'
+  );
+  assert.equal(
+    result.find((event) => event.id === 'calendar:practice')!.venue,
+    'practice'
+  );
+  const unknown = result.find((event) => event.id === 'calendar:unknown')!;
+  assert.equal(unknown.venue, undefined);
+  assert.equal(unknown.contact, null);
+  assert.equal(unknown.animal, '');
+  assert.equal(
+    result.find((event) => event.id === 'calendar:conflicting')!.venue,
+    undefined
+  );
+});
+
+test('a shared time or ambiguous contact matches never collapses distinct Calendly bookings', () => {
+  const owner = {
+    ...contact('people/shared', [
+      appointment('a', '2026-10-08T09:00:00Z'),
+      appointment('b', '2026-10-08T09:00:00Z'),
+    ]),
+    emails: ['owner@example.test'],
+  };
+  const calendar: import('../src/calendar-types.ts').CalendarAppointment = {
+    id: 'event',
+    title: 'Consultation',
+    startsAt: '2026-10-08T09:00:00Z',
+    endsAt: '2026-10-08T10:00:00Z',
+    location: null,
+    url: null,
+    status: 'confirmed',
+    attendeeEmails: ['owner@example.test'],
+  };
+  assert.equal(buildAgenda([owner], [calendar]).appointments.length, 3);
+});

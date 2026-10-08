@@ -5,6 +5,8 @@ import {
   createDemoTransport,
 } from '../scripts/preview-data.mjs';
 
+import { buildAgenda } from '../src/browser/agenda-model.ts';
+
 const parisDay = (date: string | Date) =>
   new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Paris',
@@ -21,12 +23,14 @@ test('fictitious agenda includes a past visit, two upcoming visits and a cancell
     (event) => parisDay(event.date) === parisDay(now)
   );
   assert.equal(today.filter((event) => event.status === 'canceled').length, 1);
-  assert.equal(
-    today.filter(
-      (event) => event.status === 'active' && Date.parse(event.date) < +now
-    ).length,
-    1
-  );
+  const agenda = buildAgenda(
+    data.contacts,
+    data.calendarAppointments
+  ).appointments.filter((event) => event.day === parisDay(now));
+  assert.equal(agenda.length, 3);
+  assert.equal(agenda.filter((event) => event.startsAt < +now).length, 1);
+  assert.equal(agenda.filter((event) => event.venue === 'home').length, 1);
+  assert.equal(agenda.filter((event) => event.venue === 'practice').length, 2);
   assert.equal(
     today.filter(
       (event) => event.status === 'active' && Date.parse(event.date) > +now
@@ -47,9 +51,9 @@ test('fictitious agenda includes a past visit, two upcoming visits and a cancell
 
 test('demo appointments follow the Paris day and retain local hours across winter time', () => {
   const midnight = createDemoData(new Date('2026-10-08T22:10:00Z'));
-  const firstVisit = midnight.contacts[1]!.history.at(-1)!;
-  assert.equal(parisDay(firstVisit.date), '2026-10-09');
-  assert.equal(firstVisit.date, '2026-10-08T22:00:00.000Z');
+  const firstVisit = midnight.calendarAppointments[0]!;
+  assert.equal(parisDay(firstVisit.startsAt), '2026-10-09');
+  assert.equal(firstVisit.startsAt, '2026-10-08T22:00:00.000Z');
 
   const autumn = createDemoData(new Date('2026-10-24T08:15:00Z'));
   const tomorrow = autumn.contacts[6]!.history.at(-1)!;
