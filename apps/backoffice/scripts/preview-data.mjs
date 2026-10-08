@@ -1,5 +1,45 @@
 // Fictitious interface data only. Never imported by the deployed Worker.
-export function createDemoData() {
+export function createDemoData(now = new Date()) {
+  const paris = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Paris',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  });
+  const parts = (date) =>
+    Object.fromEntries(
+      paris.formatToParts(date).map(({ type, value }) => [type, Number(value)])
+    );
+  const today = parts(now);
+  // Convert a Paris calendar date to UTC, including days across DST changes.
+  const appointmentDate = (dayOffset, minutes) => {
+    const wallTime = Date.UTC(
+      today.year,
+      today.month - 1,
+      today.day + dayOffset,
+      0,
+      minutes
+    );
+    let instant = wallTime;
+    for (let pass = 0; pass < 2; pass += 1) {
+      const local = parts(new Date(instant));
+      instant +=
+        wallTime -
+        Date.UTC(
+          local.year,
+          local.month - 1,
+          local.day,
+          local.hour,
+          local.minute,
+          local.second
+        );
+    }
+    return new Date(instant).toISOString();
+  };
   const names = [
     ['Camille', 'Rivière'],
     ['Élodie', 'Morel'],
@@ -72,10 +112,12 @@ export function createDemoData() {
               ['Moka', 'Nala', 'Oslo', 'Luna', 'Jazz', 'Plume'][index % 6],
               ...(index % 6 === 0 ? ['Poppy'] : []),
             ],
+      animalTypes:
+        index % 13 === 0 ? [] : [index % 3 === 0 ? 'Cheval' : 'Chien'],
       lastAppointment:
-        index % 13 === 0
-          ? null
-          : `2026-09-${String((index % 28) + 1).padStart(2, '0')}T10:00:00Z`,
+        index % 13 === 0 ? null : appointmentDate(-((index % 28) + 1), 10 * 60),
+      history:
+        /** @type {import('../src/contact-types.ts').ContactInteraction[]} */ ([]),
     };
     contact.history = contact.lastAppointment
       ? [
@@ -90,6 +132,52 @@ export function createDemoData() {
       : [];
     return contact;
   });
+  for (const contact of contacts) {
+    if (contact.lastAppointment)
+      contact.history.push({
+        id: `${contact.id}/previous`,
+        type: 'appointment',
+        date: contact.lastAppointment,
+        animal: contact.animals[0] ?? '',
+        status: 'active',
+      });
+  }
+  const currentMinute = today.hour * 60 + today.minute;
+  const nextMinute = Math.max(
+    11 * 60,
+    Math.ceil((currentMinute + 45) / 30) * 30
+  );
+  const appointments = [
+    { contact: 1, day: 0, minute: currentMinute >= 9 * 60 ? 9 * 60 : 0 },
+    ...[nextMinute, nextMinute + 90].map((minute, index) => ({
+      contact: index + 2,
+      day: minute < 24 * 60 ? 0 : 1,
+      minute: minute < 24 * 60 ? minute : 9 * 60 + index * 90,
+    })),
+    { contact: 4, day: 0, minute: 12 * 60, status: 'canceled' },
+    { contact: 6, day: 1, minute: 9 * 60 + 30 },
+    { contact: 7, day: 1, minute: 14 * 60 },
+    { contact: 8, day: 3, minute: 11 * 60 },
+    { contact: 9, day: 6, minute: 10 * 60 },
+    { contact: 10, day: 9, minute: 15 * 60 },
+    { contact: 11, day: 16, minute: 9 * 60 },
+    { contact: 12, day: 35, minute: 11 * 60 },
+  ];
+  for (const [index, appointment] of appointments.entries()) {
+    const contact = contacts[appointment.contact];
+    // A late-night preview naturally places the next appointments tomorrow.
+    const date = appointmentDate(appointment.day, appointment.minute);
+    const status = appointment.status ?? 'active';
+    contact.history.push({
+      id: `${contact.id}/agenda-${index}`,
+      type: 'appointment',
+      date,
+      animal: contact.animals[0] ?? '',
+      status,
+    });
+    if (status === 'active' && Date.parse(date) <= now.getTime())
+      contact.lastAppointment = date;
+  }
   return {
     contacts,
     labels,
@@ -126,7 +214,11 @@ export function createDemoData() {
 }
 
 // Self-contained factory also embedded in the offline HTML export.
-export function createDemoTransport(initial) {
+/**
+ * @param {any} initial
+ * @param {{ reports?: (import('../src/contact-types.ts').ConsultationReport & { contactId: string })[] }} [options]
+ */
+export function createDemoTransport(initial, { reports = [] } = {}) {
   const data = structuredClone(initial);
   data.archivedLists ??= [];
   let revision = 0;
@@ -168,7 +260,14 @@ export function createDemoTransport(initial) {
           demo: fictitious,
         };
       }
-      if (url.pathname === '/api/consultation-reports') return { reports: [] };
+      if (url.pathname === '/api/consultation-reports')
+        return structuredClone({
+          reports: reports
+            .filter(
+              (report) => report.contactId === url.searchParams.get('contactId')
+            )
+            .map(({ contactId, ...report }) => report),
+        });
       if (url.pathname === '/api/contact-summary') {
         const contact = data.contacts.find(
           (item) => item.id === url.searchParams.get('id')

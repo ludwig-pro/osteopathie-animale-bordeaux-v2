@@ -27,6 +27,56 @@ dans `src/browser/ui/LICENSE.md`.
 L’envoi des newsletters n’est pas encore implémenté. La connexion réelle dépend
 de la configuration Cloudflare et de l’autorisation Google existante.
 
+## Accueil : briefing de la journée
+
+L’accueil affiche les rendez-vous du jour, ceux encore à venir et l’heure de
+début du dernier dans une barre compacte. La prochaine réservation connue est
+mise en avant avec l’animal, le client, son téléphone, les repères de son suivi
+et un accès à sa fiche. Le téléphone figure à côté du client ; le bouton PDF
+est regroupé avec le titre et la date du dernier compte rendu de la fiche, qu’il ouvre
+dans le lecteur existant. La date indiquée est celle de son envoi ; le document
+est associé au client, sans attribution automatique à un animal. Les repères
+reposent sur les rendez-vous connus du même animal, pas sur une synthèse clinique
+des notes ou des PDF. Le calendrier
+mensuel permet de choisir une journée, de naviguer au clavier et de revenir
+à aujourd’hui. La navigation de journée se trouve au-dessus de la carte du
+prochain rendez-vous. Sur mobile, un raccourci mène au calendrier.
+Les informations du compte et la déconnexion restent dans le menu du profil.
+
+L’actualisation est automatique toutes les minutes lorsque l’accueil est visible,
+et au retour sur l’onglet si les données sont anciennes. Elle se met en pause
+pendant l’ouverture d’une fiche ; un chargement en cours est annulé avant
+l’édition pour ne pas remplacer la version de référence du formulaire.
+Les données déjà chargées restent visibles pendant les demandes en arrière-plan.
+
+L’agenda utilise les historiques Calendly déjà associés aux contacts : il ne
+constitue pas une lecture directe de toutes les réservations Calendly. Les
+annulations sont exclues, les doublons d’une même réservation sont regroupés
+et les horaires suivent Europe/Paris. Un historique absent, une journée vide
+et un chargement partiel sont distingués. Sans heure de fin ni statut de
+consultation, un horaire passé n’est jamais présenté comme un soin terminé.
+Le lieu, la durée et le motif ne sont pas fournis par le contrat actuel.
+
+La preview fictive propose des rendez-vous relatifs au jour courant et un PDF
+de démonstration ouvrable ; elle
+ne modifie aucune copie privée ni donnée distante. Les tests de l’agenda
+couvrent minuit à Paris, les changements d’heure, les annulations, les
+doublons et la navigation entre mois et années.
+
+Vérification navigateur du 8 octobre 2026 : fiches et historique, navigation
+calendrier et clavier, journées vides, historiques partiels ou indisponibles,
+échec d’actualisation et affichage de 320 à 1 440 px.
+[Avant](../../docs/screenshots/backoffice-home-before.png),
+[ordinateur](../../docs/screenshots/backoffice-home-desktop.png),
+[mobile](../../docs/screenshots/backoffice-home-mobile.png).
+Les vues compactes intègrent les annotations : libellés et blocs secondaires
+retirés, navigation de journée déplacée, téléphone et PDF rapprochés des
+informations utiles. Le PDF et le menu du profil ont été vérifiés sur ces vues :
+[accueil compact](../../docs/screenshots/backoffice-home-compact-desktop.jpg),
+[mobile compact](../../docs/screenshots/backoffice-home-compact-mobile.jpg).
+
+## Données et fonctionnement
+
 Google reste la source des coordonnées. Une liaison privée `GOOGLE_CONTACTS`
 vise le service `GoogleContactsService` de `apps/contacts-sync` ; le backoffice
 ne reçoit aucun secret OAuth Google. L’historique Calendly enrichit les fiches

@@ -132,6 +132,12 @@ export function useContacts(transport: ContactsTransport) {
   const controller = useRef<AbortController | null>(null);
   const generation = useRef(0);
   const listsGeneration = useRef(0);
+  const cancelRefresh = useCallback(() => {
+    generation.current++;
+    controller.current?.abort();
+    controller.current = null;
+    setLoading(false);
+  }, []);
 
   const reloadLists = useCallback(
     async (signal?: AbortSignal) => {
@@ -229,9 +235,10 @@ export function useContacts(transport: ContactsTransport) {
     [transport]
   );
   const consultationReports = useCallback(
-    (id: string) =>
+    (id: string, signal?: AbortSignal) =>
       transport(
-        `/api/consultation-reports?contactId=${encodeURIComponent(id)}`
+        `/api/consultation-reports?contactId=${encodeURIComponent(id)}`,
+        { signal }
       ) as Promise<{ reports: ConsultationReport[] }>,
     [transport]
   );
@@ -270,6 +277,7 @@ export function useContacts(transport: ContactsTransport) {
     updatedAt,
     memberships,
     refresh,
+    cancelRefresh,
     reloadLists,
     mutation,
     identityHistory,
