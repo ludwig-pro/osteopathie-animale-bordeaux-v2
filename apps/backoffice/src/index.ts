@@ -22,7 +22,7 @@ import {
 } from './consultation-reports.ts';
 import { contactSummary, requestSummaryRefresh } from './contact-summary.ts';
 import { runSummaries } from './summary-runner.ts';
-import { nextAppointment } from './calendar.ts';
+import { nextAppointment, calendarAgenda, calendarWindow } from './calendar.ts';
 
 const json = (value: unknown, status = 200) =>
   new Response(JSON.stringify(value), {
@@ -155,6 +155,12 @@ export function createBackofficeHandler(
           request.method === 'HEAD'
             ? json(null)
             : json(await nextAppointment(env));
+      } else if (url.pathname === '/api/calendar-appointments') {
+        const { from, to } = calendarWindow(url);
+        response =
+          request.method === 'HEAD'
+            ? json(null)
+            : json(await calendarAgenda(env, from, to));
       } else if (
         ['/api/contacts', '/api/contact-labels'].includes(url.pathname)
       ) {

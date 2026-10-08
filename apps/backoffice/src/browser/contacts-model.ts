@@ -9,7 +9,10 @@ import type {
   MailingListsData,
 } from '../contact-types';
 import type { ContactSummaryView } from '../summary-types';
-import type { NextAppointmentView } from '../calendar-types';
+import type {
+  NextAppointmentView,
+  CalendarAgendaView,
+} from '../calendar-types';
 
 export type ContactsTransport = (
   path: string,
@@ -132,6 +135,12 @@ export function useContacts(transport: ContactsTransport) {
   const controller = useRef<AbortController | null>(null);
   const generation = useRef(0);
   const listsGeneration = useRef(0);
+  const cancelRefresh = useCallback(() => {
+    generation.current++;
+    controller.current?.abort();
+    controller.current = null;
+    setLoading(false);
+  }, []);
 
   const reloadLists = useCallback(
     async (signal?: AbortSignal) => {
@@ -229,9 +238,10 @@ export function useContacts(transport: ContactsTransport) {
     [transport]
   );
   const consultationReports = useCallback(
-    (id: string) =>
+    (id: string, signal?: AbortSignal) =>
       transport(
-        `/api/consultation-reports?contactId=${encodeURIComponent(id)}`
+        `/api/consultation-reports?contactId=${encodeURIComponent(id)}`,
+        { signal }
       ) as Promise<{ reports: ConsultationReport[] }>,
     [transport]
   );
@@ -247,6 +257,14 @@ export function useContacts(transport: ContactsTransport) {
       transport('/api/next-appointment', {
         signal,
       }) as Promise<NextAppointmentView>,
+    [transport]
+  );
+  const calendarAppointments = useCallback(
+    (from: string, to: string, signal?: AbortSignal) =>
+      transport(
+        `/api/calendar-appointments?${new URLSearchParams({ from, to })}`,
+        { signal }
+      ) as Promise<CalendarAgendaView>,
     [transport]
   );
 
@@ -270,12 +288,14 @@ export function useContacts(transport: ContactsTransport) {
     updatedAt,
     memberships,
     refresh,
+    cancelRefresh,
     reloadLists,
     mutation,
     identityHistory,
     consultationReports,
     summary,
     nextAppointment,
+    calendarAppointments,
   };
 }
 

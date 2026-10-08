@@ -9,13 +9,18 @@ import { renderFrame } from '../src/views.ts';
 import { createDemoData, createDemoTransport } from './preview-data.mjs';
 import { createLocalTransport } from './local-database.mjs';
 import { loadLocalPreview } from './local-preview-data.mjs';
+import { createDemoReport, demoConsultationPdf } from './demo-report.mjs';
 
 const localData = await loadLocalPreview({
   demo: process.env['BACKOFFICE_PREVIEW_DEMO'] === '1',
 });
+const demoData = localData ? null : createDemoData();
+const demoReport = demoData ? createDemoReport(demoData.contacts[2]) : null;
 const transport = localData
   ? createLocalTransport(localData)
-  : createDemoTransport(createDemoData());
+  : createDemoTransport(demoData, {
+      reports: [{ contactId: demoReport.contactId, ...demoReport.report }],
+    });
 
 const port = Number(process.env['BACKOFFICE_PREVIEW_PORT'] ?? 8788);
 if (!Number.isInteger(port) || port < 1024 || port > 65535) {
@@ -105,6 +110,20 @@ const server = createServer(async (request, response) => {
         chunks.push(chunk);
       }
       try {
+        if (demoReport && url.pathname === '/api/consultation-pdf') {
+          const result = demoConsultationPdf(
+            demoReport,
+            url.searchParams.get('id'),
+            request.method
+          );
+          response.writeHead(result.status, Object.fromEntries(result.headers));
+          response.end(
+            request.method === 'HEAD'
+              ? undefined
+              : Buffer.from(await result.arrayBuffer())
+          );
+          return;
+        }
         if (transport.fetchResponse) {
           const result = await transport.fetchResponse(
             url.pathname + url.search,

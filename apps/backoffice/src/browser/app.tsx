@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MotionConfig } from 'motion/react';
 import {
-  ArrowRightIcon,
   ArrowTopRightOnSquareIcon,
   ArrowRightStartOnRectangleIcon,
   ChevronUpIcon,
@@ -9,18 +8,9 @@ import {
   UserGroupIcon,
   EnvelopeIcon,
   TagIcon,
-  ShieldCheckIcon,
-  UserCircleIcon,
 } from '@heroicons/react/20/solid';
 import type { GoogleContact, MailingList } from '../contact-types';
-import {
-  appointmentDate,
-  contactName,
-  initials,
-  useContacts,
-  type ContactsModel,
-  type ContactsTransport,
-} from './contacts-model';
+import { useContacts, type ContactsTransport } from './contacts-model';
 import {
   ArchiveDialog,
   BulkDialog,
@@ -29,10 +19,8 @@ import {
 } from './contact-dialogs';
 import { ContactsPage } from './contacts-page';
 import { ListsPage } from './lists-page';
-import { NextAppointment } from './next-appointment';
-import { Notice } from './common';
+import { HomePage } from './home-page';
 import { Avatar } from './ui/avatar';
-import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import {
   Dropdown,
@@ -43,7 +31,7 @@ import {
   DropdownLabel,
   DropdownMenu,
 } from './ui/dropdown';
-import { Heading, Subheading } from './ui/heading';
+import { Heading } from './ui/heading';
 import { Navbar, NavbarItem, NavbarLabel, NavbarSpacer } from './ui/navbar';
 import {
   Sidebar,
@@ -57,14 +45,6 @@ import {
   SidebarSpacer,
 } from './ui/sidebar';
 import { SidebarLayout } from './ui/sidebar-layout';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from './ui/table';
 import { Text } from './ui/text';
 
 type View = 'home' | 'contacts' | 'lists';
@@ -73,185 +53,12 @@ export interface AppIdentity {
   name: string;
 }
 
-function Home({
-  model,
-  href,
-  identity,
-  onContact,
-  onCreateList,
-  onLogout,
-}: {
-  model: ContactsModel;
-  href: (view: View) => string;
-  identity: AppIdentity;
-  onContact: (contact: GoogleContact) => void;
-  onCreateList: () => void;
-  onLogout: () => void;
-}) {
-  const recent = model.contacts
-    .filter((contact) => contact.lastAppointment)
-    .sort((a, b) =>
-      (b.lastAppointment ?? '').localeCompare(a.lastAppointment ?? '')
-    )
-    .slice(0, 5);
-  return (
-    <>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <Heading>Bonjour Agathe.</Heading>
-          <Text className="mt-1">
-            Votre activité, vos contacts et vos prochaines nouvelles.
-          </Text>
-        </div>
-        <Button href={href('contacts')}>
-          Voir mes contacts
-          <ArrowRightIcon />
-        </Button>
-      </div>
-      <NextAppointment model={model} />
-      <div className="mt-8 grid gap-6 sm:grid-cols-3">
-        {[
-          {
-            name: 'Contacts Google',
-            value: model.ready ? model.contacts.length : '—',
-            detail: 'Votre carnet d’adresses',
-          },
-          {
-            name: 'Avec un e-mail',
-            value: model.ready
-              ? model.contacts.filter((contact) => contact.emails.length).length
-              : '—',
-            detail: 'Une adresse pour garder le lien',
-          },
-          {
-            name: 'Listes de diffusion',
-            value: model.listsReady ? model.lists.lists.length : '—',
-            detail: 'Des destinataires bien organisés',
-          },
-        ].map((stat) => (
-          <div key={stat.name} className="border-t border-zinc-950/15 pt-4">
-            <div className="text-sm/6 font-medium text-zinc-600">
-              {stat.name}
-            </div>
-            <div className="mt-3 font-display text-4xl/10 tracking-tight text-zinc-950">
-              {stat.value}
-            </div>
-            <Text className="mt-2 text-xs/5">{stat.detail}</Text>
-          </div>
-        ))}
-      </div>
-      {(model.error || model.listsError) && (
-        <div className="mt-6 space-y-3">
-          {model.error && <Notice>{model.error}</Notice>}
-          {model.listsError && <Notice>{model.listsError}</Notice>}
-        </div>
-      )}
-      <div className="mt-9 grid gap-5 lg:grid-cols-2">
-        <section className="rounded-xl border border-zinc-950/10 bg-white p-6">
-          <UserGroupIcon
-            className="mb-5 size-6 text-green-800"
-            aria-hidden="true"
-          />
-          <Subheading>Le lien avec vos clients</Subheading>
-          <Text className="mt-2">
-            Retrouvez une fiche, mettez à jour ses coordonnées et choisissez les
-            bonnes listes de diffusion.
-          </Text>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Button href={href('contacts')}>
-              Ouvrir le carnet
-              <ArrowRightIcon />
-            </Button>
-            <Button outline onClick={onCreateList} disabled={!model.listsReady}>
-              Créer une liste
-            </Button>
-          </div>
-        </section>
-        <section className="rounded-xl border border-zinc-950/10 p-6">
-          <div className="mb-5 flex items-center justify-between">
-            <EnvelopeIcon className="size-6 text-zinc-500" aria-hidden="true" />
-            <Badge color="zinc">À venir</Badge>
-          </div>
-          <Subheading>Les nouvelles du cabinet</Subheading>
-          <Text className="mt-2">
-            Préparez bientôt vos newsletters dans un modèle qui reprend les
-            couleurs et les codes visuels de votre site.
-          </Text>
-          <Text className="mt-5 text-xs/5">
-            L’envoi de newsletters sera ajouté lors d’une prochaine étape.
-          </Text>
-        </section>
-      </div>
-      <div className="mt-10 flex items-center justify-between gap-4">
-        <Subheading>Derniers rendez-vous connus</Subheading>
-        <Button plain href={href('contacts')}>
-          Tous les contacts
-          <ArrowRightIcon />
-        </Button>
-      </div>
-      {recent.length ? (
-        <Table className="mt-4">
-          <TableHead>
-            <TableRow>
-              <TableHeader>Contact</TableHeader>
-              <TableHeader>Animal / animaux</TableHeader>
-              <TableHeader>Rendez-vous</TableHeader>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {recent.map((contact) => (
-              <TableRow key={contact.id}>
-                <TableCell>
-                  <button
-                    type="button"
-                    className="flex items-center gap-3 font-medium hover:text-green-700"
-                    onClick={() => onContact(contact)}
-                  >
-                    <Avatar
-                      initials={initials(contactName(contact))}
-                      className="size-8 bg-zinc-100 text-zinc-700"
-                    />
-                    {contactName(contact)}
-                  </button>
-                </TableCell>
-                <TableCell className="text-zinc-500">
-                  {contact.animals.join(', ') || '—'}
-                </TableCell>
-                <TableCell className="text-zinc-500">
-                  {appointmentDate(contact.lastAppointment)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      ) : (
-        <Text className="mt-4 rounded-lg bg-zinc-50 px-5 py-6">
-          Les rendez-vous connus dans Calendly apparaîtront ici pour les
-          contacts correspondants.
-        </Text>
-      )}
-      <section
-        id="compte"
-        className="mt-10 flex flex-wrap items-center gap-4 border-t border-zinc-950/10 pt-6"
-      >
-        <ShieldCheckIcon className="size-6 text-green-800" aria-hidden="true" />
-        <div className="min-w-0 flex-1">
-          <Subheading>Votre compte</Subheading>
-          <Text className="break-all">{identity.email}</Text>
-          <Text className="text-xs/5">Connexion sécurisée avec Google</Text>
-        </div>
-        <Button outline onClick={onLogout}>
-          Se déconnecter
-        </Button>
-      </section>
-    </>
-  );
-}
-
 function readView(preview: boolean, initial: 'home' | 'contacts'): View {
   if (window.location.hash === '#listes') return 'lists';
   if (preview)
-    return ['#home', '#compte'].includes(window.location.hash)
+    return ['#home', '#agenda-calendar', '#day-agenda-title'].includes(
+      window.location.hash
+    )
       ? 'home'
       : window.location.hash === '#contacts'
         ? 'contacts'
@@ -282,9 +89,12 @@ export function App({
 }) {
   const model = useContacts(transport);
   const [view, setView] = useState<View>(() => readView(preview, initial));
-  const [navigation, setNavigation] = useState(0);
   const [notice, setNotice] = useState('');
   const [contact, setContact] = useState<GoogleContact | null>(null);
+  const openContact = (selected: GoogleContact) => {
+    model.cancelRefresh();
+    setContact(selected);
+  };
   const [listEditor, setListEditor] = useState<MailingList | 'new' | null>(
     null
   );
@@ -319,7 +129,6 @@ export function App({
   useEffect(() => {
     const route = () => {
       setView(readView(preview, initial));
-      setNavigation((previous) => previous + 1);
       setNotice('');
     };
     const onClick = (event: MouseEvent) => {
@@ -337,13 +146,13 @@ export function App({
       if (!link || link.target || link.hasAttribute('download')) return;
       const address = link.getAttribute('href');
       const allowed = preview
-        ? ['#home', '#contacts', '#listes', '#compte']
-        : ['/', '/contacts', '/contacts#listes', '/#compte'];
+        ? ['#home', '#contacts', '#listes']
+        : ['/', '/contacts', '/contacts#listes'];
       if (!address || !allowed.includes(address)) return;
       event.preventDefault();
       window.history.pushState(null, '', address);
       route();
-      if (!address.endsWith('#compte')) window.scrollTo(0, 0);
+      window.scrollTo(0, 0);
     };
     document.addEventListener('click', onClick);
     window.addEventListener('popstate', route);
@@ -357,9 +166,7 @@ export function App({
 
   useEffect(() => {
     document.title = `${view === 'contacts' ? 'Contacts' : view === 'lists' ? 'Listes de diffusion' : 'Espace de gestion'} — Agathe Lescout`;
-    if (window.location.hash === '#compte')
-      document.getElementById('compte')?.scrollIntoView({ block: 'center' });
-  }, [view, navigation]);
+  }, [view]);
 
   useEffect(() => {
     if (
@@ -371,6 +178,20 @@ export function App({
       setListFilter('');
   }, [model.listsReady, model.lists.lists, listFilter]);
 
+  const accountMenuContents = (
+    <>
+      <DropdownHeader>
+        <div className="text-xs/5 text-zinc-500">Connectée avec Google</div>
+        <div className="text-sm/6 font-medium">{identity.name}</div>
+        <div className="text-xs/5 text-zinc-500">{identity.email}</div>
+      </DropdownHeader>
+      <DropdownDivider />
+      <DropdownItem onClick={logout}>
+        <ArrowRightStartOnRectangleIcon />
+        <DropdownLabel>Se déconnecter</DropdownLabel>
+      </DropdownItem>
+    </>
+  );
   const profile = (
     <Dropdown>
       <DropdownButton as={SidebarItem} className="w-full">
@@ -383,21 +204,7 @@ export function App({
         </div>
         <ChevronUpIcon />
       </DropdownButton>
-      <DropdownMenu anchor="top start">
-        <DropdownHeader>
-          <div className="text-xs/5 text-zinc-500">Connectée avec Google</div>
-          <div className="text-sm/6 font-medium">{identity.name}</div>
-        </DropdownHeader>
-        <DropdownDivider />
-        <DropdownItem href={preview ? '#compte' : '/#compte'}>
-          <UserCircleIcon />
-          <DropdownLabel>Mon compte</DropdownLabel>
-        </DropdownItem>
-        <DropdownItem onClick={logout}>
-          <ArrowRightStartOnRectangleIcon />
-          <DropdownLabel>Se déconnecter</DropdownLabel>
-        </DropdownItem>
-      </DropdownMenu>
+      <DropdownMenu anchor="top start">{accountMenuContents}</DropdownMenu>
     </Dropdown>
   );
   const sidebar = (
@@ -486,15 +293,17 @@ export function App({
               <NavbarLabel>Agathe Lescout</NavbarLabel>
             </NavbarItem>
             <NavbarSpacer />
-            <NavbarItem
-              href={preview ? '#compte' : '/#compte'}
-              aria-label="Votre compte"
-            >
-              <Avatar
-                initials="AL"
-                className="size-8 bg-green-100 text-green-800"
-              />
-            </NavbarItem>
+            <Dropdown>
+              <DropdownButton as={NavbarItem} aria-label="Votre compte">
+                <Avatar
+                  initials="AL"
+                  className="size-8 bg-green-100 text-green-800"
+                />
+              </DropdownButton>
+              <DropdownMenu anchor="bottom end">
+                {accountMenuContents}
+              </DropdownMenu>
+            </Dropdown>
           </Navbar>
         }
       >
@@ -512,13 +321,10 @@ export function App({
             </span>
           </div>
           {view === 'home' && (
-            <Home
+            <HomePage
               model={model}
-              href={href}
-              identity={identity}
-              onContact={setContact}
-              onCreateList={() => setListEditor('new')}
-              onLogout={logout}
+              refreshEnabled={contact === null}
+              onContact={openContact}
             />
           )}
           {view === 'contacts' && (
@@ -533,7 +339,7 @@ export function App({
               model={model}
               listFilter={listFilter}
               onListFilter={setListFilter}
-              onContact={setContact}
+              onContact={openContact}
               onBulk={(ids, done) => setBulk({ ids, done })}
               notice={notice}
             />
@@ -552,10 +358,12 @@ export function App({
               onNotice={setNotice}
             />
           )}
-          <footer className="mt-12 flex flex-wrap justify-between gap-2 border-t border-zinc-950/5 pt-5 text-xs/5 text-zinc-500">
-            <span>Agathe Lescout · Ostéopathie animale</span>
-            <span>Votre espace personnel</span>
-          </footer>
+          {view !== 'home' && (
+            <footer className="mt-12 flex flex-wrap justify-between gap-2 border-t border-zinc-950/5 pt-5 text-xs/5 text-zinc-500">
+              <span>Agathe Lescout · Ostéopathie animale</span>
+              <span>Votre espace personnel</span>
+            </footer>
+          )}
         </div>
       </SidebarLayout>
       <form id="logout-form" method="post" action="/logout" hidden />

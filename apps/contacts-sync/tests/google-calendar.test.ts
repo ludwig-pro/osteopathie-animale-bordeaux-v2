@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readNextAppointment } from '../src/google-calendar.ts';
+import {
+  readNextAppointment,
+  readCalendarAppointments,
+} from '../src/google-calendar.ts';
 import { readGoogleContacts } from '../src/contacts-reader.ts';
 import worker from '../src/index.ts';
 import { environment } from './helpers.ts';
@@ -292,4 +295,121 @@ test('unsafe calendar links are removed and invalid configured calendar IDs do n
   f.env.GOOGLE_CALENDAR_ID = '//other.example.test/path';
   assert.equal((await f.read()).status, 503);
   assert.equal(f.calls.length, 0);
+});
+
+test('the full window retains past visits and matches contacts using only useful attendee emails', async () => {
+  const f = fixture([
+    {
+      kind: 'calendar#events',
+      items: [
+        event('past', '2026-10-25T00:05:00Z'),
+        {
+          ...event('home'),
+          attendees: [
+            {
+              self: true,
+              responseStatus: 'accepted',
+              email: 'owner@example.test',
+            },
+            { email: 'CLIENT@example.test', responseStatus: 'accepted' },
+            { email: 'declined@example.test', responseStatus: 'declined' },
+          ],
+        },
+        { ...event('canceled'), status: 'cancelled' },
+        { ...event('all-day'), start: { date: '2026-10-25' } },
+        {
+          ...event('declined'),
+          attendees: [{ self: true, responseStatus: 'declined' }],
+        },
+        event('outside', '2026-10-26T09:00:00Z'),
+      ],
+    },
+  ]);
+  const response = await readCalendarAppointments(
+    f.request('/calendar-appointments?from=2026-10-25&to=2026-10-26'),
+    f.env,
+    f.fetcher,
+    now
+  );
+  assert.equal(response.status, 200);
+  const data = (await response.json()) as {
+    appointments: { id: string; attendeeEmails: string[] }[];
+  };
+  assert.deepEqual(
+    data.appointments.map((event) => event.id),
+    ['past', 'home']
+  );
+  assert.deepEqual(data.appointments[1]!.attendeeEmails, [
+    'client@example.test',
+  ]);
+  assert.doesNotMatch(
+    JSON.stringify(data),
+    /private-note|owner@example|declined@example|fake-calendar-token/
+  );
+  const query = f.calls[2]!.url.searchParams;
+  assert.equal(query.get('timeMin'), '2026-10-25T00:00:00Z');
+  assert.equal(query.get('timeMax'), '2026-10-26T00:00:00Z');
+  assert.equal(query.has('maxAttendees'), false);
+  assert.doesNotMatch(query.get('fields')!, /description/);
+});
+
+test('window parameters, incomplete scans, permissions and pinned account fail safely', async () => {
+  const f = fixture();
+  for (const query of [
+    'from=2026-02-30&to=2026-03-02',
+    'from=2026-01-01&to=2027-01-01',
+    'from=2026-10-25&to=2026-10-26&calendarId=other',
+    'from=2026-10-25&from=2026-10-24&to=2026-10-26',
+  ]) {
+    assert.equal(
+      (
+        await readCalendarAppointments(
+          f.request(`/calendar-appointments?${query}`),
+          f.env,
+          f.fetcher,
+          now
+        )
+      ).status,
+      400
+    );
+  }
+  const path = '/calendar-appointments?from=2026-10-25&to=2026-10-26';
+  assert.equal(
+    (
+      await readGoogleContacts(
+        f.request(path, {
+          headers: { 'X-Contacts-Account': 'another@example.test' },
+        }),
+        f.env,
+        f.fetcher
+      )
+    ).status,
+    503
+  );
+  assert.equal(f.calls.length, 0);
+  assert.equal((await worker.fetch(f.request(path), f.env)).status, 404);
+  for (const pages of [
+    Array.from({ length: 4 }, (_, i) => ({
+      kind: 'calendar#events',
+      items: [],
+      nextPageToken: `cursor${i}`,
+    })),
+    [new Response('private', { status: 403 })],
+    [
+      {
+        kind: 'calendar#events',
+        items: [{ ...event(), end: { dateTime: 'invalid' } }],
+      },
+    ],
+  ]) {
+    const failing = fixture(pages);
+    const result = await readCalendarAppointments(
+      failing.request(path),
+      failing.env,
+      failing.fetcher,
+      now
+    );
+    assert.equal(result.status, 503);
+    assert.doesNotMatch(await result.text(), /private|token/);
+  }
 });
